@@ -14,8 +14,8 @@
 #define PUMP_OUTPUT	0
 
 #define BURP_PROB	0.2
-#define RECHARGE_SECONDS 1
-#define PUMP_MS		1500
+#define RECHARGE_SECONDS 5
+#define PUMP_MS		500
 
 static piface_t *p;
 static bool last_was_burp = false;
@@ -60,12 +60,22 @@ burp()
 }
 
 static void
+wait_for_recharge()
+{
+    while (piface_get(p, BUTTON_INPUT)) {}
+    printf("Waiting to recharge\n");
+    sleep(RECHARGE_SECONDS);
+}
+
+static void
 spit()
 {
     printf("spit.\n");
     piface_set(p, PUMP_OUTPUT, true);
     ms_sleep(PUMP_MS);
     piface_set(p, PUMP_OUTPUT, false);
+
+    wait_for_recharge();
 
     last_was_burp = false;
 }
@@ -85,14 +95,6 @@ take_action()
     }
 }
 
-static void
-wait_for_recharge()
-{
-    while (piface_get(p, BUTTON_INPUT)) {}
-    printf("Waiting to recharge\n");
-    sleep(RECHARGE_SECONDS);
-}
-
 int
 main(int argc, char **argv)
 {
@@ -101,10 +103,10 @@ main(int argc, char **argv)
     initialize_audio();
 
     p = piface_new();
+
     while(true) {
 	wait_for_trigger();
 	take_action();
-	wait_for_recharge();
     }
 
     return 0;
