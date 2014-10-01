@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-#include "audio.h"
 #include "piface.h"
+#include "track.h"
 #include "util.h"
-#include "wav.h"
 
 #define BURP_WAV	"burp.wav"
 
@@ -20,26 +19,7 @@
 static piface_t *p;
 static bool last_was_burp = false;
 
-static wav_t *burp_wav;
-static audio_t *burp_audio;
-
-static void
-initialize_audio()
-{
-    audio_config_t audio_cfg;
-    audio_device_t audio_dev;
-
-    burp_wav = wav_new(BURP_WAV);
-    if (! burp_wav) {
-	perror(BURP_WAV);
-	exit(1);
-    }
-
-    audio_device_init_playback(&audio_dev);
-    audio_config_init_default(&audio_cfg);
-    wav_configure_audio(burp_wav, &audio_cfg);
-    burp_audio = audio_new(&audio_cfg, &audio_dev);
-}
+static track_t *burp_track;
 
 static void
 wait_for_trigger()
@@ -55,7 +35,7 @@ static void
 burp()
 {
     printf("burp.\n");
-    wav_play(burp_wav, burp_audio);
+    track_play(burp_track);
     last_was_burp = true;
 }
 
@@ -83,7 +63,7 @@ spit()
 static void
 take_action()
 {
-    if (drand48() < BURP_PROB) {
+    if (randomly_with_prob(BURP_PROB)) {
 	if (last_was_burp) {
 	    printf("Too many burps, do a spit instead.\n");
 	    spit();
@@ -98,9 +78,13 @@ take_action()
 int
 main(int argc, char **argv)
 {
-    srand48(time(NULL));
+    seed_random();
 
-    initialize_audio();
+    burp_track = track_new(BURP_WAV);
+    if (! burp_track) {
+	perror(BURP_WAV);
+	exit(1);
+    }
 
     p = piface_new();
 
