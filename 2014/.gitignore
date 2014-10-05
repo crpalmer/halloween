@@ -1,0 +1,6 @@
+*.d
+*.o
+
+# props
+banjo
+tobacco-spitter
