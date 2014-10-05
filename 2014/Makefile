@@ -2,6 +2,7 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib
 
 PROPS = \
+	banjo \
 	tobacco-spitter
 
 all: $(PROPS)
@@ -10,6 +11,9 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
+
+banjo: banjo.o $(LIB)
+	$(CC) banjo.o -o $@ $(LIBS)
 
 tobacco-spitter: tobacco-spitter.o $(LIB)
 	$(CC) tobacco-spitter.o -o $@ $(LIBS)
