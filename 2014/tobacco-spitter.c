@@ -12,12 +12,13 @@
 #define BUTTON_LED	7
 #define PUMP_OUTPUT	0
 
-#define BURP_PROB	0.2
-#define RECHARGE_SECONDS 5
-#define PUMP_MS		500
+#define BURP_PROB	0.3
+#define RECHARGE_SECONDS 3
+#define PUMP_MS		250
+#define MAX_CONSECUTIVE_SPITS 7
 
 static piface_t *p;
-static bool last_was_burp = false;
+static unsigned n_consecutive_spits = 0;
 
 static track_t *burp_track;
 
@@ -36,7 +37,7 @@ burp()
 {
     printf("burp.\n");
     track_play(burp_track);
-    last_was_burp = true;
+    n_consecutive_spits = 0;
 }
 
 static void
@@ -57,21 +58,26 @@ spit()
 
     wait_for_recharge();
 
-    last_was_burp = false;
+    n_consecutive_spits++;
 }
 
 static void
 take_action()
 {
     if (randomly_with_prob(BURP_PROB)) {
-	if (last_was_burp) {
+	if (! n_consecutive_spits) {
 	    printf("Too many burps, do a spit instead.\n");
 	    spit();
 	} else {
 	    burp();
 	}
     } else {
-	spit();
+	if (n_consecutive_spits >= MAX_CONSECUTIVE_SPITS) {
+	    printf("Too many spits, do a burp instead.\n");
+	    burp();
+	} else {
+	    spit();
+	}
     }
 }
 
