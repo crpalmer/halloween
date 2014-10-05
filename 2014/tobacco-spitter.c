@@ -12,10 +12,10 @@
 #define BUTTON_LED	7
 #define PUMP_OUTPUT	0
 
-#define BURP_PROB	0.3
+#define BURP_PROB	0.4
 #define RECHARGE_SECONDS 3
-#define PUMP_MS		250
-#define MAX_CONSECUTIVE_SPITS 7
+#define PUMP_MS		200
+#define MAX_CONSECUTIVE_SPITS 4
 
 static piface_t *p;
 static unsigned n_consecutive_spits = 0;
@@ -33,6 +33,12 @@ wait_for_trigger()
 }
 
 static void
+wait_for_trigger_release()
+{
+    while (piface_get(p, BUTTON_INPUT)) {}
+}
+
+static void
 burp()
 {
     printf("burp.\n");
@@ -43,7 +49,6 @@ burp()
 static void
 wait_for_recharge()
 {
-    while (piface_get(p, BUTTON_INPUT)) {}
     printf("Waiting to recharge\n");
     sleep(RECHARGE_SECONDS);
 }
@@ -56,7 +61,6 @@ spit()
     ms_sleep(PUMP_MS);
     piface_set(p, PUMP_OUTPUT, false);
 
-    wait_for_recharge();
 
     n_consecutive_spits++;
 }
@@ -97,6 +101,10 @@ main(int argc, char **argv)
     while(true) {
 	wait_for_trigger();
 	take_action();
+	wait_for_trigger_release();
+	if (n_consecutive_spits) {
+	    wait_for_recharge();
+	}
     }
 
     return 0;
