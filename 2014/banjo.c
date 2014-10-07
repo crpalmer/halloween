@@ -7,16 +7,17 @@
 #include "util.h"
 
 #define SERVO_ID	0
-#define UPDATE_MS	50
+#define UPDATE_MS	40
 
 #define INTER_TRACK_LOW 3000
-#define INTER_TRACK_HIGH 15000
+#define INTER_TRACK_HIGH 5000
 
-#define MIN_TICKS	1
-#define MAX_TICKS	10
+#define MIN_TICKS	3
+#define MAX_TICKS	9
 
-#define POS_LOW		0
-#define POS_HIGH	100
+#define POS_LOW		32
+#define POS_HIGH	58
+#define SPEED_MS	(100 * (POS_HIGH - POS_LOW + 1) / 100)
 
 typedef struct {
     bool is_playing;
@@ -64,7 +65,7 @@ main(int argc, char **argv)
 
     e = call_every_new(UPDATE_MS, update_servos, (void *) &s);
 
-    maestro_set_servo_speed(m, SERVO_ID, 150);
+    maestro_set_servo_speed(m, SERVO_ID, SPEED_MS);
 
     s.m = m;
     s.is_low = true;
