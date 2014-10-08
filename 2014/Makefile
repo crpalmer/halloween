@@ -3,7 +3,8 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib
 
 PROPS = \
 	banjo \
-	tobacco-spitter
+	tobacco-spitter \
+	voodoo
 
 all: $(PROPS)
 
@@ -17,6 +18,9 @@ banjo: banjo.o $(LIB)
 
 tobacco-spitter: tobacco-spitter.o $(LIB)
 	$(CC) tobacco-spitter.o -o $@ $(LIBS)
+
+voodoo: voodoo.o $(LIB)
+	$(CC) voodoo.o -o $@ $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
