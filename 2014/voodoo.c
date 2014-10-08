@@ -8,7 +8,6 @@
 #include "piface.h"
 #include "talking-skull.h"
 
-static double gain = 10;
 static maestro_t *maestro;
 static piface_t *piface;
 
@@ -17,9 +16,30 @@ static piface_t *piface;
 #define SERVO_MAX 90
 #define EYES 7
 
+#define HISTORY_EPSILON 2
+#define N_HISTORY 20
+#define GAIN_TARGET 75
+
+static double history[N_HISTORY];
+static size_t history_i;
+static double sum_history;
+static bool history_full;
+
+static double gain = 10;
+
 static void
 servo_update(void *unused, double pos)
 {
+    if (pos > HISTORY_EPSILON) {
+        sum_history = sum_history - history[history_i] + pos;
+        history[history_i] = pos;
+        history_i = (history_i + 1) % N_HISTORY;
+	if (history_i == 0) history_full = true;
+	if (history_full) {
+	    gain = GAIN_TARGET / (sum_history / N_HISTORY);
+	}
+    }
+
     pos *= gain;
     if (pos > 100) pos = 100;
     if (maestro) {
@@ -28,6 +48,7 @@ servo_update(void *unused, double pos)
     } else {
 	printf("servo: %.0f\n", pos);
     }
+
     piface_set(piface, EYES, pos >= 50);
 }
 
