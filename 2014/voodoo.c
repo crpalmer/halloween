@@ -12,7 +12,7 @@ static maestro_t *maestro;
 static piface_t *piface;
 
 #define SERVO_ID 0
-#define SERVO_MIN 35
+#define SERVO_MIN 20
 #define SERVO_MAX 90
 #define EYES 7
 
@@ -67,7 +67,8 @@ main(int argc, char **argv)
     if ((maestro = maestro_new()) == NULL) {
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
-        maestro_set_servo_is_inverted(maestro, 0, true);
+        maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
+	maestro_set_servo_speed(maestro, SERVO_ID, 0);
     }
 
 
