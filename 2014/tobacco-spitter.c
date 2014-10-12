@@ -28,7 +28,11 @@ wait_for_trigger()
     piface_set(p, BUTTON_LED, true);
     printf("Waiting for button %d: \n", BUTTON_INPUT); fflush(stdout);
 
-    while (! piface_get(p, BUTTON_INPUT)) {}
+    for (;;) {
+        unsigned button = piface_wait_for_input(p);
+	if (PIFACE_IS_SELECTED(button, BUTTON_INPUT)) break;
+    }
+
     piface_set(p, BUTTON_LED, false);
 }
 
