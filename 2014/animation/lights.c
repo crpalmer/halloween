@@ -9,56 +9,48 @@
 typedef enum { NONE, CHASE, ON, SELECTED, EXIT } action_t;
 
 struct lightsS {
-    gpio_table_t *gpios;
-    size_t       n_gpios;
-    gpio_t	*gpio;
+    piface_t    *piface;
 
     pthread_t    thread;
     pthread_mutex_t lock;
     pthread_cond_t  cond;
 
     action_t     action;
-    char        *selected;
+    unsigned	 selected;
     size_t	 next_chase;
 };
 
 #define CHASE_SLEEP_MS	100
+#define LIGHT_0	 2
+#define N_LIGHTS 5
 
 static void
-set_all_off(lights_t *lights)
+set(lights_t *lights, unsigned id, bool value)
 {
-    size_t i;
-
-    for (i = 0; i < lights->n_gpios; i++) {
-	gpio_off_id(lights->gpio, i);
-    }
+    piface_set(lights->piface, id + LIGHT_0, value);
 }
 
 static void
-set_all_on(lights_t *lights)
+set_all(lights_t *lights, bool value)
 {
     size_t i;
 
-    for (i = 0; i < lights->n_gpios; i++) {
-	gpio_on_id(lights->gpio, i);
-    }
+    for (i = 0; i < N_LIGHTS; i++) set(lights, i, value);
 }
 
 static void
 do_chase_step(lights_t *lights)
 {
-    set_all_off(lights);
-    gpio_on_id(lights->gpio, lights->next_chase);
-    lights->next_chase = (lights->next_chase + 1) % lights->n_gpios;
+    set_all(lights, false);
+    set(lights, lights->next_chase, true);
+    lights->next_chase = (lights->next_chase + 1) % N_LIGHTS;
 }
 
 static void
 do_selected(lights_t *lights)
 {
-    set_all_off(lights);
-    gpio_on(lights->gpio, lights->selected);
-    free(lights->selected);
-    lights->selected = NULL;
+    set_all(lights, false);
+    set(lights, lights->selected, true);
 }
 
 static void *
@@ -78,7 +70,7 @@ lights_work(void *lights_as_vp)
 	    do_chase_step(lights);
 	    break;
 	case ON:
-	    set_all_on(lights);
+	    set_all(lights, true);
 	    lights->action = NONE;
 	    break;
 	case SELECTED:
@@ -94,16 +86,14 @@ lights_work(void *lights_as_vp)
 }
 
 lights_t *
-lights_new(gpio_table_t *gpios, size_t n_gpios)
+lights_new(piface_t *piface)
 {
     lights_t *lights = fatal_malloc(sizeof(*lights));
 
-    lights->gpios = gpios;
-    lights->n_gpios = n_gpios;
-    lights->gpio = gpio_new(lights->gpios, lights->n_gpios);
+    lights->piface = piface;
 
     lights->action = NONE;
-    lights->selected = NULL;
+    lights->selected = 0;
     lights->next_chase = 0;
 
     pthread_mutex_init(&lights->lock, NULL);
@@ -114,46 +104,52 @@ lights_new(gpio_table_t *gpios, size_t n_gpios)
     return lights;
 }
 
+#define SELECTED_NONE ((unsigned) -1)
+
 static void
-send_work(lights_t *lights, action_t action, const char *selected)
+send_work_selected(lights_t *lights, action_t action, unsigned selected)
 {
     pthread_mutex_lock(&lights->lock);
     /* Once exit is picked, never override it! */
     if (lights->action != EXIT) {
         lights->action = action;
-        if (lights->selected) free(lights->selected);
-        lights->selected = fatal_strdup(selected);
+        if (selected != SELECTED_NONE) lights->selected = selected;
     }
     pthread_cond_signal(&lights->cond);
     pthread_mutex_unlock(&lights->lock);
 }
 
+static void
+send_work(lights_t *lights, action_t action)
+{
+    send_work_selected(lights, action, SELECTED_NONE);
+}
+
 void
 lights_chase(lights_t *lights)
 {
-    send_work(lights, CHASE, NULL);
+    send_work(lights, CHASE);
 }
 
 void
 lights_on(lights_t *lights)
 {
-    send_work(lights, ON, NULL);
+    send_work(lights, ON);
 }
 
 void
-lights_select(lights_t *lights, const char *name)
+lights_select(lights_t *lights, unsigned selected)
 {
-    send_work(lights, SELECTED, name);
+    send_work_selected(lights, SELECTED, selected);
 }
 
 void
 lights_destroy(lights_t *lights)
 {
-    send_work(lights, EXIT, NULL);
+    send_work(lights, EXIT);
     pthread_join(lights->thread, NULL);
 
     pthread_mutex_destroy(&lights->lock);
     pthread_cond_destroy(&lights->cond);
-    gpio_destroy(lights->gpio);
     free(lights);
 }
