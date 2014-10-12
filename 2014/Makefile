@@ -3,6 +3,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib
 
 PROPS = \
 	banjo \
+	dropper \
 	tobacco-spitter \
 	voodoo
 
@@ -15,6 +16,9 @@ LIBS = $(LIB) -lusb -lrt -lpthread
 
 banjo: banjo.o $(LIB)
 	$(CC) banjo.o -o $@ $(LIBS)
+
+dropper: dropper.o $(LIB)
+	$(CC) dropper.o -o $@ $(LIBS)
 
 tobacco-spitter: tobacco-spitter.o $(LIB)
 	$(CC) tobacco-spitter.o -o $@ $(LIBS)
