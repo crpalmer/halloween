@@ -143,6 +143,15 @@ remote_event(void *unused, const char *command)
     return result;
 }
 
+static void
+wait_for_no_buttons(void)
+{
+    for (;;) {
+	unsigned buttons = piface_get_all(piface);
+	if (PIFACE_NONE_SELECTED(buttons)) return;
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -171,6 +180,8 @@ main(int argc, char **argv)
 	for (i = 0; i < N_BUTTONS; i++) {
 	    if (PIFACE_IS_SELECTED(button, i)) {
 		handle_event(i);
+		wait_for_no_buttons();
+		break;
 	    }
 	}
     }
