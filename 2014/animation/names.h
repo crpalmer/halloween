@@ -5,6 +5,6 @@
 #define ZOMBIE "zombie"
 #define GATER  "gater"
 #define SNAKE  "snake"
-#define QUESTION "question"
+#define SNAKE_SPIT  "snake-spit"
 
 #endif
