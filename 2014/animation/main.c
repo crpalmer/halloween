@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include "gpio.h"
 #include "piface.h"
+#include "server.h"
 #include "util.h"
 #include "animation/lights.h"
 
@@ -81,16 +83,42 @@ handle_event(unsigned i)
     pthread_mutex_unlock(&event_lock);
 }
 
+static void
+remote_event(void *unused, const char *command)
+{
+    if (strcmp(command, SPIDER) == 0) {
+	do_prop(SPIDER_ID);
+    } else if (strcmp(command, ZOMBIE) == 0) {
+	do_prop(ZOMBIE_ID);
+    } else if (strcmp(command, GATER) == 0) {
+	do_prop(GATER_ID);
+    } else if (strcmp(command, SNAKE) == 0) {
+	do_prop(SNAKE_ID);
+    } else if (strcmp(command, "question") == 0) {
+	do_prop(QUESTION_ID);
+    } else {
+	fprintf(stderr, "Invalid net command: [%s]\n", command);
+    }
+}
+
 int
 main(int argc, char **argv)
 {
     unsigned i, button;
+    server_args_t server_args;
+    pthread_t server_thread;
 
     piface = piface_new();
     lights = lights_new(piface);
     gpio = gpio_new(gpio_table, N_GPIO_TABLE);
 
     pthread_mutex_init(&event_lock, NULL);
+
+    server_args.port = 5555;
+    server_args.command = remote_event;
+    server_args.state = NULL;
+
+    pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     while (true) {
 	lights_chase(lights);
