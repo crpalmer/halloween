@@ -24,6 +24,9 @@ struct lightsS {
 #define LIGHT_0	 2
 #define N_LIGHTS 5
 
+unsigned chase_seq[] = { 0, 1, 4, 2, 3, 4 };
+#define N_CHASE_SEQ (sizeof(chase_seq) / sizeof(chase_seq[0]))
+
 static void
 set(lights_t *lights, unsigned id, bool value)
 {
@@ -42,8 +45,9 @@ static void
 do_chase_step(lights_t *lights)
 {
     set_all(lights, false);
-    set(lights, lights->next_chase, true);
-    lights->next_chase = (lights->next_chase + 1) % N_LIGHTS;
+    set(lights, chase_seq[lights->next_chase], true);
+    lights->next_chase = (lights->next_chase + 1) % N_CHASE_SEQ;
+    set(lights, chase_seq[lights->next_chase], true);
 }
 
 static void
