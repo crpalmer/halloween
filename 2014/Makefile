@@ -39,4 +39,4 @@ voodoo: voodoo.o $(LIB)
 	@gcc -MM $(CFLAGS) $*.c > $*.d
 
 clean:
-	-rm $(LIB) *.o *.d $(PROPS)
+	-rm *.o *.d */*.o */*.d $(PROPS)

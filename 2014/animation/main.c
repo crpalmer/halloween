@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <pthread.h>
 #include "gpio.h"
 #include "piface.h"
 #include "util.h"
@@ -30,7 +31,10 @@ static gpio_table_t gpio_table[N_GPIOS] = {
 
 #define N_GPIO_TABLE (sizeof(gpio_table) / sizeof(gpio_table[0]))
 
+static lights_t *lights;
+static piface_t *piface;
 static gpio_t *gpio;
+static pthread_mutex_t event_lock;
 
 static void
 do_attack(unsigned id)
@@ -68,29 +72,38 @@ do_prop(unsigned id)
     }
 }
 
+static void
+handle_event(unsigned i)
+{
+    pthread_mutex_lock(&event_lock);
+    lights_select(lights, i);
+    do_prop(i);
+    pthread_mutex_unlock(&event_lock);
+}
+
 int
 main(int argc, char **argv)
 {
-    lights_t *lights;
-    piface_t *piface;
     unsigned i, button;
 
     piface = piface_new();
     lights = lights_new(piface);
     gpio = gpio_new(gpio_table, N_GPIO_TABLE);
 
+    pthread_mutex_init(&event_lock, NULL);
+
     while (true) {
 	lights_chase(lights);
 	button = piface_wait_for_input(piface);
 	for (i = 0; i < N_BUTTONS; i++) {
 	    if (PIFACE_IS_SELECTED(button, i)) {
-		lights_select(lights, i);
-		do_prop(i);
+		handle_event(i);
 	    }
 	}
 	ms_sleep(1000);
     }
 
+    pthread_mutex_destroy(&event_lock);
     lights_destroy(lights);
     piface_destroy(piface);
 
