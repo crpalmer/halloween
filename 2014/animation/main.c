@@ -55,34 +55,30 @@ static void
 do_popup(unsigned id, unsigned ms)
 {
 printf("popup on %d\n", id);
-    gpio_off_id(gpio, id);
-    ms_sleep(ms);
     gpio_on_id(gpio, id);
+    ms_sleep(ms);
+    gpio_off_id(gpio, id);
 }
 
 static void
 do_attack(unsigned id)
 {
-#if 0
     unsigned i;
 
-printf("attacking on %d\n", id);
-    for (i = 0; i < 10; i++) {
-	gpio_on_id(gpio, 0);
-	ms_sleep(200);
- 	gpio_off_id(gpio, 0);
-	ms_sleep(200);
+    for (i = 0; i < 3; i++) {
+	gpio_on_id(gpio, id);
+	ms_sleep(500 + random_number_in_range(0, 250) - 125);
+ 	gpio_off_id(gpio, id);
+	ms_sleep(200 + random_number_in_range(0, 100) - 50);
     }
-#endif
-do_popup(id, 5000);
 }
 
 static void
 do_snake(void)
 {
-printf("snake\n");
-do_popup(SNAKE_GPIO, 5000);
-do_popup(SNAKE_SPIT_GPIO, 5000);
+     gpio_on_id(gpio, SNAKE_SPIT_GPIO);
+     do_attack(SNAKE_GPIO);
+     gpio_off_id(gpio, SNAKE_SPIT_GPIO);
 }
 
 static void
@@ -102,7 +98,6 @@ handle_event_locked(unsigned i)
 {
     lights_select(lights, i);
     do_prop(i);
-ms_sleep(2500);
     lights_chase(lights);
 }
 
@@ -154,6 +149,8 @@ main(int argc, char **argv)
     unsigned i, button;
     server_args_t server_args;
     pthread_t server_thread;
+
+    seed_random();
 
     piface = piface_new();
     lights = lights_new(piface);
