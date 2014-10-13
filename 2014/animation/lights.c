@@ -6,7 +6,7 @@
 
 #include "lights.h"
 
-typedef enum { NONE, CHASE, ON, SELECTED, BLINK, EXIT } action_t;
+typedef enum { NONE, CHASE, ON, OFF, SELECTED, BLINK, EXIT } action_t;
 
 struct lightsS {
     piface_t    *piface;
@@ -78,6 +78,10 @@ lights_work(void *lights_as_vp)
 	    set_all(lights, true);
 	    lights->action = NONE;
 	    break;
+	case OFF:
+	    set_all(lights, false);
+	    lights->action = NONE;
+	    break;
 	case SELECTED:
 	    do_selected(lights);
 	    lights->action = NONE;
@@ -147,6 +151,12 @@ void
 lights_on(lights_t *lights)
 {
     send_work(lights, ON);
+}
+
+void
+lights_off(lights_t *lights)
+{
+    send_work(lights, OFF);
 }
 
 void

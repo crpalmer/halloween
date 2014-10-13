@@ -34,6 +34,7 @@
 #define ZOMBIE_MS	5000
 #define SPIDER_MS	5000
 #define QUESTION_MS	5000
+#define BUTTON_LOCKOUT_MS 1000
 
 static gpio_table_t gpio_table[N_GPIOS] = {
     [SPIDER_GPIO]      = { SPIDER,     26, 0 },
@@ -98,7 +99,6 @@ handle_event_locked(unsigned i)
 {
     lights_select(lights, i);
     do_prop(i);
-    lights_chase(lights);
 }
 
 static void
@@ -139,6 +139,8 @@ remote_event(void *unused, const char *command)
     }
     result = remote_event_locked(command);
     pthread_mutex_unlock(&event_lock);
+
+    lights_chase(lights);
 
     return result;
 }
@@ -181,6 +183,9 @@ main(int argc, char **argv)
 	    if (PIFACE_IS_SELECTED(button, i)) {
 		handle_event(i);
 		wait_for_no_buttons();
+		lights_off(lights);
+		ms_sleep(BUTTON_LOCKOUT_MS);
+		lights_chase(lights);
 		break;
 	    }
 	}

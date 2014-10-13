@@ -15,6 +15,9 @@ void
 lights_on(lights_t *lights);
 
 void
+lights_off(lights_t *lights);
+
+void
 lights_select(lights_t *lights, unsigned selected);
 
 void
