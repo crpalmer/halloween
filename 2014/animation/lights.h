@@ -18,6 +18,9 @@ void
 lights_select(lights_t *lights, unsigned selected);
 
 void
+lights_blink(lights_t *lights);
+
+void
 lights_destroy(lights_t *lights);
 
 #endif

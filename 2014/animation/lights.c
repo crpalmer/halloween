@@ -6,7 +6,7 @@
 
 #include "lights.h"
 
-typedef enum { NONE, CHASE, ON, SELECTED, EXIT } action_t;
+typedef enum { NONE, CHASE, ON, SELECTED, BLINK, EXIT } action_t;
 
 struct lightsS {
     piface_t    *piface;
@@ -18,9 +18,10 @@ struct lightsS {
     action_t     action;
     unsigned	 selected;
     size_t	 next_chase;
+    bool         blink_on;
 };
 
-#define CHASE_SLEEP_MS	100
+#define ANIMATION_SLEEP_MS	100
 #define LIGHT_0	 2
 #define N_LIGHTS 5
 
@@ -81,11 +82,17 @@ lights_work(void *lights_as_vp)
 	    do_selected(lights);
 	    lights->action = NONE;
 	    break;
+	case BLINK:
+	    lights->blink_on = !lights->blink_on;
+	    set_all(lights, lights->blink_on);
+	    break;
 	case EXIT:
 	    return NULL;
 	}
 	pthread_mutex_unlock(&lights->lock);
-	if (lights->action == CHASE) ms_sleep(CHASE_SLEEP_MS);
+	if (lights->action == CHASE || lights->action == BLINK) {
+	    ms_sleep(ANIMATION_SLEEP_MS);
+	}
     }
 }
 
@@ -99,6 +106,7 @@ lights_new(piface_t *piface)
     lights->action = NONE;
     lights->selected = 0;
     lights->next_chase = 0;
+    lights->blink_on = false;
 
     pthread_mutex_init(&lights->lock, NULL);
     pthread_cond_init(&lights->cond, NULL);
@@ -145,6 +153,12 @@ void
 lights_select(lights_t *lights, unsigned selected)
 {
     send_work_selected(lights, SELECTED, selected);
+}
+
+void
+lights_blink(lights_t *lights)
+{
+    send_work(lights, BLINK);
 }
 
 void

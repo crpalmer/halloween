@@ -59,6 +59,7 @@ printf("snake\n");
 static void
 do_question(void)
 {
+    lights_blink(lights);
 printf("question\n");
 }
 
