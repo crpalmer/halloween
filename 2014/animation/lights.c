@@ -21,7 +21,7 @@ struct lightsS {
     bool         blink_on;
 };
 
-#define ANIMATION_SLEEP_MS	100
+#define ANIMATION_SLEEP_MS	200
 #define LIGHT_0	 2
 #define N_LIGHTS 5
 
