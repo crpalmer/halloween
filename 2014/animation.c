@@ -90,7 +90,10 @@ do_prop(unsigned id)
     case ZOMBIE_BUTTON: do_popup(ZOMBIE_GPIO, ZOMBIE_MS); break;
     case GATER_BUTTON:  do_attack(GATER_GPIO); break;
     case SNAKE_BUTTON:  do_snake(); break;
-    case QUESTION_BUTTON: do_popup(QUESTION_GPIO, QUESTION_MS); break;
+    case QUESTION_BUTTON:
+	lights_blink(lights);
+	do_popup(QUESTION_GPIO, QUESTION_MS);
+	break;
     }
 }
 
