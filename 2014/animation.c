@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include "lights.h"
 #include "gpio.h"
 #include "piface.h"
 #include "server.h"
+#include "track.h"
 #include "util.h"
 
 #define N_BUTTONS 5
@@ -51,6 +53,7 @@ static lights_t *lights;
 static piface_t *piface;
 static gpio_t *gpio;
 static pthread_mutex_t event_lock;
+static track_t *laugh;
 
 static void
 do_popup(unsigned id, unsigned ms)
@@ -83,6 +86,14 @@ do_snake(void)
 }
 
 static void
+do_question(void)
+{
+    track_play_asynchronously(laugh);
+    lights_blink(lights);
+    do_popup(QUESTION_GPIO, QUESTION_MS);
+}
+
+static void
 do_prop(unsigned id)
 {
     switch (id) {
@@ -90,10 +101,7 @@ do_prop(unsigned id)
     case ZOMBIE_BUTTON: do_popup(ZOMBIE_GPIO, ZOMBIE_MS); break;
     case GATER_BUTTON:  do_attack(GATER_GPIO); break;
     case SNAKE_BUTTON:  do_snake(); break;
-    case QUESTION_BUTTON:
-	lights_blink(lights);
-	do_popup(QUESTION_GPIO, QUESTION_MS);
-	break;
+    case QUESTION_BUTTON: do_question(); break;
     }
 }
 
@@ -165,6 +173,11 @@ main(int argc, char **argv)
     pthread_t server_thread;
 
     seed_random();
+
+    if ((laugh = track_new("laugh.wav")) == NULL) {
+	perror("laugh.wav");
+	exit(1);
+    }
 
     piface = piface_new();
     lights = lights_new(piface);
