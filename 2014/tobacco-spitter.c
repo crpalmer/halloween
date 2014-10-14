@@ -115,7 +115,10 @@ remote_event(void *unused, const char *command)
 {
     char *response;
 
-    pthread_mutex_lock(&event_lock);
+    if (pthread_mutex_trylock(&event_lock) != 0) {
+	return strdup("prop is busy");
+    }
+
     response = remote_event_locked(command);
     pthread_mutex_unlock(&event_lock);
 
