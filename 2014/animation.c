@@ -126,7 +126,7 @@ remote_event_locked(const char *command)
 	fprintf(stderr, "Invalid net command: [%s]\n", command);
 	return strdup("Invalid command\n");
     }
-    return strdup("ok");
+    return strdup(SERVER_OK);
 }
 
 static char *
