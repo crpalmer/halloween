@@ -2,7 +2,7 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
-	animation/animation \
+	animation \
 	banjo \
 	dropper \
 	tobacco-spitter \
@@ -15,10 +15,8 @@ all: $(PROPS)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
 
-ANIMATION_OBJS = animation/main.o animation/lights.o
-
-animation/animation: $(ANIMATION_OBJS) $(LIB)
-	$(CC) -o $@ $(ANIMATION_OBJS) $(LIBS)
+animation: animation.o $(LIB)
+	$(CC) -o $@ animation.o $(LIBS)
 
 banjo: banjo.o $(LIB)
 	$(CC) banjo.o -o $@ $(LIBS)

@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include "lights.h"
 #include "gpio.h"
 #include "piface.h"
 #include "server.h"
 #include "util.h"
-#include "animation/lights.h"
 
 #define N_BUTTONS 5
 
