@@ -77,27 +77,41 @@ remote_event(void *unused, const char *command)
     unsigned char *data;
     size_t i, j;
 
-fprintf(stderr, "remote: [%s]\n", command);
+fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
+
     if (strncmp(command, "play ", 5) != 0) {
 	return strdup("Invalid command");
     }
 
-    data = malloc(strlen(command));
-    for (i = 5; command[i]; i++, j++) {
+    /* Expect sample rate 16000 mono and playing 48000 stereo */
+    data = malloc(strlen(command) * 3 * 2);
+
+    for (i = 5, j = 0; command[i]; i++) {
 	if (command[i] == '\\') {
-	    switch(command[++i]) {
-	    case '\\': data[j] = '\\'; break;
-	    case 'n': data[j] = '\n'; break;
-	    case '0': data[j] = '\0'; break;
+	    i++;
+	    switch(command[i]) {
+	    case '\\': data[j++] = '\\'; break;
+	    case 'n': data[j++] = '\n'; break;
+	    case 'r': data[j++] = '\r'; break;
+	    case '0': data[j++] = '\0'; break;
 	    default:
 		free(data);
 		return strdup("corrupt data");
 	    }
 	} else {
-	    data[j] = data[i];
+	    data[j++] = command[i];
+	}
+
+	if ((j % 2) == 0) {
+	    size_t p = j-2, k;
+	    for (k = 1; k < 3*2; k++) {
+		data[j++] = data[p];
+		data[j++] = data[p+1];
+	    }
 	}
     }
 
+fprintf(stderr, "playing %u bytes\n", j);
     play_one_buffer(data, j);
     free(data);
 
@@ -134,11 +148,14 @@ main(int argc, char **argv)
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     audio_config_init_default(&cfg);
-    audio_device_init_playback(&in_dev);
-    audio_device_init_capture(&out_dev);
+    cfg.channels = 2;
+    cfg.rate = 48000;
 
-    out = audio_new(&cfg, &in_dev);
-    in = audio_new(&cfg, &out_dev);
+    audio_device_init_playback(&out_dev);
+    audio_device_init_capture(&in_dev);
+
+    out = audio_new(&cfg, &out_dev);
+    in = audio_new(&cfg, &in_dev);
 
     if (! out) {
 	perror("out");
