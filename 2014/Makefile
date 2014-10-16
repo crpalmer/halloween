@@ -4,6 +4,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 PROPS = \
 	animation \
 	banjo \
+	deer \
 	dropper \
 	tobacco-spitter \
 	voodoo
@@ -20,6 +21,9 @@ animation: animation.o $(LIB)
 
 banjo: banjo.o $(LIB)
 	$(CC) banjo.o -o $@ $(LIBS)
+
+deer: deer.o $(LIB)
+	$(CC) deer.o -o $@ $(LIBS)
 
 dropper: dropper.o $(LIB)
 	$(CC) dropper.o -o $@ $(LIBS)
