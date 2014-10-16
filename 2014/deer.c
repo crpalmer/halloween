@@ -5,6 +5,7 @@
 #include "maestro.h"
 #include "piface.h"
 #include "talking-skull.h"
+#include "track.h"
 #include "wav.h"
 
 #define SERVO_ID 0
@@ -30,11 +31,9 @@ update_servo(void *unused, double pos)
 int
 main(int argc, char **argv)
 {
-    wav_t *song, *servo;
+    track_t *song;
+    wav_t *servo;
     audio_meta_t meta_servo;
-    audio_config_t audio_cfg;
-    audio_device_t audio_dev;
-    audio_t *audio;
     talking_skull_t *talking_skull;
     unsigned char *servo_data;
     size_t n_servo_data;
@@ -64,7 +63,7 @@ main(int argc, char **argv)
 	}
     }
 
-    song = wav_new(argv[1]);
+    song = track_new(argv[1]);
     if (! song) {
 	perror(argv[1]);
 	exit(1);
@@ -80,26 +79,9 @@ main(int argc, char **argv)
     servo_data = wav_get_raw_data(servo, &n_servo_data);
     talking_skull = talking_skull_new(&meta_servo, false, update_servo, NULL);
 
-    audio_device_init_playback(&audio_dev);
-    audio_config_init_default(&audio_cfg);
-    wav_configure_audio(song, &audio_cfg);
-
-    printf("Config from wav file: ");
-    audio_config_print(&audio_cfg, stdout);
-    printf("\n");
-
-    audio = audio_new(&audio_cfg, &audio_dev);
-
-    if (! audio) {
-	perror("audio_new");
-	exit(1);
-    }
-
-    audio_set_volume(audio, 100);
-
     while (true) {
 	talking_skull_play(talking_skull, servo_data, n_servo_data);
-	wav_play(song, audio);
+	track_play(song);
 	ms_sleep(INTER_SONG_MS);
     }
 
