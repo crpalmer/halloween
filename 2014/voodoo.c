@@ -8,6 +8,7 @@
 #include "mem.h"
 #include "pi-usb.h"
 #include "piface.h"
+#include "producer-consumer.h"
 #include "server.h"
 #include "talking-skull.h"
 
@@ -33,6 +34,9 @@ static audio_t *out;
 static talking_skull_t *skull;
 
 static double gain = 10;
+
+static producer_consumer_t *pc;
+size_t size;
 
 static void
 servo_update(void *unused, double pos)
@@ -62,13 +66,11 @@ servo_update(void *unused, double pos)
 static void
 play_one_buffer(void *buffer, size_t size)
 {
-    pthread_mutex_lock(&speak_lock);
     talking_skull_play(skull, buffer, size);
     if (! audio_play_buffer(out, buffer, size)) {
 	fprintf(stderr, "Failed to play buffer!\n");
 	exit(1);
     }
-    pthread_mutex_unlock(&speak_lock);
 }
 
 static char *
@@ -84,7 +86,9 @@ fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
     }
 
     /* Expect sample rate 16000 mono and playing 48000 stereo */
-    data = malloc(strlen(command) * 3 * 2);
+    data = fatal_malloc(size + 100);
+
+    pthread_mutex_lock(&speak_lock);
 
     for (i = 5, j = 0; command[i]; i++) {
 	if (command[i] == '\\') {
@@ -109,26 +113,50 @@ fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
 		data[j++] = data[p+1];
 	    }
 	}
+	if (j >= size) {
+	    producer_consumer_produce(pc, data);
+	    data = fatal_malloc(size + 100);
+	    j = 0;
+	}
     }
 
-fprintf(stderr, "playing %u bytes\n", j);
-    play_one_buffer(data, j);
-    free(data);
+    if (j > 0) {
+	while (j < size) data[j++] = 0;
+	producer_consumer_produce(pc, data);
+    } else {
+	free(data);
+    }
+
+    pthread_mutex_unlock(&speak_lock);
 
     return strdup(SERVER_OK);
+}
+
+static void *
+play_thread_main(void *unused)
+{
+    void *buffer;
+    unsigned seq_unused;
+
+    while ((buffer = producer_consumer_consume(pc, &seq_unused)) != NULL) {
+	play_one_buffer(buffer, size);
+	free(buffer);
+    }
+
+    return NULL;
 }
 
 int
 main(int argc, char **argv)
 {
     unsigned char *buffer;
-    size_t size;
     audio_t *in;
     audio_config_t cfg;
     audio_meta_t meta;
     audio_device_t in_dev, out_dev;
     server_args_t server_args;
     pthread_t server_thread;
+    pthread_t play_thread;
 
     pi_usb_init();
     if ((maestro = maestro_new()) == NULL) {
@@ -145,7 +173,10 @@ main(int argc, char **argv)
     server_args.command = remote_event;
     server_args.state = NULL;
 
+    pc = producer_consumer_new(1);
+
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
+    pthread_create(&play_thread, NULL, play_thread_main, NULL);
 
     audio_config_init_default(&cfg);
     cfg.channels = 2;
@@ -169,7 +200,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    audio_set_volume(in, 10);
+    audio_set_volume(in, 50);
     audio_set_volume(out, 100);
 
     size = audio_get_buffer_size(in);
@@ -183,7 +214,10 @@ main(int argc, char **argv)
     fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
 
     while (audio_capture_buffer(in, buffer)) {
-	play_one_buffer(buffer, size);
+	pthread_mutex_lock(&speak_lock);
+	producer_consumer_produce(pc, buffer);
+	pthread_mutex_unlock(&speak_lock);
+	buffer = fatal_malloc(size);
     }
 
     fprintf(stderr, "Failed to capture buffer!\n");
