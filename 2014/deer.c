@@ -10,14 +10,15 @@
 
 #define SERVO_ID 0
 #define SERVO_MIN 20
-#define SERVO_MAX 90
+#define SERVO_MAX 70
 
 #define EYES 7
 #define INTER_SONG_MS 2000
 
-static double gain = 1;
+static double gain = 3;
 static maestro_t *maestro;
 static piface_t *piface;
+static int n_to_avg = 600;
 
 static void
 update_servo(void *unused, double pos)
@@ -46,7 +47,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    maestro_set_servo_is_inverted(maestro, SERVO_ID, 1);
+    //maestro_set_servo_is_inverted(maestro, SERVO_ID, 1);
 
     while (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-') {
 	if (strcmp(argv[1], "--") == 0) {
@@ -63,21 +64,21 @@ main(int argc, char **argv)
 	}
     }
 
-    song = track_new(argv[1]);
+    song = track_new("bayou-song.wav");
     if (! song) {
-	perror(argv[1]);
+	perror("bayou-song.wav");
 	exit(1);
     }
 
-    servo = wav_new(argv[2]);
+    servo = wav_new("bayou-servo.wav");
     if (! servo) {
-	perror(argv[2]);
+	perror("bayou-servo.wav");
 	exit(1);
     }
 
     meta_servo = wav_get_meta(servo);
     servo_data = wav_get_raw_data(servo, &n_servo_data);
-    talking_skull = talking_skull_new(&meta_servo, false, update_servo, NULL);
+    talking_skull = talking_skull_new_with_n_to_avg(&meta_servo, n_to_avg, update_servo, NULL);
 
     while (true) {
 	talking_skull_play(talking_skull, servo_data, n_servo_data);
