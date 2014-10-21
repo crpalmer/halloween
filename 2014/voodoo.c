@@ -11,6 +11,7 @@
 #include "producer-consumer.h"
 #include "server.h"
 #include "talking-skull.h"
+#include "wav.h"
 
 static maestro_t *maestro;
 static piface_t *piface;
@@ -24,6 +25,13 @@ static piface_t *piface;
 #define N_HISTORY 20
 #define GAIN_TARGET 75
 
+#define ANY_AUDIO_EPSILON HISTORY_EPSILON
+#define MAX_ANY_AUDIO 10
+#define ANY_AUDIO_THRESHOLD 2
+#define IDLE_AUDIO_SECS 10
+
+#define MIN_POS_TO_MOVE_SERVO HISTORY_EPSILON
+
 static double history[N_HISTORY];
 static size_t history_i;
 static double sum_history;
@@ -33,13 +41,16 @@ static pthread_mutex_t speak_lock;
 static audio_t *out;
 static talking_skull_t *skull;
 
+static unsigned any_audio;
+static time_t last_audio;
+
 static double gain = 10;
 
 static producer_consumer_t *pc;
 size_t size;
 
 static void
-servo_update(void *unused, double pos)
+update_history_and_gain(double pos)
 {
     if (pos > HISTORY_EPSILON) {
         sum_history = sum_history - history[history_i] + pos;
@@ -49,6 +60,25 @@ servo_update(void *unused, double pos)
 	if (history_full) {
 	    gain = GAIN_TARGET / (sum_history / N_HISTORY);
 	}
+    }
+}
+
+static void
+update_any_audio_check(double pos)
+{
+    if (pos > ANY_AUDIO_EPSILON) {
+	if (any_audio < MAX_ANY_AUDIO) any_audio++;
+    } else {
+	if (any_audio > 0) any_audio--;
+    }
+    if (any_audio > ANY_AUDIO_THRESHOLD) last_audio = time(NULL);
+}
+
+static void
+update_servo_and_eyes(double pos)
+{
+    if (pos < MIN_POS_TO_MOVE_SERVO) {
+	pos = 0;
     }
 
     pos *= gain;
@@ -61,6 +91,14 @@ servo_update(void *unused, double pos)
     }
 
     piface_set(piface, EYES, pos >= 50);
+}
+
+static void
+servo_update(void *unused, double pos)
+{
+    update_history_and_gain(pos);
+    update_any_audio_check(pos);
+    update_servo_and_eyes(pos);
 }
 
 static void
@@ -157,6 +195,9 @@ main(int argc, char **argv)
     server_args_t server_args;
     pthread_t server_thread;
     pthread_t play_thread;
+    unsigned char *auto_play_buffer = NULL;
+    size_t auto_play_bytes_left = 0;
+    wav_t *auto_wav;
 
     pi_usb_init();
     if ((maestro = maestro_new()) == NULL) {
@@ -167,6 +208,11 @@ main(int argc, char **argv)
     }
 
     piface = piface_new();
+
+    if ((auto_wav = wav_new("chant1.wav")) == NULL) {
+	perror("chant1.wav");
+	exit(1);
+    }
 
     pthread_mutex_init(&speak_lock, NULL);
     server_args.port = 5555;
@@ -213,8 +259,22 @@ main(int argc, char **argv)
 
     fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
 
+    last_audio = time(NULL);
+
     while (audio_capture_buffer(in, buffer)) {
 	pthread_mutex_lock(&speak_lock);
+
+	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS) {
+	    auto_play_buffer = wav_get_raw_data(auto_wav, &auto_play_bytes_left);
+	    gain = 3;
+	}
+	if (auto_play_bytes_left > 0) {
+	    size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
+	    memcpy(buffer, auto_play_buffer, n);
+	    auto_play_buffer += n;
+	    auto_play_bytes_left -= n;
+	}
+
 	producer_consumer_produce(pc, buffer);
 	pthread_mutex_unlock(&speak_lock);
 	buffer = fatal_malloc(size);
