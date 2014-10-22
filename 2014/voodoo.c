@@ -21,7 +21,7 @@ static piface_t *piface;
 #define SERVO_MAX 90
 #define EYES 7
 
-#define HISTORY_EPSILON 2
+#define HISTORY_EPSILON 5
 #define N_HISTORY 20
 #define GAIN_TARGET 75
 
@@ -246,7 +246,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    audio_set_volume(in, 50);
+    audio_set_volume(in, 100);
     audio_set_volume(out, 100);
 
     size = audio_get_buffer_size(in);
