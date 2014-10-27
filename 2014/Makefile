@@ -6,6 +6,7 @@ PROPS = \
 	banjo \
 	deer \
 	dropper \
+	swamp \
 	tobacco-spitter \
 	voodoo
 
@@ -27,6 +28,9 @@ deer: deer.o $(LIB)
 
 dropper: dropper.o $(LIB)
 	$(CC) dropper.o -o $@ $(LIBS)
+
+swamp: swamp.o $(LIB)
+	$(CC) swamp.o -o $@ $(LIBS)
 
 tobacco-spitter: tobacco-spitter.o $(LIB)
 	$(CC) tobacco-spitter.o -o $@ $(LIBS)
