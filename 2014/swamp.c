@@ -20,6 +20,7 @@
 static piface_t *p;
 static double duty = .10;
 static pthread_mutex_t lock;
+static pthread_mutex_t fog_lock;
 
 static double
 read_duty_cycle(void)
@@ -94,7 +95,11 @@ remote_event(void *unused, const char *command)
 	write_duty_cycle(duty);
 	return return_duty();
     } else if (strcmp(command, "fog") == 0) {
+        if (pthread_mutex_trylock(&fog_lock) != 0) {
+	    return strdup("prop is busy");
+	}
 	do_fog(FOG_BURST_MS);
+	pthread_mutex_unlock(&fog_lock);
     } else {
         return strdup("invalid command");
     }
@@ -112,6 +117,7 @@ main(int argc, char **argv)
     duty = read_duty_cycle();
 
     pthread_mutex_init(&lock, NULL);
+    pthread_mutex_init(&fog_lock, NULL);
 
     server_args.port = 5555;
     server_args.command = remote_event;
