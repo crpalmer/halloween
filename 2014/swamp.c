@@ -62,6 +62,8 @@ write_duty_cycle(double x)
 static void
 do_fog(unsigned ms)
 {
+    if (ms == 0) return;
+
     pthread_mutex_lock(&lock);
     piface_set(p, FOG_OUTPUT, 1);
     fprintf(stderr, "sleeping for ON\n");
