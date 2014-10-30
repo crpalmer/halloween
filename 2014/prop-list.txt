@@ -3,3 +3,4 @@ pi2: banjo
 pi3: voodoo
 pi4: animation
 pi5: deer
+pi6: swamp
