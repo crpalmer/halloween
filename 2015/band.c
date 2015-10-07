@@ -10,10 +10,18 @@
 
 #define DRUM_LEFT_ID 2
 #define DRUM_RIGHT_ID 3
-#define SERVO_ID 0
+#define SINGER_SERVO_ID 0
+#define BANJO_SERVO_ID 1
 
 #define EYES 7
+
 #define INTER_SONG_MS 2000
+
+#define BANJO_GAIN	4
+#define BANJO_MIN_TICKS (6*BANJO_GAIN)
+#define BANJO_MAX_TICKS (18*BANJO_GAIN)
+#define BANJO_POS_LOW   32
+#define BANJO_POS_HIGH  58
 
 static double gain = 1;
 static maestro_t *maestro;
@@ -39,7 +47,7 @@ update_singer(void *unused, double pos)
 {
     pos *= gain;
     if (pos > 100) pos = 100;
-    maestro_set_servo_pos(maestro, SERVO_ID, pos);
+    maestro_set_servo_pos(maestro, SINGER_SERVO_ID, pos);
     piface_set(piface, EYES, pos > 50);
 }
 
@@ -54,6 +62,28 @@ update_drum(void *drum_as_vp, double pos)
 	piface_set(drum->piface, drum->id, drum->up);
 	printf("drum %d @ %d\n", drum->id, drum->up);
     }
+}
+
+static void
+update_banjo(void *unused, double pos)
+{
+    static int n_ticks_left = 1;
+    static int is_low = 0;
+
+    if (--n_ticks_left == 0) {
+	n_ticks_left = random_number_in_range(BANJO_MIN_TICKS, BANJO_MAX_TICKS) * pos;
+	if (n_ticks_left == 0) n_ticks_left = 1;
+
+	is_low = !is_low;
+	if (! maestro_set_servo_pos(maestro, BANJO_SERVO_ID, is_low ? BANJO_POS_LOW : BANJO_POS_HIGH)) {
+	     printf("set_target failed.\n");
+	}
+    }
+	
+    pos *= gain;
+    if (pos > 100) pos = 100;
+    maestro_set_servo_pos(maestro, SINGER_SERVO_ID, pos);
+    piface_set(piface, EYES, pos > 50);
 }
 
 static void
@@ -82,7 +112,7 @@ int
 main(int argc, char **argv)
 {
     track_t *song;
-    actor_t singer, a_left, a_right;
+    actor_t singer, a_left, a_right, banjo;
     drum_t left, right;
 
     pi_usb_init();
@@ -93,8 +123,8 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    maestro_set_servo_is_inverted(maestro, SERVO_ID, 1);
-    maestro_set_range(maestro, SERVO_ID, TALKING_SKULL);
+    maestro_set_servo_is_inverted(maestro, SINGER_SERVO_ID, 1);
+    maestro_set_range(maestro, SINGER_SERVO_ID, TALKING_SKULL);
 
     while (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-') {
 	if (strcmp(argv[1], "--") == 0) {
@@ -127,6 +157,7 @@ main(int argc, char **argv)
     actor_init(&singer, "under-the-sea-singer.wav", update_singer, NULL);
     actor_init(&a_left, "under-the-sea-drum-left.wav", update_drum, &left);
     actor_init(&a_right, "under-the-sea-drum-right.wav", update_drum, &right);
+    actor_init(&banjo, "under-the-sea-banjo.wav", update_banjo, NULL);
 
     printf("Starting!\n");
 
@@ -134,6 +165,7 @@ main(int argc, char **argv)
 	actor_play(&singer);
 	actor_play(&a_left);
 	actor_play(&a_right);
+	actor_play(&banjo);
 	track_play(song);
 	ms_sleep(INTER_SONG_MS);
     }
