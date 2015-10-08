@@ -17,15 +17,12 @@
 
 #define INTER_SONG_MS 2000
 
+#define SINGER_GAIN	1
 #define BANJO_GAIN	4
 #define BANJO_MIN_TICKS (6*BANJO_GAIN)
 #define BANJO_MAX_TICKS (18*BANJO_GAIN)
 #define BANJO_POS_LOW   32
 #define BANJO_POS_HIGH  58
-
-static double gain = 1;
-static maestro_t *maestro;
-static piface_t *piface;
 
 typedef struct {
     wav_t *servo;
@@ -37,18 +34,29 @@ typedef struct {
 } actor_t;
 
 typedef struct {
+    maestro_t *m;
+    piface_t  *piface;
+} singer_t;
+
+typedef struct {
     int id;
     int up;
     piface_t *piface;
 } drum_t;
 
+typedef struct {
+    maestro_t *m;
+} banjo_t;
+
 static void
-update_singer(void *unused, double pos)
+update_singer(void *singer_as_vp, double pos)
 {
-    pos *= gain;
+    singer_t *singer = (singer_t *) singer_as_vp;
+
+    pos *= SINGER_GAIN;
     if (pos > 100) pos = 100;
-    maestro_set_servo_pos(maestro, SINGER_SERVO_ID, pos);
-    piface_set(piface, EYES, pos > 50);
+    maestro_set_servo_pos(singer->m, SINGER_SERVO_ID, pos);
+    piface_set(singer->piface, EYES, pos > 50);
 }
 
 static void
@@ -65,8 +73,9 @@ update_drum(void *drum_as_vp, double pos)
 }
 
 static void
-update_banjo(void *unused, double pos)
+update_banjo(void *banjo_as_vp, double pos)
 {
+    banjo_t *banjo = (banjo_t *) banjo_as_vp;
     static int n_ticks_left = 1;
     static int is_low = 0;
 
@@ -75,15 +84,10 @@ update_banjo(void *unused, double pos)
 	if (n_ticks_left == 0) n_ticks_left = 1;
 
 	is_low = !is_low;
-	if (! maestro_set_servo_pos(maestro, BANJO_SERVO_ID, is_low ? BANJO_POS_LOW : BANJO_POS_HIGH)) {
+	if (! maestro_set_servo_pos(banjo->m, BANJO_SERVO_ID, is_low ? BANJO_POS_LOW : BANJO_POS_HIGH)) {
 	     printf("set_target failed.\n");
 	}
     }
-	
-    pos *= gain;
-    if (pos > 100) pos = 100;
-    maestro_set_servo_pos(maestro, SINGER_SERVO_ID, pos);
-    piface_set(piface, EYES, pos > 50);
 }
 
 static void
@@ -108,38 +112,51 @@ actor_play(actor_t *a)
     talking_skull_play_prepared(a->talking_skull, a->ops);
 }
 
+static void
+singer_init(singer_t *singer)
+{
+    if ((singer->m = maestro_new()) == NULL) {
+	fprintf(stderr, "couldn't find a recognized device.\n");
+	exit(1);
+    }
+    maestro_set_servo_is_inverted(singer->m, SINGER_SERVO_ID, 1);
+    maestro_set_range(singer->m, SINGER_SERVO_ID, TALKING_SKULL);
+
+    singer->piface = piface_new();
+}
+
+static void
+banjo_init(banjo_t *banjo)
+{
+    if ((banjo->m = maestro_new()) == NULL) {
+	fprintf(stderr, "couldn't find a recognized device.\n");
+	exit(1);
+    }
+}
+
+static void
+drum_init(drum_t *drum, int id)
+{
+    drum->id = id;
+    drum->up = 0;
+    drum->piface = piface_new();
+}
+
 int
 main(int argc, char **argv)
 {
     track_t *song;
-    actor_t singer, a_left, a_right, banjo;
+    actor_t a_singer, a_left, a_right, a_banjo;
+    singer_t singer;
+    banjo_t banjo;
     drum_t left, right;
 
     pi_usb_init();
 
-    piface = piface_new();
-    if ((maestro = maestro_new()) == NULL) {
-	fprintf(stderr, "couldn't find a recognized device.\n");
-	exit(1);
-    }
-
-    maestro_set_servo_is_inverted(maestro, SINGER_SERVO_ID, 1);
-    maestro_set_range(maestro, SINGER_SERVO_ID, TALKING_SKULL);
-
-    while (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-') {
-	if (strcmp(argv[1], "--") == 0) {
-	    argc -= 1;
-	    argv += 1;
-	    break;
-	}
-	if (argc > 2 && strcmp(argv[1], "--gain") == 0) {
-	    gain = atof(argv[2]);
-	    argc -= 2;
-	    argv += 2;
-	} else {
-	    fprintf(stderr, "usage: [--gain X] audio.wav servo.wav\n");
-	}
-    }
+    singer_init(&singer);
+    banjo_init(&banjo);
+    drum_init(&left, DRUM_LEFT_ID);
+    drum_init(&right, DRUM_RIGHT_ID);
 
     song = track_new("under-the-sea.wav");
     if (! song) {
@@ -147,25 +164,18 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    left.id = DRUM_LEFT_ID;
-    left.up = 0;
-    left.piface = piface_new();
-    right.id = DRUM_RIGHT_ID;
-    right.up = 0;
-    right.piface = piface_new();
-
-    actor_init(&singer, "under-the-sea-singer.wav", update_singer, NULL);
+    actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
     actor_init(&a_left, "under-the-sea-drum-left.wav", update_drum, &left);
     actor_init(&a_right, "under-the-sea-drum-right.wav", update_drum, &right);
-    actor_init(&banjo, "under-the-sea-banjo.wav", update_banjo, NULL);
+    actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
 
     printf("Starting!\n");
 
     while (true) {
-	actor_play(&singer);
+	actor_play(&a_singer);
 	actor_play(&a_left);
 	actor_play(&a_right);
-	actor_play(&banjo);
+	actor_play(&a_banjo);
 	track_play(song);
 	ms_sleep(INTER_SONG_MS);
     }
