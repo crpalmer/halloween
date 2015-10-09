@@ -15,10 +15,12 @@
 
 #define EYES 7
 
-#define INTER_SONG_MS 2000
+#define INTER_SONG_MS 20000
 
 #define SINGER_GAIN	1
-#define BANJO_GAIN	4
+#define SINGER_EYE_ON_PCT 40
+
+#define BANJO_GAIN	2
 #define BANJO_MIN_TICKS (6*BANJO_GAIN)
 #define BANJO_MAX_TICKS (18*BANJO_GAIN)
 #define BANJO_POS_LOW   32
@@ -56,7 +58,7 @@ update_singer(void *singer_as_vp, double pos)
     pos *= SINGER_GAIN;
     if (pos > 100) pos = 100;
     maestro_set_servo_pos(singer->m, SINGER_SERVO_ID, pos);
-    piface_set(singer->piface, EYES, pos > 50);
+    piface_set(singer->piface, EYES, pos > SINGER_EYE_ON_PCT);
 }
 
 static void
