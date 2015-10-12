@@ -5,11 +5,12 @@
 #include "maestro.h"
 #include "piface.h"
 #include "talking-skull.h"
+#include "time-utils.h"
 #include "track.h"
 #include "wav.h"
 
-#define DRUM_LEFT_ID 2
-#define DRUM_RIGHT_ID 3
+#define DRUM_LEFT_ID 0
+#define DRUM_RIGHT_ID 1
 #define SINGER_SERVO_ID 0
 #define BANJO_SERVO_ID 1
 
@@ -26,6 +27,11 @@
 #define BANJO_POS_LOW   32
 #define BANJO_POS_HIGH  58
 
+#define DRUM_MIN_STATE_MS 150
+#define DRUM_P_CORRECTION 6
+
+static struct timespec play_started;
+
 typedef struct {
     wav_t *servo;
     audio_meta_t meta_servo;
@@ -41,8 +47,8 @@ typedef struct {
 } singer_t;
 
 typedef struct {
-    int id;
-    int up;
+    int up[2];
+    struct timespec at[2];
     piface_t *piface;
 } drum_t;
 
@@ -65,12 +71,19 @@ static void
 update_drum(void *drum_as_vp, double pos)
 {
     drum_t *drum = (drum_t *) drum_as_vp;
-    int this_up = pos > 0.5;
+    double P = pos / (DRUM_MIN_STATE_MS / 20.0) / DRUM_P_CORRECTION;
 
-    if (this_up != drum->up) {
-	drum->up = this_up;
-	piface_set(drum->piface, drum->id, drum->up);
-	printf("drum %d @ %d\n", drum->id, drum->up);
+    if (randomly_with_prob(P/100.0)) {
+	int which = random_number_in_range(0, 1);
+	struct timespec now;
+
+	nano_gettime(&now);
+	if (nano_elapsed_ms(&now, &drum->at[which]) >= DRUM_MIN_STATE_MS) {
+	    drum->at[which] = now;
+	    drum->up[which] = !drum->up[which];
+	    piface_set(drum->piface, which, drum->up[which]);
+	    printf("%5d drum %d @ %d P=%.3f\n", nano_elapsed_ms(&now, &play_started), which, drum->up[which], P);
+	}
     }
 }
 
@@ -139,8 +152,9 @@ banjo_init(banjo_t *banjo)
 static void
 drum_init(drum_t *drum, int id)
 {
-    drum->id = id;
-    drum->up = 0;
+    drum->up[0] = drum->up[1] = 0;
+    nano_gettime(&drum->at[0]);
+    nano_gettime(&drum->at[1]);
     drum->piface = piface_new();
 }
 
@@ -148,17 +162,16 @@ int
 main(int argc, char **argv)
 {
     track_t *song;
-    actor_t a_singer, a_left, a_right, a_banjo;
+    actor_t a_singer, a_drum, a_banjo;
     singer_t singer;
     banjo_t banjo;
-    drum_t left, right;
+    drum_t drum;
 
     pi_usb_init();
 
     singer_init(&singer);
     banjo_init(&banjo);
-    drum_init(&left, DRUM_LEFT_ID);
-    drum_init(&right, DRUM_RIGHT_ID);
+    drum_init(&drum, DRUM_LEFT_ID);
 
     song = track_new("under-the-sea.wav");
     if (! song) {
@@ -167,17 +180,16 @@ main(int argc, char **argv)
     }
 
     actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
-    actor_init(&a_left, "under-the-sea-drum-left.wav", update_drum, &left);
-    actor_init(&a_right, "under-the-sea-drum-right.wav", update_drum, &right);
+    actor_init(&a_drum, "under-the-sea-drum.wav", update_drum, &drum);
     actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
 
     printf("Starting!\n");
 
     while (true) {
 	actor_play(&a_singer);
-	actor_play(&a_left);
-	actor_play(&a_right);
+	actor_play(&a_drum);
 	actor_play(&a_banjo);
+	nano_gettime(&play_started);
 	track_play(song);
 	ms_sleep(INTER_SONG_MS);
     }
