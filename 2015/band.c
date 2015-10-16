@@ -48,7 +48,7 @@ typedef struct {
 
 typedef struct {
     int up[2];
-    struct timespec at[2];
+    struct timespec next[2];
     piface_t *piface;
 } drum_t;
 
@@ -70,21 +70,24 @@ update_singer(void *singer_as_vp, double pos)
 static void
 update_drum(void *drum_as_vp, double pos)
 {
+#if 0
     drum_t *drum = (drum_t *) drum_as_vp;
-    double P = pos / (DRUM_MIN_STATE_MS / 20.0) / DRUM_P_CORRECTION;
+    struct timespec now;
+    int which;
 
-    if (randomly_with_prob(P/100.0)) {
-	int which = random_number_in_range(0, 1);
-	struct timespec now;
+    nano_gettime(&now);
 
-	nano_gettime(&now);
-	if (nano_elapsed_ms(&now, &drum->at[which]) >= DRUM_MIN_STATE_MS) {
-	    drum->at[which] = now;
-	    drum->up[which] = !drum->up[which];
-	    piface_set(drum->piface, which, drum->up[which]);
-	    printf("%5d drum %d @ %d P=%.3f\n", nano_elapsed_ms(&now, &play_started), which, drum->up[which], P);
+    for (which = 1; which < 2; which++) {
+	if (nano_later_than(&now, &drum->next[which])) {
+	     int delay = random_number_in_range(0, (100-pos)*4) + 200;
+	     drum->up[which] = !drum->up[which];
+	     piface_set(drum->piface, which, drum->up[which]);
+	     drum->next[which] = now;
+	     printf("drum %d delay %d\n", which, delay);
+	     nano_add_ms(&drum->next[which], delay);
 	}
     }
+#endif
 }
 
 static void
@@ -153,8 +156,8 @@ static void
 drum_init(drum_t *drum, int id)
 {
     drum->up[0] = drum->up[1] = 0;
-    nano_gettime(&drum->at[0]);
-    nano_gettime(&drum->at[1]);
+    nano_gettime(&drum->next[0]);
+    nano_gettime(&drum->next[1]);
     drum->piface = piface_new();
 }
 
