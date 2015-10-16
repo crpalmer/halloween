@@ -13,8 +13,10 @@
 #define DRUM_RIGHT_ID 1
 #define SINGER_SERVO_ID 0
 #define BANJO_SERVO_ID 1
+#define BACKUP_SINGER_SERVO_ID 2
 
-#define EYES 7
+#define BACKUP_SINGER_EYES 6
+#define SINGER_EYES 7
 
 #define INTER_SONG_MS 20000
 
@@ -44,6 +46,8 @@ typedef struct {
 typedef struct {
     maestro_t *m;
     piface_t  *piface;
+    int        servo;
+    int        eyes;
 } singer_t;
 
 typedef struct {
@@ -63,8 +67,8 @@ update_singer(void *singer_as_vp, double pos)
 
     pos *= SINGER_GAIN;
     if (pos > 100) pos = 100;
-    maestro_set_servo_pos(singer->m, SINGER_SERVO_ID, pos);
-    piface_set(singer->piface, EYES, pos > SINGER_EYE_ON_PCT);
+    maestro_set_servo_pos(singer->m, singer->servo, pos);
+    piface_set(singer->piface, singer->eyes, pos > SINGER_EYE_ON_PCT);
 }
 
 static void
@@ -131,16 +135,18 @@ actor_play(actor_t *a)
 }
 
 static void
-singer_init(singer_t *singer)
+singer_init(singer_t *singer, int who, int servo, int eyes)
 {
     if ((singer->m = maestro_new()) == NULL) {
 	fprintf(stderr, "couldn't find a recognized device.\n");
 	exit(1);
     }
     maestro_set_servo_is_inverted(singer->m, SINGER_SERVO_ID, 1);
-    maestro_set_range(singer->m, SINGER_SERVO_ID, TALKING_SKULL);
+    maestro_set_range(singer->m, SINGER_SERVO_ID, who);
 
     singer->piface = piface_new();
+    singer->servo = servo;
+    singer->eyes = eyes;
 }
 
 static void
@@ -165,14 +171,16 @@ int
 main(int argc, char **argv)
 {
     track_t *song;
-    actor_t a_singer, a_drum, a_banjo;
+    actor_t a_singer, a_backup_singer, a_drum, a_banjo;
     singer_t singer;
+    singer_t backup_singer;
     banjo_t banjo;
     drum_t drum;
 
     pi_usb_init();
 
-    singer_init(&singer);
+    singer_init(&singer, TALKING_SKULL, SINGER_SERVO_ID, SINGER_EYES);
+    singer_init(&backup_singer, TALKING_DEER, BACKUP_SINGER_SERVO_ID, BACKUP_SINGER_EYES);
     banjo_init(&banjo);
     drum_init(&drum, DRUM_LEFT_ID);
 
@@ -183,6 +191,7 @@ main(int argc, char **argv)
     }
 
     actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
+    actor_init(&a_backup_singer, "under-the-sea-singer.wav", update_singer, &backup_singer);
     actor_init(&a_drum, "under-the-sea-drum.wav", update_drum, &drum);
     actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
 
@@ -190,6 +199,7 @@ main(int argc, char **argv)
 
     while (true) {
 	actor_play(&a_singer);
+	actor_play(&a_backup_singer);
 	actor_play(&a_drum);
 	actor_play(&a_banjo);
 	nano_gettime(&play_started);
