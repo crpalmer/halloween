@@ -198,7 +198,7 @@ main(int argc, char **argv)
     }
 
     actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
-    actor_init(&a_backup_singer, "under-the-sea-singer.wav", update_singer, &backup_singer);
+    actor_init(&a_backup_singer, "under-the-sea-backup-singer.wav", update_singer, &backup_singer);
     actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
     actor_init(&a_drum[0], "under-the-sea-drum1.wav", update_drum, &drum[0]);
     actor_init(&a_drum[1], "under-the-sea-drum2.wav", update_drum, &drum[1]);
