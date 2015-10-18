@@ -12,6 +12,8 @@
 #define SINGER_SERVO_ID 0
 #define BANJO_SERVO_ID 1
 #define BACKUP_SINGER_SERVO_ID 2
+#define DRUM_1_SERVO_ID 3
+#define DRUM_2_SERVO_ID 4
 
 #define BACKUP_SINGER_EYES 6
 #define SINGER_EYES 7
@@ -26,6 +28,8 @@
 #define BANJO_MAX_TICKS (18*BANJO_GAIN)
 #define BANJO_POS_LOW   32
 #define BANJO_POS_HIGH  58
+
+#define DRUM_MIN_UP_MS	200
 
 static struct timespec play_started;
 
@@ -48,6 +52,13 @@ typedef struct {
 typedef struct {
     maestro_t *m;
 } banjo_t;
+
+typedef struct {
+    maestro_t *m;
+    servo_id_t servo_id;
+    int is_up;
+    struct timespec last_up;
+} drum_t;
 
 static void
 update_singer(void *singer_as_vp, double pos)
@@ -78,6 +89,30 @@ update_banjo(void *banjo_as_vp, double pos)
     }
 }
 
+static void
+update_drum(void *drum_as_vp, double pos)
+{
+    drum_t *drum = (drum_t *) drum_as_vp;
+    int this_up = (pos >= 0.25);
+
+    if (! this_up && drum->is_up) {
+	struct timespec now;
+	nano_gettime(&now);
+	if (nano_elapsed_ms(&now, &drum->last_up) >= DRUM_MIN_UP_MS) {
+	    drum->is_up = 0;
+	}
+    } else if (this_up && ! drum->is_up) {
+	drum->is_up = 1;
+	nano_gettime(&drum->last_up);
+    }
+
+    if ((this_up && drum->is_up) || (! this_up && ! drum->is_up)) {
+	if (! maestro_set_servo_pos(drum->m, drum->servo_id, pos)) {
+	    printf("set_target failed.\n");
+	}
+    }
+}
+    
 static void
 actor_init(actor_t *a, const char *fname, talking_skull_servo_update_t update, void *data)
 {
@@ -124,20 +159,37 @@ banjo_init(banjo_t *banjo)
     }
 }
 
+static void
+drum_init(drum_t *drum, servo_id_t servo_id)
+{
+    if ((drum->m = maestro_new()) == NULL) {
+	fprintf(stderr, "couldn't find a recognized device.\n");
+	exit(1);
+    }
+    drum->servo_id = servo_id;
+    drum->is_up = 0;
+
+    maestro_set_servo_is_inverted(drum->m, servo_id, 1);
+    maestro_set_servo_range_pct(drum->m, servo_id, 25, 100);
+}
+
 int
 main(int argc, char **argv)
 {
     track_t *song;
-    actor_t a_singer, a_backup_singer, a_banjo;
+    actor_t a_singer, a_backup_singer, a_banjo, a_drum[2];
     singer_t singer;
     singer_t backup_singer;
     banjo_t banjo;
+    drum_t drum[2];
 
     pi_usb_init();
 
     singer_init(&singer, TALKING_SKULL, SINGER_SERVO_ID, SINGER_EYES);
     singer_init(&backup_singer, TALKING_DEER, BACKUP_SINGER_SERVO_ID, BACKUP_SINGER_EYES);
     banjo_init(&banjo);
+    drum_init(&drum[0], DRUM_1_SERVO_ID);
+    drum_init(&drum[1], DRUM_2_SERVO_ID);
 
     song = track_new("under-the-sea.wav");
     if (! song) {
@@ -148,6 +200,8 @@ main(int argc, char **argv)
     actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
     actor_init(&a_backup_singer, "under-the-sea-singer.wav", update_singer, &backup_singer);
     actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
+    actor_init(&a_drum[0], "under-the-sea-drum1.wav", update_drum, &drum[0]);
+    actor_init(&a_drum[1], "under-the-sea-drum2.wav", update_drum, &drum[1]);
 
     printf("Starting!\n");
 
@@ -155,6 +209,8 @@ main(int argc, char **argv)
 	actor_play(&a_singer);
 	actor_play(&a_backup_singer);
 	actor_play(&a_banjo);
+	actor_play(&a_drum[0]);
+	actor_play(&a_drum[1]);
 	nano_gettime(&play_started);
 	track_play(song);
 	ms_sleep(INTER_SONG_MS);
