@@ -108,7 +108,7 @@ singer_init(singer_t *singer, int who, int servo, int eyes)
 	exit(1);
     }
     maestro_set_servo_is_inverted(singer->m, SINGER_SERVO_ID, 1);
-    maestro_set_range(singer->m, SINGER_SERVO_ID, who);
+    maestro_set_servo_range(singer->m, SINGER_SERVO_ID, who);
 
     singer->piface = piface_new();
     singer->servo = servo;
