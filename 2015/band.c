@@ -29,7 +29,7 @@
 #define BANJO_POS_LOW   32
 #define BANJO_POS_HIGH  58
 
-#define DRUM_MIN_UP_MS	200
+#define DRUM_MIN_STATE_MS 300
 
 static struct timespec play_started;
 
@@ -56,8 +56,7 @@ typedef struct {
 typedef struct {
     maestro_t *m;
     servo_id_t servo_id;
-    int is_up;
-    struct timespec last_up;
+    struct timespec last_move;
 } drum_t;
 
 static void
@@ -93,23 +92,19 @@ static void
 update_drum(void *drum_as_vp, double pos)
 {
     drum_t *drum = (drum_t *) drum_as_vp;
-    int this_up = (pos >= 0.25);
+    struct timespec now;
 
-    if (! this_up && drum->is_up) {
-	struct timespec now;
-	nano_gettime(&now);
-	if (nano_elapsed_ms(&now, &drum->last_up) >= DRUM_MIN_UP_MS) {
-	    drum->is_up = 0;
-	}
-    } else if (this_up && ! drum->is_up) {
-	drum->is_up = 1;
-	nano_gettime(&drum->last_up);
+    nano_gettime(&now);
+    if (nano_elapsed_ms(&now, &drum->last_move) < DRUM_MIN_STATE_MS) {
+	return;
     }
+    if (pos < 25) pos = 0;
+    else if (pos < 65) pos = 65;
+    else pos = 100;
+    nano_gettime(&drum->last_move);
 
-    if ((this_up && drum->is_up) || (! this_up && ! drum->is_up)) {
-	if (! maestro_set_servo_pos(drum->m, drum->servo_id, pos)) {
-	    printf("set_target failed.\n");
-	}
+    if (! maestro_set_servo_pos(drum->m, drum->servo_id, pos)) {
+	printf("set_target failed.\n");
     }
 }
     
@@ -167,10 +162,10 @@ drum_init(drum_t *drum, servo_id_t servo_id)
 	exit(1);
     }
     drum->servo_id = servo_id;
-    drum->is_up = 0;
 
     maestro_set_servo_is_inverted(drum->m, servo_id, 1);
-    maestro_set_servo_range_pct(drum->m, servo_id, 25, 100);
+    maestro_set_servo_range_pct(drum->m, servo_id, 40, 90);
+    nano_gettime(&drum->last_move);
 }
 
 int
