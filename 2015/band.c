@@ -13,7 +13,15 @@
 #define BANJO_SERVO_ID 1
 #define BACKUP_SINGER_SERVO_ID 2
 #define DRUM_1_SERVO_ID 3
+#define DRUM_1_MIN_PCT 40
+#define DRUM_1_MAX_PCT 90
+#define DRUM_1_BEATS	4
+#define DRUM_1_STATE_MS 257
 #define DRUM_2_SERVO_ID 4
+#define DRUM_2_MIN_PCT 20
+#define DRUM_2_MAX_PCT 90
+#define DRUM_2_BEATS	3
+#define DRUM_2_STATE_MS 383
 
 #define BACKUP_SINGER_EYES 6
 #define SINGER_EYES 7
@@ -28,8 +36,6 @@
 #define BANJO_MAX_TICKS (18*BANJO_GAIN)
 #define BANJO_POS_LOW   32
 #define BANJO_POS_HIGH  58
-
-#define DRUM_MIN_STATE_MS 300
 
 static struct timespec play_started;
 
@@ -56,7 +62,7 @@ typedef struct {
 typedef struct {
     maestro_t *m;
     servo_id_t servo_id;
-    struct timespec last_move;
+    int	       beats, state_ms;
 } drum_t;
 
 static void
@@ -93,15 +99,13 @@ update_drum(void *drum_as_vp, double pos)
 {
     drum_t *drum = (drum_t *) drum_as_vp;
     struct timespec now;
+    int state;
 
     nano_gettime(&now);
-    if (nano_elapsed_ms(&now, &drum->last_move) < DRUM_MIN_STATE_MS) {
-	return;
-    }
-    if (pos < 25) pos = 0;
-    else if (pos < 65) pos = 65;
-    else pos = 100;
-    nano_gettime(&drum->last_move);
+    state = nano_elapsed_ms(&now, &play_started) / drum->state_ms;
+    if (state % 2 == 0) pos = 0;
+    else if (state % (2*drum->beats) == 1) pos = 100;
+    else pos = 65;
 
     if (! maestro_set_servo_pos(drum->m, drum->servo_id, pos)) {
 	printf("set_target failed.\n");
@@ -155,17 +159,33 @@ banjo_init(banjo_t *banjo)
 }
 
 static void
-drum_init(drum_t *drum, servo_id_t servo_id)
+drum_1_init(drum_t *drum)
 {
     if ((drum->m = maestro_new()) == NULL) {
 	fprintf(stderr, "couldn't find a recognized device.\n");
 	exit(1);
     }
-    drum->servo_id = servo_id;
+    drum->servo_id = DRUM_1_SERVO_ID;
+    drum->beats    = DRUM_1_BEATS;
+    drum->state_ms = DRUM_1_STATE_MS;
 
-    maestro_set_servo_is_inverted(drum->m, servo_id, 1);
-    maestro_set_servo_range_pct(drum->m, servo_id, 40, 90);
-    nano_gettime(&drum->last_move);
+    maestro_set_servo_is_inverted(drum->m, drum->servo_id, 1);
+    maestro_set_servo_range_pct(drum->m, drum->servo_id, DRUM_1_MIN_PCT, DRUM_1_MAX_PCT);
+}
+
+static void
+drum_2_init(drum_t *drum)
+{
+    if ((drum->m = maestro_new()) == NULL) {
+	fprintf(stderr, "couldn't find a recognized device.\n");
+	exit(1);
+    }
+    drum->servo_id = DRUM_2_SERVO_ID;
+    drum->beats    = DRUM_2_BEATS;
+    drum->state_ms = DRUM_2_STATE_MS;
+
+    maestro_set_servo_is_inverted(drum->m, drum->servo_id, 1);
+    maestro_set_servo_range_pct(drum->m, drum->servo_id, DRUM_2_MIN_PCT, DRUM_2_MAX_PCT);
 }
 
 int
@@ -183,8 +203,8 @@ main(int argc, char **argv)
     singer_init(&singer, TALKING_SKULL, SINGER_SERVO_ID, SINGER_EYES);
     singer_init(&backup_singer, TALKING_DEER, BACKUP_SINGER_SERVO_ID, BACKUP_SINGER_EYES);
     banjo_init(&banjo);
-    drum_init(&drum[0], DRUM_1_SERVO_ID);
-    drum_init(&drum[1], DRUM_2_SERVO_ID);
+    drum_1_init(&drum[0]);
+    drum_2_init(&drum[1]);
 
     song = track_new("under-the-sea.wav");
     if (! song) {
@@ -195,8 +215,8 @@ main(int argc, char **argv)
     actor_init(&a_singer, "under-the-sea-singer.wav", update_singer, &singer);
     actor_init(&a_backup_singer, "under-the-sea-backup-singer.wav", update_singer, &backup_singer);
     actor_init(&a_banjo, "under-the-sea-banjo.wav", update_banjo, &banjo);
-    actor_init(&a_drum[0], "under-the-sea-drum1.wav", update_drum, &drum[0]);
-    actor_init(&a_drum[1], "under-the-sea-drum2.wav", update_drum, &drum[1]);
+    actor_init(&a_drum[0], "under-the-sea-banjo.wav", update_drum, &drum[0]);
+    actor_init(&a_drum[1], "under-the-sea-banjo.wav", update_drum, &drum[1]);
 
     printf("Starting!\n");
 
