@@ -26,7 +26,7 @@
 #define BACKUP_SINGER_EYES 6
 #define SINGER_EYES 7
 
-#define INTER_SONG_MS 20000
+#define INTER_SONG_MS 5000
 
 #define SINGER_GAIN	1
 #define SINGER_EYE_ON_PCT 40
