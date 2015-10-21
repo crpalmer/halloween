@@ -13,7 +13,7 @@
 #define BANJO_SERVO_ID 1
 #define BACKUP_SINGER_SERVO_ID 2
 #define DRUM_1_SERVO_ID 3
-#define DRUM_1_MIN_PCT 40
+#define DRUM_1_MIN_PCT 30
 #define DRUM_1_MAX_PCT 90
 #define DRUM_1_BEATS	4
 #define DRUM_1_STATE_MS 257
@@ -184,7 +184,7 @@ drum_2_init(drum_t *drum)
     drum->beats    = DRUM_2_BEATS;
     drum->state_ms = DRUM_2_STATE_MS;
 
-    maestro_set_servo_is_inverted(drum->m, drum->servo_id, 1);
+    maestro_set_servo_is_inverted(drum->m, drum->servo_id, 0);
     maestro_set_servo_range_pct(drum->m, drum->servo_id, DRUM_2_MIN_PCT, DRUM_2_MAX_PCT);
 }
 
