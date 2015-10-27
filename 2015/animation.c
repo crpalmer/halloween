@@ -11,39 +11,36 @@
 
 #define N_BUTTONS 5
 
-#define SPIDER_BUTTON   0
-#define ZOMBIE_BUTTON   1
-#define GATER_BUTTON    2
-#define SNAKE_BUTTON    3
+#define OCTO_BUTTON     0
+#define SQUID_BUTTON    1
+#define UNKNOWN_BUTTON  2
+#define CUDA_BUTTON     3
 #define QUESTION_BUTTON 4
 
 #define N_GPIOS   6
 
-#define SPIDER_GPIO   0
-#define ZOMBIE_GPIO   1
-#define GATER_GPIO    2
-#define SNAKE_GPIO    3
-#define SNAKE_SPIT_GPIO 4
-#define QUESTION_GPIO 5
+#define OCTO_GPIO     0
+#define SQUID_GPIO    1
+#define UNKNOWN_GPIO  2
+#define CUDA_GPIO     3
+#define QUESTION_GPIO 4
 
-#define SPIDER      "spider"
-#define ZOMBIE      "zombie"
-#define GATER       "gater"
-#define SNAKE       "snake"
-#define SNAKE_SPIT  "snake-spit"
+#define OCTO        "octo"
+#define SQUID       "squid"
+#define UNKNOWN     "???"
+#define CUDA        "cuda"
 #define QUESTION    "question"
 
-#define ZOMBIE_MS	5000
-#define SPIDER_MS	5000
+#define SQUID_MS	5000
+#define CUDA_MS	        5000
 #define QUESTION_MS	5000
 #define BUTTON_LOCKOUT_MS 1000
 
 static gpio_table_t gpio_table[N_GPIOS] = {
-    [SPIDER_GPIO]      = { SPIDER,     26, 0 },
-    [ZOMBIE_GPIO]      = { ZOMBIE,     19, 0 },
-    [GATER_GPIO]       = { GATER,      16, 0 },
-    [SNAKE_GPIO]       = { SNAKE,       6, 0 },
-    [SNAKE_SPIT_GPIO]  = { SNAKE_SPIT,  5, 0 },
+    [OCTO_GPIO]        = { OCTO,       26, 0 },
+    [SQUID_GPIO]       = { SQUID,      19, 0 },
+    [UNKNOWN_GPIO]     = { UNKNOWN,    16, 0 },
+    [CUDA_GPIO]        = { CUDA,       6, 0 },
     [QUESTION_GPIO]    = { QUESTION,   13, 0 },
 };
 
@@ -78,14 +75,6 @@ do_attack(unsigned id)
 }
 
 static void
-do_snake(void)
-{
-     gpio_on_id(gpio, SNAKE_SPIT_GPIO);
-     do_attack(SNAKE_GPIO);
-     gpio_off_id(gpio, SNAKE_SPIT_GPIO);
-}
-
-static void
 do_question(void)
 {
     track_play_asynchronously(laugh);
@@ -97,10 +86,10 @@ static void
 do_prop(unsigned id)
 {
     switch (id) {
-    case SPIDER_BUTTON: do_attack(SPIDER_GPIO); break;
-    case ZOMBIE_BUTTON: do_popup(ZOMBIE_GPIO, ZOMBIE_MS); break;
-    case GATER_BUTTON:  do_attack(GATER_GPIO); break;
-    case SNAKE_BUTTON:  do_snake(); break;
+    case OCTO_BUTTON: do_attack(OCTO_GPIO); break;
+    case SQUID_BUTTON: do_popup(SQUID_GPIO, SQUID_MS); break;
+    case UNKNOWN_BUTTON:  do_attack(UNKNOWN_GPIO); break;
+    case CUDA_BUTTON:  do_popup(CUDA_GPIO, CUDA_MS); break;
     case QUESTION_BUTTON: do_question(); break;
     }
 }
@@ -123,14 +112,14 @@ handle_event(unsigned i)
 static char *
 remote_event_locked(const char *command)
 {
-    if (strcmp(command, SPIDER) == 0) {
-	handle_event_locked(SPIDER_BUTTON);
-    } else if (strcmp(command, ZOMBIE) == 0) {
-	handle_event_locked(ZOMBIE_BUTTON);
-    } else if (strcmp(command, GATER) == 0) {
-	handle_event_locked(GATER_BUTTON);
-    } else if (strcmp(command, SNAKE) == 0) {
-	handle_event_locked(SNAKE_BUTTON);
+    if (strcmp(command, OCTO) == 0) {
+	handle_event_locked(OCTO_BUTTON);
+    } else if (strcmp(command, SQUID) == 0) {
+	handle_event_locked(SQUID_BUTTON);
+    } else if (strcmp(command, UNKNOWN) == 0) {
+	handle_event_locked(UNKNOWN_BUTTON);
+    } else if (strcmp(command, CUDA) == 0) {
+	handle_event_locked(CUDA_BUTTON);
     } else if (strcmp(command, "question") == 0) {
 	handle_event_locked(QUESTION_BUTTON);
     } else {
