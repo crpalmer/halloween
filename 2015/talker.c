@@ -204,7 +204,7 @@ main(int argc, char **argv)
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
         maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
-	maestro_set_servo_speed(maestro, SERVO_ID, 0);
+	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL2);
     }
 
     piface = piface_new();
