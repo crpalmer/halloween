@@ -3,7 +3,8 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
 	animation \
-	band
+	band \
+	talker
 
 all: $(PROPS)
 
@@ -17,6 +18,9 @@ animation: animation.o $(LIB)
 
 band: band.o $(LIB)
 	$(CC) -o $@ band.o $(LIBS)
+
+talker: talker.o $(LIB)
+	$(CC) -o $@ talker.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
