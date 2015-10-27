@@ -9,7 +9,7 @@
 #include "track.h"
 #include "util.h"
 
-#define DUTY_FILENAME "swamp.duty"
+#define DUTY_FILENAME "fogger.duty"
 #define DEFAULT_DUTY_CYCLE .10
 #define DUTY_DELTA 0.01
 #define FOG_BURST_MS	5000
