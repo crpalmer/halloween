@@ -19,7 +19,7 @@
 #define DRUM_1_STATE_MS 257
 #define DRUM_2_SERVO_ID 4
 #define DRUM_2_MIN_PCT 20
-#define DRUM_2_MAX_PCT 90
+#define DRUM_2_MAX_PCT 40
 #define DRUM_2_BEATS	3
 #define DRUM_2_STATE_MS 383
 
