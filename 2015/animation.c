@@ -16,6 +16,7 @@
 #define UNKNOWN_BUTTON  2
 #define CUDA_BUTTON     3
 #define QUESTION_BUTTON 4
+#define EEL_BUTTON	5
 
 #define N_GPIOS   6
 
@@ -24,12 +25,14 @@
 #define UNKNOWN_GPIO  2
 #define CUDA_GPIO     3
 #define QUESTION_GPIO 4
+#define EEL_GPIO      5
 
 #define OCTO        "octo"
 #define SQUID       "squid"
 #define UNKNOWN     "???"
 #define CUDA        "cuda"
 #define QUESTION    "question"
+#define EEL	    "eel"
 
 #define SQUID_MS	5000
 #define CUDA_MS	        5000
@@ -42,6 +45,7 @@ static gpio_table_t gpio_table[N_GPIOS] = {
     [UNKNOWN_GPIO]     = { UNKNOWN,    16, 0 },
     [CUDA_GPIO]        = { CUDA,       6, 0 },
     [QUESTION_GPIO]    = { QUESTION,   13, 0 },
+    [EEL_GPIO]         = { EEL,        5, 0 },
 };
 
 #define N_GPIO_TABLE (sizeof(gpio_table) / sizeof(gpio_table[0]))
@@ -49,7 +53,7 @@ static gpio_table_t gpio_table[N_GPIOS] = {
 static lights_t *lights;
 static piface_t *piface;
 static gpio_t *gpio;
-static pthread_mutex_t event_lock;
+static pthread_mutex_t event_lock, eel_lock;
 static track_t *laugh;
 
 static void
@@ -92,6 +96,7 @@ do_prop(unsigned id)
     case UNKNOWN_BUTTON:  do_attack(UNKNOWN_GPIO); break;
     case CUDA_BUTTON:  do_popup(CUDA_GPIO, CUDA_MS); break;
     case QUESTION_BUTTON: do_question(); break;
+    case EEL_BUTTON: do_attack(EEL_GPIO); break;
     }
 }
 
@@ -110,6 +115,14 @@ handle_event(unsigned i)
     pthread_mutex_unlock(&event_lock);
 }
 
+static void
+handle_eel(void)
+{
+    pthread_mutex_lock(&eel_lock);
+    do_prop(EEL_BUTTON);
+    pthread_mutex_unlock(&eel_lock);
+}
+
 static char *
 remote_event_locked(const char *command)
 {
@@ -123,6 +136,8 @@ remote_event_locked(const char *command)
 	handle_event_locked(CUDA_BUTTON);
     } else if (strcmp(command, "question") == 0) {
 	handle_event_locked(QUESTION_BUTTON);
+    } else if (strcmp(command, EEL) == 0) {
+	do_prop(EEL_BUTTON);
     } else {
 	fprintf(stderr, "Invalid net command: [%s]\n", command);
 	return strdup("Invalid command\n");
@@ -134,14 +149,22 @@ static char *
 remote_event(void *unused, const char *command)
 {
     char *result;
+    pthread_mutex_t *lock = &event_lock;
+    int is_eel = strcmp(command, EEL) == 0;
 
-    if (pthread_mutex_trylock(&event_lock) != 0) {
+    if (is_eel) {
+	lock = &eel_lock;
+    }
+
+    if (pthread_mutex_trylock(lock) != 0) {
 	return strdup("prop is busy");
     }
     result = remote_event_locked(command);
-    pthread_mutex_unlock(&event_lock);
+    pthread_mutex_unlock(lock);
 
-    lights_chase(lights);
+    if (! is_eel) {
+	lights_chase(lights);
+    }
 
     return result;
 }
@@ -174,6 +197,7 @@ main(int argc, char **argv)
     gpio = gpio_new(gpio_table, N_GPIO_TABLE);
 
     pthread_mutex_init(&event_lock, NULL);
+    pthread_mutex_init(&eel_lock, NULL);
 
     server_args.port = 5555;
     server_args.command = remote_event;
@@ -194,10 +218,14 @@ main(int argc, char **argv)
 		lights_chase(lights);
 		break;
 	    }
+	    if (PIFACE_IS_SELECTED(button, EEL_BUTTON)) {
+		handle_eel();
+	    }
 	}
     }
 
     pthread_mutex_destroy(&event_lock);
+    pthread_mutex_destroy(&eel_lock);
     lights_destroy(lights);
     piface_destroy(piface);
 
