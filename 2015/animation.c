@@ -66,6 +66,7 @@ do_attack(unsigned id)
 {
     unsigned i;
 
+printf("attack on %d\n", id);
     for (i = 0; i < 3; i++) {
 	gpio_on_id(gpio, id);
 	ms_sleep(500 + random_number_in_range(0, 250) - 125);
