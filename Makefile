@@ -2,7 +2,8 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
-	lightning
+	lightning \
+	fogger
 
 all: $(PROPS)
 
@@ -10,6 +11,9 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
+
+fogger: fogger.o $(LIB)
+	$(CC) -o $@ fogger.o $(LIBS)
 
 lightning: lightning.o $(LIB)
 	$(CC) -o $@ lightning.o $(LIBS)
