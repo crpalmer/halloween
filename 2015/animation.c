@@ -11,39 +11,39 @@
 
 #define N_BUTTONS 5
 
-#define OCTO_BUTTON     0
-#define SQUID_BUTTON    1
-#define UNKNOWN_BUTTON  2
-#define CUDA_BUTTON     3
+#define SQUID_BUTTON    0
+#define CUDA_BUTTON     1
+#define OCTO_BUTTON     3
+#define DIVER_BUTTON  2
 #define QUESTION_BUTTON 4
-#define EEL_BUTTON	5
+#define EEL_BUTTON	6
 
 #define N_GPIOS   6
 
-#define OCTO_GPIO     0
-#define SQUID_GPIO    1
-#define UNKNOWN_GPIO  2
+#define SQUID_GPIO    0
+#define OCTO_GPIO     1
+#define DIVER_GPIO  2
 #define CUDA_GPIO     3
 #define QUESTION_GPIO 4
 #define EEL_GPIO      5
 
 #define OCTO        "octo"
 #define SQUID       "squid"
-#define UNKNOWN     "???"
+#define DIVER       "diver"
 #define CUDA        "cuda"
 #define QUESTION    "question"
 #define EEL	    "eel"
 
-#define SQUID_MS	5000
-#define CUDA_MS	        5000
-#define QUESTION_MS	5000
+#define CUDA_MS	        1000
+#define QUESTION_MS	2000
+#define DIVER_MS	2000
 #define BUTTON_LOCKOUT_MS 1000
 
 static gpio_table_t gpio_table[N_GPIOS] = {
-    [OCTO_GPIO]        = { OCTO,       26, 0 },
-    [SQUID_GPIO]       = { SQUID,      19, 0 },
-    [UNKNOWN_GPIO]     = { UNKNOWN,    16, 0 },
-    [CUDA_GPIO]        = { CUDA,       6, 0 },
+    [SQUID_GPIO]       = { SQUID,      26, 0 },
+    [OCTO_GPIO]        = { OCTO,       6, 0 },
+    [DIVER_GPIO]       = { DIVER,      16, 0 },
+    [CUDA_GPIO]        = { CUDA,       19, 0 },
     [QUESTION_GPIO]    = { QUESTION,   13, 0 },
     [EEL_GPIO]         = { EEL,        5, 0 },
 };
@@ -66,16 +66,16 @@ printf("popup on %d\n", id);
 }
 
 static void
-do_attack(unsigned id)
+do_attack(unsigned id, double up, double down)
 {
     unsigned i;
 
 printf("attack on %d\n", id);
     for (i = 0; i < 3; i++) {
 	gpio_on_id(gpio, id);
-	ms_sleep(500 + random_number_in_range(0, 250) - 125);
+	ms_sleep((500 + random_number_in_range(0, 250) - 125)*up);
  	gpio_off_id(gpio, id);
-	ms_sleep(200 + random_number_in_range(0, 100) - 50);
+	ms_sleep((200 + random_number_in_range(0, 100) - 50)*down);
     }
 }
 
@@ -91,12 +91,12 @@ static void
 do_prop(unsigned id)
 {
     switch (id) {
-    case OCTO_BUTTON: do_attack(OCTO_GPIO); break;
-    case SQUID_BUTTON: do_popup(SQUID_GPIO, SQUID_MS); break;
-    case UNKNOWN_BUTTON:  do_attack(UNKNOWN_GPIO); break;
+    case OCTO_BUTTON: do_attack(OCTO_GPIO, 1, 1); break;
+    case SQUID_BUTTON: do_attack(SQUID_GPIO, 1, 1.75); break;
+    case DIVER_BUTTON:  do_popup(DIVER_GPIO, DIVER_MS); break;
     case CUDA_BUTTON:  do_popup(CUDA_GPIO, CUDA_MS); break;
     case QUESTION_BUTTON: do_question(); break;
-    case EEL_BUTTON: do_attack(EEL_GPIO); break;
+    case EEL_BUTTON: do_attack(EEL_GPIO, 1, 3); break;
     }
 }
 
@@ -130,8 +130,8 @@ remote_event_locked(const char *command)
 	handle_event_locked(OCTO_BUTTON);
     } else if (strcmp(command, SQUID) == 0) {
 	handle_event_locked(SQUID_BUTTON);
-    } else if (strcmp(command, UNKNOWN) == 0) {
-	handle_event_locked(UNKNOWN_BUTTON);
+    } else if (strcmp(command, DIVER) == 0) {
+	handle_event_locked(DIVER_BUTTON);
     } else if (strcmp(command, CUDA) == 0) {
 	handle_event_locked(CUDA_BUTTON);
     } else if (strcmp(command, "question") == 0) {
@@ -218,9 +218,10 @@ main(int argc, char **argv)
 		lights_chase(lights);
 		break;
 	    }
-	    if (PIFACE_IS_SELECTED(button, EEL_BUTTON)) {
-		handle_eel();
-	    }
+	}
+	if (PIFACE_IS_SELECTED(button, EEL_BUTTON)) {
+	    handle_eel();
+	    wait_for_no_buttons();
 	}
     }
 
