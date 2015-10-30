@@ -17,8 +17,6 @@ static maestro_t *maestro;
 static piface_t *piface;
 
 #define SERVO_ID 0
-#define SERVO_MIN 20
-#define SERVO_MAX 90
 #define EYES 7
 
 #define HISTORY_EPSILON 5
@@ -77,6 +75,9 @@ update_any_audio_check(double pos)
 static void
 update_servo_and_eyes(double pos)
 {
+    static int eyes = -1;
+    int new_eyes;
+
     if (pos < MIN_POS_TO_MOVE_SERVO) {
 	pos = 0;
     }
@@ -84,13 +85,17 @@ update_servo_and_eyes(double pos)
     pos *= gain;
     if (pos > 100) pos = 100;
     if (maestro) {
-	maestro_set_servo_pos(maestro, SERVO_ID, pos * (SERVO_MAX - SERVO_MIN) / 100 + SERVO_MIN);
+	maestro_set_servo_pos(maestro, SERVO_ID, pos);
 	//piface_set(s->p, EYES, pos > 50);
     } else {
 	printf("servo: %.0f\n", pos);
     }
 
-    piface_set(piface, EYES, pos >= 50);
+    new_eyes = (pos >= 50);
+    if (new_eyes != eyes) {
+	eyes = new_eyes;
+	piface_set(piface, EYES, eyes);
+     }
 }
 
 static void
