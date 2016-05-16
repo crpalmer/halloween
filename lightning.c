@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "gpio.h"
 #include "track.h"
 #include "util.h"
-
-static gpio_table_t gpio_table[] = { { "flash", 14, 0 } };
+#include "wb.h"
 
 #define N_TRACKS	6
 #define N_BOLTS		5
@@ -44,16 +42,26 @@ do_sleep(int ms, int ms_left)
     return this_ms;
 }
 
+static void
+set_flash(wb_t *wb, bool on)
+{
+    int i;
+
+    for (i = 0; i < 16; i++) wb_set(wb, i, on);
+}
+
 int
 main(int argc, char **argv)
 {
-    gpio_t *gpio = gpio_new(gpio_table, 1);
+    wb_t *wb = wb_new();
     int last_track = -1;
 
-    if (! gpio) {
-	fprintf(stderr, "failed to initialize gpio\n");
+    if (! wb) {
+	fprintf(stderr, "failed to initialize wb\n");
 	exit(1);
     }
+
+    set_flash(wb, false);
 
     load_tracks();
 
@@ -75,9 +83,9 @@ main(int argc, char **argv)
 	    int ms_left = bolt_times[track][bolt];
 
 	    while (flashes-- && ms_left) {
-		gpio_on_id(gpio, 0);
+		set_flash(wb, true);
 		ms_left -= do_sleep(200, ms_left);
-		gpio_off_id(gpio, 0);
+		set_flash(wb, false);
 		ms_left -= do_sleep(50, ms_left);
 	    }
 	    if (ms_left) ms_sleep(ms_left);
