@@ -3,6 +3,7 @@
 *.d
 *.o
 *.sw?
+animation
 fogger
 fogger.duty
 lightning
