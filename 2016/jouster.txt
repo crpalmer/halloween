@@ -1,0 +1,109 @@
+Jousters
+
+* each jouster is identical
+* jouster sits on a wheeled base with 2 motors driving 2 of 4 wheels
+* wheeled base rides in tracks with a gap in the middle
+* ir emitters and receivers are used to form breakbeam sensors to identify each
+  end of each track
+  * maybe add a piece of foam in the gap at the end of each track to give a softer stop?
+  * jouster will be completely opaque (saddle, horse blanket, etc.) so whole body will
+    break the sensor making detection time long (no need to worry about missing it)
+* wires connecting the jouster to the controller hang and travel all over the
+  place in the gap between the two tracks
+
+      +------+
+      +-+--+-+
+   BB1| |  | |IR1
+      | |  | |
+      | |  | |
+      | |w | |
+      | |i | |
+      | | r| |
+      | | e| |
+      | | s| |
+      | |  | |
+      | |  | |
+      | |  | |
+   BB2| |  | |IR2
+      +-+--+-+
+      +------+
+
+* entire track is 16 feet long
+  * wheels ride on a road of 2 lengths of plywood joined together with pocket screws
+  * wheels are contained by walls cut from plywood nailed to the sides of the road
+  * walls on tracks are 2 lengths of plywood, one cut in half so we have
+    1/2 length, full length, 1/2 length down each side (provides support where the
+    two lenghts of the "road" are joined)
+  * join the two tracks at each end on a 2x4 to close it off
+  * build 2x4 supports based on how floppy the assembly ends up being (both ends & middle?)
+
+* when reset
+  * each jouster does
+    * if no breakbeam is active the go forward direction at slow speed
+    * when jouster triggers a breakbeam stop
+  * each jouster gets facing the right direction
+    * if jouster is on beam 1 then servo at 0 degrees else servo at 180 degrees
+  * if they are both on the same side, move jouster 1 down to the other side
+    * start motor backward at slow speed
+    * stop when breakbeam is detected
+  * each jouster gets facing the right direction (see above)
+
+* when triggered
+  * play trumpet sound
+  * turn on all motors at full
+  * play horse galloping sound
+  * wait until middle breakbeam is triggered
+  * play crash sound
+  * gradually slow down motors to slow speed
+  * play trot sound
+  * wait until ir breakbeam is triggered
+  * stop motor
+  * stop audio
+  * goto reset
+
+OUTPUT 1: 12V 4amp+ power supply on Vext
+
+out 1,1 jouster 1 motor 1 forward on motor controller 1
+out 1,2 jouster 1 motor 1 back on motor controller 1
+out 1,2 jouster 1 motor 2 forward on motor controller 1
+out 1,3 jouster 1 motor 2 back on motor controller 1
+out 1,4 jouster 2 motor 1 forward on motor controller 2
+out 1,5 jouster 2 motor 1 back on motor controller 2
+out 1,7 jouster 2 motor 2 forward on motor controller 2
+out 1,8 jouster 2 motor 2 back on motor controller 2
+
+OUTPUT 2: 5V drawn from usb power
+
+out 2,1 jouster 1 ir led 1
+out 2,2 jouster 1 ir led 2
+out 2,3 jouster 2 ir led 1
+out 2,4 jouster 2 ir led 2
+out 2,5 middle ir led
+
+INPUTS
+
+in 1 trigger from controller?
+in 2 jouster 1 breakbeam 1
+in 3 jouster 1 breakbeam 2
+in 4 jouster 2 breakbeam 1
+in 5 jouster 2 breakbeam 2
+in 6 middle breakbeam
+
+USB PORTS
+
+usb 1 wifi
+usb 2 audio (trumpets and horses?)
+usb 3 servos
+usb 4
+
+SERVOS: 6V 1amp+ power supply
+
+servo 1; jouster 1 spin
+servo 2: jouster 2 spin
+
+WIRES TO JOUSTER
+
+cat5: 1,2: motor 1 12V
+      3,4: motor 2 12V
+      5,6,7: servo
+
