@@ -1,0 +1,14 @@
+SYMBOL POPUP  = PIN0
+
+SYMBOL R : W0
+SYMBOL i : W1
+
+loop:
+    POPUP = 1
+    i = R // 125 + 50
+    PAUSE i
+    POPUP = 0
+    RANDOM R
+    i = R // 125 + 50
+    PAUSE i
+    GOTO loop

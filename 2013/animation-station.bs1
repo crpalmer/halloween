@@ -1,0 +1,92 @@
+' {$STAMP BS1}
+
+SYMBOL SPIDER_IN = PIN7
+SYMBOL ZOMBIE_IN = PIN6
+SYMBOL HEAD_IN   = PIN5
+SYMBOL FOGGER_IN = PIN4
+
+SYMBOL SPIDER_OUT = PIN3
+SYMBOL ZOMBIE_OUT = PIN2
+SYMBOL HEAD_OUT   = PIN1
+SYMBOL FOGGER_OUT = PIN0
+
+SYMBOL ZOMBIE_LOOPS = 200
+SYMBOL SPIDER_LOOPS = 200
+SYMBOL HEAD_LOOPS   = 200
+SYMBOL FOGGER_LOOPS = 200
+SYMBOL FOGGER_LOCKOUT_LOOPS = 1000
+
+SYMBOL zombie = W0
+SYMBOL spider = W1
+SYMBOL fogger = W2
+SYMBOL head   = W3
+SYMBOL fogger_lockout = W4
+
+PINS = %00000000
+DIRS = %00001111
+
+again:
+
+maybe_start_zombie:
+    IF zombie_in = 0 OR zombie <> 0 THEN maybe_start_spider
+    DEBUG "zombie on"
+    zombie_out = 1
+    zombie = ZOMBIE_LOOPS
+
+maybe_start_spider:
+    IF spider_in = 0 OR spider <> 0 THEN maybe_start_head
+    DEBUG "spider on"
+    spider_out = 1
+    spider = SPIDER_LOOPS
+
+maybe_start_head:
+    IF head_in = 0 OR head <> 0 THEN maybe_start_fogger
+    DEBUG "head on"
+    head_out = 1
+    head = HEAD_LOOPS
+
+maybe_start_fogger:
+    IF fogger_in = 0 OR fogger <> 0 OR fogger_lockout <> 0 THEN pause_before_updating
+    DEBUG "fogger on"
+    fogger_out = 1
+    fogger = FOGGER_LOOPS
+
+pause_before_updating:
+    ' Do the pause between button checks and updating because we don't want to pause
+    ' after turning off a prop if someone is holding down the button.  This way, we
+    ' will loop around quickly and re-enable the prop without it starting to descend.
+    PAUSE 1
+
+update_zombie:
+    IF zombie = 0 THEN update_spider
+    zombie = zombie - 1
+    IF zombie <> 0 THEN update_spider
+    zombie_out = 0
+    DEBUG "zombie off"
+
+update_spider:
+    IF spider = 0 THEN update_head
+    spider = spider - 1
+    IF spider <> 0 THEN update_head
+    spider_out = 0
+    DEBUG "spider off"
+
+update_head:
+    IF head = 0 THEN update_fogger
+    head = head - 1
+    IF head <> 0 THEN update_fogger
+    head_out = 0
+    DEBUG "head off"
+
+update_fogger:
+    IF fogger = 0 THEN update_fogger_lockout
+    fogger = fogger - 1
+    IF fogger <> 0 THEN update_fogger_lockout
+    fogger_out = 0
+    fogger_lockout = FOGGER_LOCKOUT_LOOPS
+    DEBUG "fogger off"
+
+update_fogger_lockout:
+    IF fogger_lockout = 0 THEN again
+    fogger_lockout = fogger_lockout - 1
+    GOTO again

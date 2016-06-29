@@ -1,0 +1,98 @@
+' {$STAMP BS1}
+' -----[ I/O Definitions ]-------------------------------------------------
+
+SYMBOL  RX              = 7                     ' SETUP = UP, no ULN
+SYMBOL  TX              = 6                     ' SETUP = UP, no ULN
+
+' -----[ Constants ]-------------------------------------------------------
+
+SYMBOL  Baud            = OT2400                 'Prop-1 speed
+
+SYMBOL  IsOn            = 1
+SYMBOL  IsOff           = 0
+
+SYMBOL  VolMax          = 0
+SYMBOL  VolMin          = $FE
+
+' -----[ Variables ]-------------------------------------------------------
+
+SYMBOL  bolts           = B0
+SYMBOL  flashes         = B1
+SYMBOL  lottery         = W1
+SYMBOL  delay           = W2
+SYMBOL  mute            = B6
+SYMBOL  theMP3          = B7
+SYMBOL  eePntr          = W4
+SYMBOL  idx             = B10
+SYMBOL  char            = B11
+SYMBOL  strike          = B11
+
+' -----[ Initialization ]--------------------------------------------------
+
+Reset:
+  PINS = %00000000                              ' preset IOs
+  DIRS = %00111111                              ' set output pins (1s)
+
+  PAUSE 2000
+  SEROUT TX, Baud, ("ST V 0", 13, "ST R 10", 13)
+
+' -----[ Program Code ]----------------------------------------------------
+
+Main:
+  RANDOM lottery
+  bolts = lottery // 3 + 2
+
+  RANDOM lottery
+  ' theMP3 = lottery // 6 + "0"
+  theMp3 = theMp3 + 1
+  theMp3 = theMp3 // 6
+  lottery = theMp3 + "0"
+  SEROUT TX, Baud, ("PC F t", lottery, ".MP3", 13)
+waiting:
+  GOSUB get_status
+  IF CHAR = "S" THEN waiting
+
+a_bolt:
+    RANDOM lottery
+    flashes = lottery // 2 + 1
+
+a_flash:
+    strike = isOn
+    GOSUB set_all
+    RANDOM lottery
+    delay = lottery // 201 + 50
+    PAUSE delay
+    strike = isOff
+    GOSUB set_all
+    RANDOM lottery
+    delay = lottery // 51 + 50                ' on delay 1/3 to 1 sec
+    PAUSE delay
+    flashes = flashes - 1
+    IF flashes > 0 THEN a_flash
+    RANDOM lottery
+    delay = lottery // 1001 + 300
+    bolts = bolts - 1
+    IF bolts > 0 THEN a_bolt
+
+still_playing:
+    GOSUB get_status
+    IF char = "P" THEN still_playing
+
+    RANDOM lottery
+    delay = lottery // 2000 + 1000
+    PAUSE delay
+    GOTO Main
+
+get_status:
+    SEROUT TX, Baud, ("PC Z", 13)                 ' request status
+    SERIN  RX, Baud, char                         ' will be "S" or "P"
+    RETURN
+
+set_all:
+    PIN0 = strike
+    PIN1 = strike
+    PIN2 = strike
+    PIN3 = strike
+    PIN4 = strike
+    PIN5 = strike
+    RETURN
