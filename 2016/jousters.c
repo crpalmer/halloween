@@ -17,12 +17,19 @@ static void set(int *on, int *off, float duty)
     wb_pwm(WB_OUTPUT(1, on[1]), duty);
 }
 
-static void wait_for_trigger(void)
+static void
+wait_for_trigger(void)
 {
     if (fgets(buf, sizeof(buf), stdin) == NULL || feof(stdin)) {
 	fprintf(stderr, "EOF\n");
 	exit(1);
     }
+}
+
+static void
+wait_until_middle(void)
+{
+	ms_sleep(3700);
 }
 
 int
@@ -33,15 +40,26 @@ main(int argc, char **argv)
 	exit(1);
     }
 
+    set(backward[1], forward[1], 0.25);
+    wait_until_start_position();
+
     while (true) {
 	wait_for_trigger();
-
+	track_play(trumpet);
 	set(forward[1], backward[1], 1);
-	ms_sleep(2100);
+	play_asynchronously(gallop);
+	wait_until_middle();
+	cancel_async_playback();
+	track_play(crash);
+	set(forward[1], backward[1], .25);
+	play_asynchronously(trot);
+	ms_sleep(TROT_MS);
+	/* gradual deceleration needed here? */
 	set(forward[1], backward[1], 0);
 	ms_sleep(100);
+	play_asynchronously(beep);
 	set(backward[1], forward[1], 0.35);
-	ms_sleep(5500);
+	wait_until_start_position();
 	set(forward[1], backward[1], 0);
     }
 
