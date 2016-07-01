@@ -4,9 +4,11 @@
 #include "util.h"
 #include "wb.h"
 
-#define TROT_MS 2000
+#define TRIGGER_PIN 8
 
-static char buf[1024];
+#define MIDDLE_MS	3000
+#define TROT_MS		2700
+#define REVERSE_MS	7500
 
 static int forward[2][2] = {{ -1, -1 }, { 6, 8 }};
 static int backward[2][2] = { { -1, -1 }, {5, 7 }};
@@ -16,29 +18,32 @@ static void set(int *on, int *off, float duty)
     wb_pwm(WB_OUTPUT(1, off[0]), 0);
     wb_pwm(WB_OUTPUT(1, off[1]), 0);
     wb_pwm(WB_OUTPUT(1, on[0]), duty);
-    if (duty == 1) ms_sleep(1);	/* temp hack until I get a bigger power supply? */
     wb_pwm(WB_OUTPUT(1, on[1]), duty);
 }
 
 static void
 wait_for_trigger(void)
 {
-    if (fgets(buf, sizeof(buf), stdin) == NULL || feof(stdin)) {
-	fprintf(stderr, "EOF\n");
-	exit(1);
+    unsigned yes = 0;
+
+    while (true) {
+	if (wb_get(TRIGGER_PIN)) yes++;
+	else yes = 0;
+	if (yes >= 10) return;
+	ms_sleep(1);
     }
 }
 
 static void
 wait_until_start_position(void)
 {
-    ms_sleep(7500);
+    ms_sleep(REVERSE_MS);
 }
 
 static void
 wait_until_middle(void)
 {
-    ms_sleep(3000);
+    ms_sleep(MIDDLE_MS);
 }
 
 int
