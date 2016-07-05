@@ -16,20 +16,18 @@
 #define TROT_MS		2200
 #define REVERSE_MS	7500
 
-static int motor_pwm[2][2] = { { -1, -1 }, { 5, 7 } };
-static int motor_dir[2][2] = { { -1, -1 }, { 6, 8 } };
+static int motor_pwm[2] = { 5, 7 };
+static int motor_dir[2] = { 6, 8 };
 
 static void motor(unsigned jouster, bool forward, float duty)
 {
-    wb_set(WB_OUTPUT(1, motor_dir[jouster][0]), forward);
-    wb_set(WB_OUTPUT(1, motor_dir[jouster][1]), forward);
-    wb_pwm(WB_OUTPUT(1, motor_pwm[jouster][0]), duty);
-    wb_pwm(WB_OUTPUT(1, motor_pwm[jouster][1]), duty);
+    wb_set(WB_OUTPUT(1, motor_dir[jouster]), forward);
+    wb_pwm(WB_OUTPUT(1, motor_pwm[jouster]), forward ? 1-duty : duty);
 }
 
 static void motor_forward(unsigned jouster, float duty)
 {
-    motor(jouster, true, 1-duty);
+    motor(jouster, true, duty);
 }
 
 static void motor_backward(unsigned jouster, float duty)
