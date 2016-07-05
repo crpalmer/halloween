@@ -10,10 +10,10 @@
 #define DEBOUNCE_COUNTER 100
 
 #define REVERSE_DUTY 0.40
-#define TROT_DUTY 0.40
+#define TROT_DUTY 0.30
 
 #define MIDDLE_MS	3000
-#define TROT_MS		2200
+#define TROT_MS		4000
 #define REVERSE_MS	7500
 
 static int motor_pwm[2] = { 5, 7 };
