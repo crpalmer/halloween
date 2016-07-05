@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "time-utils.h"
 #include "track.h"
 #include "util.h"
 #include "wb.h"
@@ -8,6 +9,8 @@
 #define TRIGGER_PIN 8
 
 #define DEBOUNCE_COUNTER 100
+
+#define RETURN_TO_START_MAX_MS 12000
 
 #define REVERSE_DUTY 0.40
 #define TROT_DUTY 0.30
@@ -40,10 +43,13 @@ static void motor_stop(unsigned jouster)
     motor(jouster, false, 0);
 }
 
-static void
-wait_for_pin(int pin, unsigned value)
+static bool
+wait_for_pin(int pin, unsigned value, unsigned max_ms)
 {
     unsigned yes = 0;
+    struct timespec start, now;
+
+    nano_gettime(&start);
 
     while (true) {
 	if (wb_get(pin) == value) {
@@ -51,22 +57,27 @@ wait_for_pin(int pin, unsigned value)
 	} else {
 	    yes = 0;
 	}
-	if (yes >= DEBOUNCE_COUNTER) return;
+	if (yes >= DEBOUNCE_COUNTER) return true;
+	nano_gettime(&now);
+	if (max_ms != -1 && nano_elapsed_ms(&now, &start) > max_ms) return false;
     }
 }
 
 static void
 wait_for_trigger(void)
 {
-    wait_for_pin(TRIGGER_PIN, 1);
+    wait_for_pin(TRIGGER_PIN, 1, -1);
 }
 
 static void
 wait_until_start_position(void)
 {
-fprintf(stderr, "waiting for start\n");
-    wait_for_pin(HOME_1_PIN, 0);
-fprintf(stderr, "at start\n");
+	fprintf(stderr, "waiting for start\n");
+    if (wait_for_pin(HOME_1_PIN, 0, RETURN_TO_START_MAX_MS)) {
+	fprintf(stderr, "at start\n");
+    } else {
+	fprintf(stderr, "Failed to return to start!\n");
+    }
 }
 
 static void
