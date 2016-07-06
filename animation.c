@@ -82,7 +82,7 @@ printf("attack on %d\n", id);
 static void
 do_question(void)
 {
-    track_play_asynchronously(laugh);
+    track_play_asynchronously(laugh, NULL);
     lights_blink(lights);
     do_popup(QUESTION_GPIO, QUESTION_MS);
 }
