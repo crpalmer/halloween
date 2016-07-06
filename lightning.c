@@ -61,7 +61,7 @@ set_flash(bool on)
 
     for (bank = 1; bank <= 2; bank++) {
 	for (pin = 1; pin <= 8; pin++) {
-	    wb_set(WB_OUTPUT(bank, pin), on);
+	    wb_set(bank, pin, on);
 	}
     }
 }
