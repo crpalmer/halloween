@@ -2,233 +2,86 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include "lights.h"
-#include "gpio.h"
-#include "piface.h"
 #include "server.h"
-#include "track.h"
 #include "util.h"
+#include "wb.h"
 
-#define N_BUTTONS 5
+#include "animation-actions.h"
+#include "animation-common.h"
+#include "animation-lights.h"
 
-#define SQUID_BUTTON    0
-#define CUDA_BUTTON     1
-#define OCTO_BUTTON     3
-#define DIVER_BUTTON  2
-#define QUESTION_BUTTON 4
-#define EEL_BUTTON	6
-
-#define N_GPIOS   6
-
-#define SQUID_GPIO    0
-#define OCTO_GPIO     1
-#define DIVER_GPIO  2
-#define CUDA_GPIO     3
-#define QUESTION_GPIO 4
-#define EEL_GPIO      5
-
-#define OCTO        "octo"
-#define SQUID       "squid"
-#define DIVER       "diver"
-#define CUDA        "cuda"
-#define QUESTION    "question"
-#define EEL	    "eel"
-
-#define CUDA_MS	        1000
-#define QUESTION_MS	2000
-#define DIVER_MS	2000
 #define BUTTON_LOCKOUT_MS 1000
 
-static gpio_table_t gpio_table[N_GPIOS] = {
-    [SQUID_GPIO]       = { SQUID,      26, 0 },
-    [OCTO_GPIO]        = { OCTO,       6, 0 },
-    [DIVER_GPIO]       = { DIVER,      16, 0 },
-    [CUDA_GPIO]        = { CUDA,       19, 0 },
-    [QUESTION_GPIO]    = { QUESTION,   13, 0 },
-    [EEL_GPIO]         = { EEL,        5, 0 },
-};
-
-#define N_GPIO_TABLE (sizeof(gpio_table) / sizeof(gpio_table[0]))
-
-static lights_t *lights;
-static piface_t *piface;
-static gpio_t *gpio;
-static pthread_mutex_t event_lock, eel_lock;
-static track_t *laugh;
-
 static void
-do_popup(unsigned id, unsigned ms)
+do_prop_common_locked(unsigned pin)
 {
-printf("popup on %d\n", id);
-    gpio_on_id(gpio, id);
-    ms_sleep(ms);
-    gpio_off_id(gpio, id);
+    if (pin <= N_STATION_BUTTONS) lights_select(pin);
+    actions[pin].action(actions[pin].action_data, pin);
+    if (pin <= N_STATION_BUTTONS) lights_chase();
 }
 
 static void
-do_attack(unsigned id, double up, double down)
+handle_button_press(unsigned pin)
 {
-    unsigned i;
-
-printf("attack on %d\n", id);
-    for (i = 0; i < 3; i++) {
-	gpio_on_id(gpio, id);
-	ms_sleep((500 + random_number_in_range(0, 250) - 125)*up);
- 	gpio_off_id(gpio, id);
-	ms_sleep((200 + random_number_in_range(0, 100) - 50)*down);
-    }
-}
-
-static void
-do_question(void)
-{
-    track_play_asynchronously(laugh, NULL);
-    lights_blink(lights);
-    do_popup(QUESTION_GPIO, QUESTION_MS);
-}
-
-static void
-do_prop(unsigned id)
-{
-    switch (id) {
-    case OCTO_BUTTON: do_attack(OCTO_GPIO, 1, 1); break;
-    case SQUID_BUTTON: do_attack(SQUID_GPIO, 1, 1.75); break;
-    case DIVER_BUTTON:  do_popup(DIVER_GPIO, DIVER_MS); break;
-    case CUDA_BUTTON:  do_popup(CUDA_GPIO, CUDA_MS); break;
-    case QUESTION_BUTTON: do_question(); break;
-    case EEL_BUTTON: do_attack(EEL_GPIO, 1, 3); break;
-    }
-}
-
-static void
-handle_event_locked(unsigned i)
-{
-    lights_select(lights, i);
-    do_prop(i);
-}
-
-static void
-handle_event(unsigned i)
-{
-    pthread_mutex_lock(&event_lock);
-    handle_event_locked(i);
-    pthread_mutex_unlock(&event_lock);
-}
-
-static void
-handle_eel(void)
-{
-    pthread_mutex_lock(&eel_lock);
-    do_prop(EEL_BUTTON);
-    pthread_mutex_unlock(&eel_lock);
-}
-
-static char *
-remote_event_locked(const char *command)
-{
-    if (strcmp(command, OCTO) == 0) {
-	handle_event_locked(OCTO_BUTTON);
-    } else if (strcmp(command, SQUID) == 0) {
-	handle_event_locked(SQUID_BUTTON);
-    } else if (strcmp(command, DIVER) == 0) {
-	handle_event_locked(DIVER_BUTTON);
-    } else if (strcmp(command, CUDA) == 0) {
-	handle_event_locked(CUDA_BUTTON);
-    } else if (strcmp(command, "question") == 0) {
-	handle_event_locked(QUESTION_BUTTON);
-    } else if (strcmp(command, EEL) == 0) {
-	do_prop(EEL_BUTTON);
-    } else {
-	fprintf(stderr, "Invalid net command: [%s]\n", command);
-	return strdup("Invalid command\n");
-    }
-    return strdup(SERVER_OK);
+    pthread_mutex_lock(actions[pin].lock);
+    do_prop_common_locked(pin);
+    pthread_mutex_unlock(actions[pin].lock);
 }
 
 static char *
 remote_event(void *unused, const char *command)
 {
-    char *result;
-    pthread_mutex_t *lock = &event_lock;
-    int is_eel = strcmp(command, EEL) == 0;
+    unsigned pin;
 
-    if (is_eel) {
-	lock = &eel_lock;
+    for (pin = 1; actions[pin].action; pin++) {
+	if (strcmp(actions[pin].cmd, command) == 0) {
+	    if (pthread_mutex_trylock(actions[pin].lock) != 0) return strdup("prop is busy");
+	    do_prop_common_locked(pin);
+	    pthread_mutex_unlock(actions[pin].lock);
+	    return strdup(SERVER_OK);
+	}
     }
-
-    if (pthread_mutex_trylock(lock) != 0) {
-	return strdup("prop is busy");
-    }
-    result = remote_event_locked(command);
-    pthread_mutex_unlock(lock);
-
-    if (! is_eel) {
-	lights_chase(lights);
-    }
-
-    return result;
+	    
+    fprintf(stderr, "Invalid net command: [%s]\n", command);
+    return strdup("Invalid command\n");
 }
 
 static void
 wait_for_no_buttons(void)
 {
-    for (;;) {
-	unsigned buttons = piface_get_all(piface);
-	if (PIFACE_NONE_SELECTED(buttons)) return;
+    while (wb_get_all()) {
     }
 }
 
 int
 main(int argc, char **argv)
 {
-    unsigned i, button;
     server_args_t server_args;
     pthread_t server_thread;
 
     seed_random();
-
-    if ((laugh = track_new("laugh.wav")) == NULL) {
-	perror("laugh.wav");
-	exit(1);
-    }
-
-    piface = piface_new();
-    lights = lights_new(piface);
-    gpio = gpio_new(gpio_table, N_GPIO_TABLE);
-
-    pthread_mutex_init(&event_lock, NULL);
-    pthread_mutex_init(&eel_lock, NULL);
+    actions_init();
+    lights_init();
 
     server_args.port = 5555;
     server_args.command = remote_event;
     server_args.state = NULL;
 
-    lights_chase(lights);
+    lights_chase();
 
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     while (true) {
-	button = piface_wait_for_input(piface);
-	for (i = 0; i < N_BUTTONS; i++) {
-	    if (PIFACE_IS_SELECTED(button, i)) {
-		handle_event(i);
-		wait_for_no_buttons();
-		lights_off(lights);
-		ms_sleep(BUTTON_LOCKOUT_MS);
-		lights_chase(lights);
-		break;
-	    }
+	unsigned pin = wb_wait_for_pins(WB_PIN_MASK_ALL, WB_PIN_MASK_ALL);
+	lights_select(pin);
+	handle_button_press(pin);
+	wait_for_no_buttons();
+	if (pin <= N_STATION_BUTTONS) {
+	    lights_off();
+	    ms_sleep(BUTTON_LOCKOUT_MS);
 	}
-	if (PIFACE_IS_SELECTED(button, EEL_BUTTON)) {
-	    handle_eel();
-	    wait_for_no_buttons();
-	}
+	lights_chase();
     }
-
-    pthread_mutex_destroy(&event_lock);
-    pthread_mutex_destroy(&eel_lock);
-    lights_destroy(lights);
-    piface_destroy(piface);
 
     return 0;
 }

@@ -13,8 +13,10 @@ all: $(PROPS)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
 
-animation: animation.o $(LIB)
-	$(CC) -o $@ animation.o $(LIBS)
+ANIMATION_OBJS= animation.o animation-actions.o animation-lights.o
+
+animation: $(ANIMATION_OBJS) $(LIB)
+	$(CC) -o $@ $(ANIMATION_OBJS) $(LIBS)
 
 fogger: fogger.o $(LIB)
 	$(CC) -o $@ fogger.o $(LIBS)
