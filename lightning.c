@@ -55,11 +55,15 @@ do_sleep(int ms, int ms_left)
 }
 
 static void
-set_flash(wb_t *wb, bool on)
+set_flash(bool on)
 {
-    int i;
+    unsigned bank, pin;
 
-    for (i = 0; i < 16; i++) wb_set(wb, i, on);
+    for (bank = 1; bank <= 2; bank++) {
+	for (pin = 1; pin <= 8; pin++) {
+	    wb_set(WB_OUTPUT(bank, pin), on);
+	}
+    }
 }
 
 #define OCTOBER	9	/* 0 based month number */
@@ -100,15 +104,14 @@ is_valid_time_of_day(void)
 int
 main(int argc, char **argv)
 {
-    wb_t *wb = wb_new();
     int last_track = -1;
 
-    if (! wb) {
+    if (! wb_init()) {
 	fprintf(stderr, "failed to initialize wb\n");
 	exit(1);
     }
 
-    set_flash(wb, false);
+    set_flash(false);
 
     load_tracks();
 
@@ -133,16 +136,16 @@ main(int argc, char **argv)
 
 	track_set_volume(tracks[track], is_halloween_within_days(1) ? 100 : 75);
 
-	track_play_asynchronously(tracks[track]);
+	track_play_asynchronously(tracks[track], NULL);
 
 	for (bolt = 0; bolt < N_BOLTS && bolt_times[track][bolt]; bolt++) {
 	    int flashes = random_number_in_range(1, 2);
 	    int ms_left = bolt_times[track][bolt];
 
 	    while (flashes-- && ms_left) {
-		set_flash(wb, true);
+		set_flash(true);
 		ms_left -= do_sleep(200, ms_left);
-		set_flash(wb, false);
+		set_flash(false);
 		ms_left -= do_sleep(50, ms_left);
 	    }
 	    if (ms_left) ms_sleep(ms_left);
