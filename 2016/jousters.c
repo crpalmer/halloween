@@ -8,6 +8,8 @@
 #define HOME_1_PIN  1
 #define TRIGGER_PIN 8
 
+#define MOTOR_BANK 1
+
 #define DEBOUNCE_COUNTER 100
 
 #define RETURN_TO_START_MAX_MS 12000
@@ -24,8 +26,8 @@ static int motor_dir[2] = { 6, 8 };
 
 static void motor(unsigned jouster, bool forward, float duty)
 {
-    wb_set(WB_OUTPUT(1, motor_dir[jouster]), forward);
-    wb_pwm(WB_OUTPUT(1, motor_pwm[jouster]), forward ? 1-duty : duty);
+    wb_set(MOTOR_BANK, motor_dir[jouster], forward);
+    wb_pwm(MOTOR_BANK, motor_pwm[jouster], forward ? 1-duty : duty);
 }
 
 static void motor_forward(unsigned jouster, float duty)
