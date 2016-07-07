@@ -54,7 +54,10 @@ chase_locked(lights_t *l)
     for (pin = l->min_pin; pin <= l->max_pin && l->action == LIGHTS_CHASE; pin++) {
 	set_all(l, 0);
 	wb_set(LIGHTS_OUTPUT_BANK, pin, 1);
-	wb_set(LIGHTS_OUTPUT_BANK, pin < l->max_pin ? pin+1 : l->min_pin, 1);
+	if (l->max_pin - l->min_pin + 1 >= 3) {
+	    /* If we only have 2 lights, only light up one at a time */
+	    wb_set(LIGHTS_OUTPUT_BANK, pin < l->max_pin ? pin+1 : l->min_pin, 1);
+	}
 	pthread_mutex_unlock(&l->lock);
 	ms_sleep(ANIMATION_SLEEP_MS);
 	pthread_mutex_lock(&l->lock);
@@ -100,7 +103,8 @@ lights_chase(lights_t *l)
 {
     pthread_mutex_lock(&l->lock);
     set_all(l, 0);
-    l->action = LIGHTS_CHASE;
+    if (l->min_pin == l->max_pin) l->action = LIGHTS_BLINK;
+    else l->action = LIGHTS_CHASE;
     pthread_cond_signal(&l->cond);
     pthread_mutex_unlock(&l->lock);
 } 
