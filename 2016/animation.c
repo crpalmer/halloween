@@ -90,6 +90,7 @@ static action_t eel_actions[] = {
 station_t stations[] = {
     { main_actions, &station_lock },
     { eel_actions, &eel_lock },
+    { NULL, NULL },
 };
 
 void
