@@ -159,6 +159,7 @@ animation_main(void)
     pthread_t server_thread;
 
     seed_random();
+    wb_init();
     actions_init();
 
     init_stations();
