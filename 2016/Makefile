@@ -1,5 +1,5 @@
 LIB=~/lib/lib.a
-CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
+CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	animation \

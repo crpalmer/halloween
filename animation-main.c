@@ -12,12 +12,14 @@
 
 #define BUTTON_LOCKOUT_MS 1000
 
+static lights_t *lights;
+
 static void
 do_prop_common_locked(unsigned pin)
 {
-    if (pin <= N_STATION_BUTTONS) lights_select(pin);
-    actions[pin].action(actions[pin].action_data, pin);
-    if (pin <= N_STATION_BUTTONS) lights_chase();
+    if (pin <= N_STATION_BUTTONS) lights_select(lights, pin);
+    actions[pin].action(actions[pin].action_data, lights, pin);
+    if (pin <= N_STATION_BUTTONS) lights_chase(lights);
 }
 
 static void
@@ -61,25 +63,25 @@ animation_main(void)
 
     seed_random();
     actions_init();
-    lights_init();
+    lights = lights_new(1, 8);
 
     server_args.port = 5555;
     server_args.command = remote_event;
     server_args.state = NULL;
 
-    lights_chase();
+    lights_chase(lights);
 
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     while (true) {
 	unsigned pin = wb_wait_for_pins(WB_PIN_MASK_ALL, WB_PIN_MASK_ALL);
-	lights_select(pin);
+	lights_select(lights, pin);
 	handle_button_press(pin);
 	wait_for_no_buttons();
 	if (pin <= N_STATION_BUTTONS) {
-	    lights_off();
+	    lights_off(lights);
 	    ms_sleep(BUTTON_LOCKOUT_MS);
 	}
-	lights_chase();
+	lights_chase(lights);
     }
 }

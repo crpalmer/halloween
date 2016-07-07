@@ -1,7 +1,9 @@
 #ifndef __ANIMATION_ACTIONS_H__
 #define __ANIMATION_ACTIONS_H__
 
-typedef void (*action_fn_t)(void *action_data, unsigned pin);
+#include "animation-lights.h"
+
+typedef void (*action_fn_t)(void *action_data, lights_t *l, unsigned pin);
 
 typedef struct {
     const char *cmd;

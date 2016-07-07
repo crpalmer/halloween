@@ -1,11 +1,13 @@
 #ifndef __ANIMATION_LIGHTS_H__
 #define __ANIMATION_LIGHTS_H__
 
-void lights_init(void);
-void lights_chase(void);
-void lights_on(void);
-void lights_off(void);
-void lights_select(unsigned selected);
-void lights_blink(void);
+typedef struct lightsS lights_t;
+
+lights_t *lights_new(unsigned min_pin, unsigned max_pin);
+void lights_chase(lights_t *);
+void lights_on(lights_t *);
+void lights_off(lights_t *);
+void lights_select(lights_t *, unsigned selected);
+void lights_blink(lights_t *);
 
 #endif

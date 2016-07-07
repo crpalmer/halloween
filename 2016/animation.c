@@ -6,9 +6,9 @@
 #include "util.h"
 #include "wb.h"
 
-#include "../animation-actions.h"
-#include "../animation-common.h"
-#include "../animation-lights.h"
+#include "animation-actions.h"
+#include "animation-common.h"
+#include "animation-lights.h"
 
 #define OCTO        "octo"
 #define SQUID       "squid"
@@ -25,7 +25,7 @@ static pthread_mutex_t station_lock, eel_lock;
 static track_t *laugh;
 
 static void
-do_popup(void *ms_as_vp, unsigned pin)
+do_popup(void *ms_as_vp, lights_t *l, unsigned pin)
 {
     unsigned ms = (unsigned) ms_as_vp;
 
@@ -35,7 +35,7 @@ do_popup(void *ms_as_vp, unsigned pin)
 }
 
 static void
-do_attack(unsigned pin, double up, double down)
+do_attack(unsigned pin, lights_t *l, double up, double down)
 {
     unsigned i;
 
@@ -48,29 +48,29 @@ do_attack(unsigned pin, double up, double down)
 }
 
 static void
-do_question(void *unused, unsigned pin)
+do_question(void *unused, lights_t *l, unsigned pin)
 {
     track_play_asynchronously(laugh, NULL);
-    lights_blink();
-    do_popup((void *) QUESTION_MS, pin);
+    lights_blink(l);
+    do_popup((void *) QUESTION_MS, l, pin);
 }
 
 static void
-do_squid(void *unused, unsigned pin)
+do_squid(void *unused, lights_t *l, unsigned pin)
 {
-    do_attack(pin, 1, 1.75);
+    do_attack(pin, l, 1, 1.75);
 }
 
 static void
-do_octo(void *unused, unsigned pin)
+do_octo(void *unused, lights_t *l, unsigned pin)
 {
-    do_attack(pin, 1, 1);
+    do_attack(pin, l, 1, 1);
 }
 
 static void
-do_eel(void *unused, unsigned pin)
+do_eel(void *unused, lights_t *l, unsigned pin)
 {
-    do_attack(pin, 1, 3);
+    do_attack(pin, l, 1, 3);
 }
 
 action_t actions[] = {
