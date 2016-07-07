@@ -6,6 +6,8 @@
 
 #define N_STATION_BUTTONS       5
 
-void animation_main(void);
+#include "animation-actions.h"
+
+void animation_main(station_t *);
 
 #endif

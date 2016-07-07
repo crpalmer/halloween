@@ -24,11 +24,12 @@ static pthread_mutex_t station_lock[MAX_STATIONS];
 static pthread_cond_t station_cond[MAX_STATIONS];
 static unsigned current_pin[MAX_STATIONS];
 
+static station_t *stations;
+
 static void
 do_prop_common_locked(unsigned station, unsigned pin)
 {
-    lights_select(lights[station], pin);
-    stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
+    lights_select(lights[station], pin); stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
     lights_chase(lights[station]);
 }
 
@@ -153,14 +154,15 @@ init_stations(void)
 }
 
 void
-animation_main(void)
+animation_main(station_t *stations_)
 {
     server_args_t server_args;
     pthread_t server_thread;
 
+    stations = stations_;
+
     seed_random();
     wb_init();
-    actions_init();
 
     init_stations();
 

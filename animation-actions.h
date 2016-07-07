@@ -16,8 +16,4 @@ typedef struct {
     pthread_mutex_t *lock;
 } station_t;
 
-extern station_t stations[];
-
-void actions_init(void);
-
 #endif

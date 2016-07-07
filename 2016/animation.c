@@ -89,14 +89,14 @@ static action_t eel_actions[] = {
     { NULL,	NULL,		NULL },
 };
 
-station_t stations[] = {
+static station_t stations[] = {
     { main_actions, &station_lock },
     { eel_actions, &eel_lock },
     { NULL, NULL },
 };
 
-void
-actions_init(void)
+int
+main(int argc, char **argv)
 {
     pthread_mutex_init(&station_lock, NULL);
     pthread_mutex_init(&eel_lock, NULL);
@@ -105,13 +105,11 @@ actions_init(void)
 	perror("laugh.wav");
 	exit(1);
     }
-}
 
-int
-main(int argc, char **argv)
-{
     stop = stop_new();
-    animation_main();
+
+    animation_main(stations);
+
     return 0;
 }
 
