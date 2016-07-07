@@ -18,11 +18,11 @@
 #define EEL	    "eel"
 
 #define CUDA_MS	        1000
-#define QUESTION_MS	2000
 #define DIVER_MS	2000
 
 static pthread_mutex_t station_lock, eel_lock;
 static track_t *laugh;
+static stop_t *stop;
 
 static void
 do_popup(void *ms_as_vp, lights_t *l, unsigned pin)
@@ -50,9 +50,11 @@ do_attack(unsigned pin, lights_t *l, double up, double down)
 static void
 do_question(void *unused, lights_t *l, unsigned pin)
 {
-    track_play_asynchronously(laugh, NULL);
+    track_play_asynchronously(laugh, stop);
     lights_blink(l);
-    do_popup((void *) QUESTION_MS, l, pin);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    stop_await_stop(stop);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
 }
 
 static void
@@ -108,6 +110,7 @@ actions_init(void)
 int
 main(int argc, char **argv)
 {
+    stop = stop_new();
     animation_main();
     return 0;
 }
