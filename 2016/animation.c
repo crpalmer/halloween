@@ -73,17 +73,25 @@ do_eel(void *unused, lights_t *l, unsigned pin)
     do_attack(pin, l, 1, 3);
 }
 
-action_t actions[] = {
-    { NULL,	NULL,		NULL,			NULL },
-    { SQUID,	do_squid,	NULL,			&station_lock },
-    { CUDA,	do_popup,	(void *) CUDA_MS,	&station_lock },
-    { DIVER,	do_popup,	(void *) DIVER_MS,	&station_lock },
-    { OCTO,	do_octo,	NULL,			&station_lock },
-    { QUESTION, do_question,	NULL,			&station_lock },
-    { EEL,	do_eel,		NULL,			&eel_lock },
-    { NULL,	NULL,		NULL,			NULL },
+static action_t main_actions[] = {
+    { SQUID,	do_squid,	NULL },
+    { CUDA,	do_popup,	(void *) CUDA_MS },
+    { DIVER,	do_popup,	(void *) DIVER_MS },
+    { OCTO,	do_octo,	NULL },
+    { QUESTION, do_question,	NULL },
+    { NULL,	NULL,		NULL },
 };
-    
+
+static action_t eel_actions[] = {
+    { EEL,	do_eel,		NULL },
+    { NULL,	NULL,		NULL },
+};
+
+station_t stations[] = {
+    { main_actions, &station_lock },
+    { eel_actions, &eel_lock },
+};
+
 void
 actions_init(void)
 {

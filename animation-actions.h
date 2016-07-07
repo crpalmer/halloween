@@ -9,10 +9,14 @@ typedef struct {
     const char *cmd;
     action_fn_t action;
     void    *action_data;
-    pthread_mutex_t *lock;
 } action_t;
 
-extern action_t actions[];
+typedef struct {
+    action_t *actions;
+    pthread_mutex_t *lock;
+} station_t;
+
+extern station_t stations[];
 
 void actions_init(void);
 
