@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "server.h"
+#include "time-utils.h"
 #include "util.h"
 #include "wb.h"
 
@@ -17,6 +18,11 @@ static lights_t *lights[MAX_STATIONS];
 static unsigned min_pin[MAX_STATIONS];
 static unsigned max_pin[MAX_STATIONS];
 static unsigned wb_mask[MAX_STATIONS];
+
+static pthread_t thread[MAX_STATIONS];
+static pthread_mutex_t station_lock[MAX_STATIONS];
+static pthread_cond_t station_cond[MAX_STATIONS];
+static unsigned current_pin[MAX_STATIONS];
 
 static void
 do_prop_common_locked(unsigned station, unsigned pin)
@@ -59,11 +65,52 @@ remote_event(void *unused, const char *command)
     return strdup("Invalid command\n");
 }
 
-static void
-wait_for_no_buttons(unsigned station)
+static void *
+station_main(void *station_as_vp)
 {
-    while ((wb_get_all() & wb_mask[station]) != 0) {
+    unsigned station = (unsigned) station_as_vp;
+    enum { READY, LOCKOUT } state = READY;
+    struct timespec last_button;
+    unsigned pin;
+
+    while (true) {
+	pthread_mutex_lock(&station_lock[station]);
+	while (current_pin[station] == -1) {
+	    if (state == LOCKOUT) {
+		struct timespec now, wait_until;
+
+		wait_until = last_button;
+		nano_add_ms(&wait_until, BUTTON_LOCKOUT_MS);
+
+		pthread_cond_timedwait(&station_cond[station], &station_lock[station], &wait_until);
+
+		nano_gettime(&now);
+		if (nano_later_than(&now, &wait_until)) {
+		    state = READY;
+		    lights_chase(lights[station]);
+		} else if (current_pin[station] != -1) {
+		    last_button = now;
+		    current_pin[station] = -1;
+		}
+	    } else {
+		pthread_cond_wait(&station_cond[station], &station_lock[station]);
+	    }
+	}
+	pin = current_pin[station];
+	current_pin[station] = -1;
+	pthread_mutex_unlock(&station_lock[station]);
+
+
+	if (state == READY) {
+	    lights_select(lights[station], pin);
+	    handle_button_press(station, pin);
+	    lights_off(lights[station]);
+	    state = LOCKOUT;
+	    nano_gettime(&last_button);
+	}
     }
+
+    return NULL;
 }
 
 static void
@@ -74,6 +121,7 @@ init_stations(void)
 
     for (i = 0; stations[i].actions && i < MAX_STATIONS; i++) {
 	unsigned j;
+	pthread_condattr_t attr;
 
 	wb_mask[i] = 0;
 	for (j = 0; stations[i].actions[j].action; j++) {
@@ -84,6 +132,14 @@ init_stations(void)
 	lights_chase(lights[i]);
 	pin0 += j;
 	max_pin[i] = pin0;
+	current_pin[i] = -1;
+
+	pthread_mutex_init(&station_lock[i], NULL);
+	pthread_condattr_init(&attr);
+	pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+	pthread_cond_init(&station_cond[i], &attr);
+
+	pthread_create(&thread[i], NULL, station_main, (void *) i);
     }
 
     while (i < MAX_STATIONS) {
@@ -117,12 +173,10 @@ animation_main(void)
 	for (station = 0; station < MAX_STATIONS; station++) {
 	    if (pin < min_pin[station] || pin > max_pin[station]) continue;
 	    pin -= min_pin[station];
-	    lights_select(lights[station], pin);
-	    handle_button_press(station, pin);
-	    wait_for_no_buttons(station);
-	    lights_off(lights[station]);
-	    ms_sleep(BUTTON_LOCKOUT_MS);
-	    lights_chase(lights[station]);
+	    pthread_mutex_lock(&station_lock[station]);
+	    current_pin[station] = pin;
+	    pthread_cond_signal(&station_cond[station]);
+	    pthread_mutex_unlock(&station_lock[station]);
 	}
     }
 }
