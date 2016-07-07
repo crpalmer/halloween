@@ -72,10 +72,13 @@ station_main(void *station_as_vp)
     enum { READY, LOCKOUT } state = READY;
     struct timespec last_button;
     unsigned pin;
+    pthread_mutex_t *lock = &station_lock[station];
+    pthread_cond_t  *cond = &station_cond[station];
+    lights_t         *l   = lights[station];
 
-    lights_chase(lights[station]);
+    lights_chase(l);
     while (true) {
-	pthread_mutex_lock(&station_lock[station]);
+	pthread_mutex_lock(lock);
 	while (current_pin[station] == -1) {
 	    if (state == LOCKOUT) {
 		struct timespec now, wait_until;
@@ -83,29 +86,29 @@ station_main(void *station_as_vp)
 		wait_until = last_button;
 		nano_add_ms(&wait_until, BUTTON_LOCKOUT_MS);
 
-		pthread_cond_timedwait(&station_cond[station], &station_lock[station], &wait_until);
+		pthread_cond_timedwait(cond, lock, &wait_until);
 
 		nano_gettime(&now);
 		if (nano_later_than(&now, &wait_until)) {
 		    state = READY;
-		    lights_chase(lights[station]);
+		    lights_chase(l);
 		} else if (current_pin[station] != -1) {
 		    last_button = now;
 		    current_pin[station] = -1;
 		}
 	    } else {
-		pthread_cond_wait(&station_cond[station], &station_lock[station]);
+		pthread_cond_wait(cond, lock);
 	    }
 	}
 	pin = current_pin[station];
 	current_pin[station] = -1;
-	pthread_mutex_unlock(&station_lock[station]);
+	pthread_mutex_unlock(lock);
 
 
 	if (state == READY) {
-	    lights_select(lights[station], pin);
+	    lights_select(l, pin);
 	    handle_button_press(station, pin);
-	    lights_off(lights[station]);
+	    lights_off(l);
 	    state = LOCKOUT;
 	    nano_gettime(&last_button);
 	}
