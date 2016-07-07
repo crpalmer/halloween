@@ -73,6 +73,7 @@ station_main(void *station_as_vp)
     struct timespec last_button;
     unsigned pin;
 
+    lights_chase(lights[station]);
     while (true) {
 	pthread_mutex_lock(&station_lock[station]);
 	while (current_pin[station] == -1) {
@@ -129,7 +130,6 @@ init_stations(void)
 	}
 	min_pin[i] = pin0;
 	lights[i] = lights_new(pin0, pin0 + j);
-	lights_chase(lights[i]);
 	pin0 += j;
 	max_pin[i] = pin0;
 	current_pin[i] = -1;
