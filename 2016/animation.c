@@ -76,9 +76,9 @@ do_eel(void *unused, lights_t *l, unsigned pin)
 static action_t main_actions[] = {
     { SQUID,	do_squid,	NULL },
     { CUDA,	do_popup,	(void *) CUDA_MS },
+    { QUESTION, do_question,	NULL },
     { DIVER,	do_popup,	(void *) DIVER_MS },
     { OCTO,	do_octo,	NULL },
-    { QUESTION, do_question,	NULL },
     { NULL,	NULL,		NULL },
 };
 
