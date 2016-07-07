@@ -8,21 +8,25 @@ PROPS = \
 
 all: $(PROPS)
 
-# pull in dependency info for *existing* .o files
--include $(OBJS:.o=.d)
-
 LIBS = $(LIB) -lusb -lrt -lpthread
 
 ANIMATION_OBJS= animation-main.o animation-lights.o
+FOGGER_OBJS = fogger.o
+LIGHTNING_OBJS = lightning.o
+
+OBJS = $(ANIMATION_OBJS) $(FOGGER_OBJS) $(LIGHTNING_OBJS)
+
+# pull in dependency info for *existing* .o files
+-include $(OBJS:.o=.d)
 
 libanimation.a: $(ANIMATION_OBJS) $(LIB)
 	@ar r $@ $(ANIMATION_OBJS) $(LIB)
 
-fogger: fogger.o $(LIB)
-	$(CC) -o $@ fogger.o $(LIBS)
+fogger: $(FOGGER_OBJS) $(LIB)
+	$(CC) -o $@ $(FOGGER_OBJS) $(LIBS)
 
-lightning: lightning.o $(LIB)
-	$(CC) -o $@ lightning.o $(LIBS)
+lightning: $(LIGHTNING_OBJS) $(LIB)
+	$(CC) -o $@ $(LIGHTNING_OBJS) $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
