@@ -2,7 +2,7 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
-	animation \
+	libanimation.a \
 	lightning \
 	fogger
 
@@ -13,10 +13,10 @@ all: $(PROPS)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
 
-ANIMATION_OBJS= animation.o animation-actions.o animation-lights.o
+ANIMATION_OBJS= animation-main.o animation-lights.o
 
-animation: $(ANIMATION_OBJS) $(LIB)
-	$(CC) -o $@ $(ANIMATION_OBJS) $(LIBS)
+libanimation.a: $(ANIMATION_OBJS) $(LIB)
+	@ar r $@ $(ANIMATION_OBJS) $(LIB)
 
 fogger: fogger.o $(LIB)
 	$(CC) -o $@ fogger.o $(LIBS)

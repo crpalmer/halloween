@@ -53,8 +53,8 @@ wait_for_no_buttons(void)
     }
 }
 
-int
-main(int argc, char **argv)
+void
+animation_main(void)
 {
     server_args_t server_args;
     pthread_t server_thread;
@@ -82,6 +82,4 @@ main(int argc, char **argv)
 	}
 	lights_chase();
     }
-
-    return 0;
 }

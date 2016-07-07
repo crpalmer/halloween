@@ -2,6 +2,7 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
+	animation \
 	jousters \
 
 all: $(PROPS)
@@ -10,6 +11,9 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
+
+animation: animation.o $(LIB) ../libanimation.a
+	$(CC) -o $@ animation.o ../libanimation.a $(LIBS)
 
 jousters: jousters.o $(LIB)
 	$(CC) -o $@ jousters.o $(LIBS)

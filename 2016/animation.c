@@ -6,9 +6,9 @@
 #include "util.h"
 #include "wb.h"
 
-#include "animation-actions.h"
-#include "animation-common.h"
-#include "animation-lights.h"
+#include "../animation-actions.h"
+#include "../animation-common.h"
+#include "../animation-lights.h"
 
 #define OCTO        "octo"
 #define SQUID       "squid"
@@ -95,3 +95,11 @@ actions_init(void)
 	exit(1);
     }
 }
+
+int
+main(int argc, char **argv)
+{
+    animation_main();
+    return 0;
+}
+

@@ -6,4 +6,6 @@
 
 #define N_STATION_BUTTONS       5
 
+void animation_main(void);
+
 #endif
