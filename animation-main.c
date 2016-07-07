@@ -28,7 +28,7 @@ static void
 do_prop_common_locked(unsigned station, unsigned pin)
 {
     lights_select(lights[station], pin);
-    stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin);
+    stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
     lights_chase(lights[station]);
 }
 

@@ -133,7 +133,7 @@ lights_select(lights_t *l, unsigned selected)
 {
     pthread_mutex_lock(&l->lock);
     set_all(l, 0);
-    wb_set(LIGHTS_OUTPUT_BANK, selected, 1);
+    wb_set(LIGHTS_OUTPUT_BANK, selected + l->min_pin, 1);
     l->action = LIGHTS_NONE;
     pthread_mutex_unlock(&l->lock);
 }
