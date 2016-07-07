@@ -133,9 +133,10 @@ init_stations(void)
 	    wb_mask[i] |= WB_PIN_MASK(pin0 + j);
 	}
 	min_pin[i] = pin0;
-	lights[i] = lights_new(pin0, pin0 + j);
-	pin0 += j;
-	max_pin[i] = pin0;
+	max_pin[i] = pin0 + j-1;
+	lights[i] = lights_new(min_pin[i], max_pin[i]);
+
+	pin0 += max_pin[i];
 	current_pin[i] = -1;
 
 	pthread_mutex_init(&station_lock[i], NULL);
