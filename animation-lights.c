@@ -18,6 +18,7 @@ struct lightsS {
     pthread_cond_t   cond;
     lights_action_t  action;
     unsigned	     min_pin, max_pin;
+    unsigned	     blink_pin;
 };
 
 
@@ -36,12 +37,16 @@ set_all(lights_t *l, unsigned value)
 static void
 blink_locked(lights_t *l)
 {
-    set_all(l, 1);
+    if (l->blink_pin == -1) set_all(l, 1);
+    else wb_set(LIGHTS_OUTPUT_BANK, l->blink_pin, 1);
+
     pthread_mutex_unlock(&l->lock);
     ms_sleep(ANIMATION_SLEEP_MS);
     pthread_mutex_lock(&l->lock);
     if (l->action == LIGHTS_BLINK) {
-	set_all(l, 0);
+	if (l->blink_pin == -1) set_all(l, 0);
+	else wb_set(LIGHTS_OUTPUT_BANK, l->blink_pin, 0);
+
 	ms_sleep(ANIMATION_SLEEP_MS);
     }
 }
@@ -143,6 +148,18 @@ lights_blink(lights_t *l)
 {
     pthread_mutex_lock(&l->lock);
     set_all(l, 0);
+    l->blink_pin = -1;
+    l->action = LIGHTS_BLINK;
+    pthread_cond_signal(&l->cond);
+    pthread_mutex_unlock(&l->lock);
+}
+
+void
+lights_blink_one(lights_t *l, unsigned pin)
+{
+    pthread_mutex_lock(&l->lock);
+    set_all(l, 0);
+    l->blink_pin = pin;
     l->action = LIGHTS_BLINK;
     pthread_cond_signal(&l->cond);
     pthread_mutex_unlock(&l->lock);

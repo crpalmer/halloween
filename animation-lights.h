@@ -9,5 +9,6 @@ void lights_on(lights_t *);
 void lights_off(lights_t *);
 void lights_select(lights_t *, unsigned selected);
 void lights_blink(lights_t *);
+void lights_blink_one(lights_t *l, unsigned pin);
 
 #endif
