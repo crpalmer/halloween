@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include "animation-actions.h"
+#include "animation-common.h"
 #include "track.h"
 #include "util.h"
 #include "wb.h"
@@ -19,8 +22,13 @@
 #define TROT_MS		2000
 #define REVERSE_MS	7500
 
+static stop_t *stop;
+static track_t *jousting, *crash, *beeping;
+
 static int motor_pwm[2] = { 5, 7 };
 static int motor_dir[2] = { 6, 8 };
+
+typedef enum { WINNER_RED, WINNER_BLUE } winner_t;
 
 static void motor(unsigned jouster, bool forward, float duty)
 {
@@ -44,12 +52,6 @@ static void motor_stop(unsigned jouster)
 }
 
 static void
-wait_for_trigger(void)
-{
-    wb_wait_for_pin(TRIGGER_PIN, 1);
-}
-
-static void
 wait_until_start_position(void)
 {
     fprintf(stderr, "waiting for start\n");
@@ -68,16 +70,55 @@ go_to_start_position(void)
     motor_stop(1);
 }
 
+static void joust(void *pick_as_vp, lights_t *l, unsigned pin)
+{
+    fprintf(stderr, "Starting joust\n");
+
+    lights_blink_one(l, pin);
+
+    track_play_asynchronously(jousting, stop);
+    motor_forward(1, 1);
+
+    if (wb_wait_for_pin_timeout(WIN_1_PIN, 0, WIN_MAX_MS)) {
+	    stop_stop(stop);
+	    track_play_asynchronously(crash, stop);
+	    motor_forward(1, TROT_DUTY);
+	    ms_sleep(TROT_MS);
+    }
+
+    stop_stop(stop);
+    motor_stop(1);
+    ms_sleep(100);
+
+    track_play_asynchronously(beeping, stop);
+    go_to_start_position();
+    stop_stop(stop);
+}
+
+static pthread_mutex_t lock;
+
+static action_t actions[] = {
+    { "red",	joust,	 (void *) WINNER_RED },
+    { "blue",  joust,	(void *) WINNER_BLUE },
+    { NULL, NULL, NULL }
+};
+
+static station_t stations[] = {
+    { actions, &lock },
+    { NULL, NULL }
+};
+
 int
 main(int argc, char **argv)
 {
-    stop_t *stop = stop_new();
-    track_t *jousting, *crash, *beeping;
-
     if (wb_init() < 0) {
 	fprintf(stderr, "Failed to initialize wb\n");
 	exit(1);
     }
+
+    pthread_mutex_init(&lock, NULL);
+
+    stop = stop_new();
 
     jousting = track_new_fatal("jousters_jousting.wav");
     crash = track_new_fatal("jousters_crash.wav");
@@ -91,29 +132,7 @@ main(int argc, char **argv)
     motor_stop(1);
     go_to_start_position();
 
-    while (true) {
-fprintf(stderr, "Waiting\n");
-	wait_for_trigger();
-fprintf(stderr, "Starting joust\n");
-
-	track_play_asynchronously(jousting, stop);
-	motor_forward(1, 1);
-
-	if (wb_wait_for_pin_timeout(WIN_1_PIN, 0, WIN_MAX_MS)) {
-		stop_stop(stop);
-		track_play_asynchronously(crash, stop);
-		motor_forward(1, TROT_DUTY);
-		ms_sleep(TROT_MS);
-	}
-
-	stop_stop(stop);
-	motor_stop(1);
-	ms_sleep(100);
-
-	track_play_asynchronously(beeping, stop);
-	go_to_start_position();
-	stop_stop(stop);
-    }
+    animation_main(stations);
 
     return 0;
 }

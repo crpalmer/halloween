@@ -11,12 +11,13 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
+LIBS_ANIMATION = ../libanimation.a
 
-animation: animation.o $(LIB) ../libanimation.a
-	$(CC) -o $@ animation.o ../libanimation.a $(LIBS)
+animation: animation.o $(LIB) $(LIBS_ANIMATION)
+	$(CC) -o $@ animation.o $(LIBS_ANIMATION) $(LIBS)
 
-jousters: jousters.o $(LIB)
-	$(CC) -o $@ jousters.o $(LIBS)
+jousters: jousters.o $(LIB) $(LIBS_ANIMATION)
+	$(CC) -o $@ jousters.o $(LIBS_ANIMATION) $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
