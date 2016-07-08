@@ -4,18 +4,19 @@
 #include "util.h"
 #include "wb.h"
 
-#define HOME_1_PIN  1
-#define TRIGGER_PIN 8
+#define TRIGGER_PIN 1
+#define HOME_1_PIN  5
+#define WIN_1_PIN   6
 
 #define MOTOR_BANK 1
 
+#define WIN_MAX_MS		4000
 #define RETURN_TO_START_MAX_MS 12000
 
 #define REVERSE_DUTY 0.40
 #define TROT_DUTY 0.30
 
-#define MIDDLE_MS	3000
-#define TROT_MS		4000
+#define TROT_MS		2000
 #define REVERSE_MS	7500
 
 static int motor_pwm[2] = { 5, 7 };
@@ -60,12 +61,6 @@ wait_until_start_position(void)
 }
 
 static void
-wait_until_middle(void)
-{
-    ms_sleep(MIDDLE_MS);
-}
-
-static void
 go_to_start_position(void)
 {
     motor_backward(1, REVERSE_DUTY);
@@ -89,6 +84,7 @@ main(int argc, char **argv)
     beeping = track_new_fatal("jousters_beeping.wav");
 
     wb_set_pull_up(HOME_1_PIN, WB_PULL_UP_UP);
+    wb_set_pull_up(WIN_1_PIN, WB_PULL_UP_UP);
 
     motor_forward(1, 0.5);
     ms_sleep(1000);
@@ -102,13 +98,13 @@ fprintf(stderr, "Starting joust\n");
 
 	track_play_asynchronously(jousting, stop);
 	motor_forward(1, 1);
-	wait_until_middle();
-	stop_stop(stop);
 
-	track_play_asynchronously(crash, stop);
-	motor_forward(1, TROT_DUTY);
-	ms_sleep(TROT_MS);
-	/* gradual deceleration needed here? */
+	if (wb_wait_for_pin_timeout(WIN_1_PIN, 0, WIN_MAX_MS)) {
+		stop_stop(stop);
+		track_play_asynchronously(crash, stop);
+		motor_forward(1, TROT_DUTY);
+		ms_sleep(TROT_MS);
+	}
 
 	stop_stop(stop);
 	motor_stop(1);
