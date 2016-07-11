@@ -4,6 +4,7 @@
 #include "animation-lights.h"
 
 typedef void (*action_fn_t)(void *action_data, lights_t *l, unsigned pin);
+typedef void (*waiting_fn_t)(unsigned total_wait_ms);
 
 typedef struct {
     const char *cmd;
@@ -14,6 +15,8 @@ typedef struct {
 typedef struct {
     action_t *actions;
     pthread_mutex_t *lock;
+    waiting_fn_t waiting;
+    unsigned waiting_period_ms;
 } station_t;
 
 #endif

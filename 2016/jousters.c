@@ -24,11 +24,14 @@
 #define REVERSE_MS	7500
 
 static stop_t *stop;
-static track_t *winner, *loser;
+static stop_t *pick_stop;
+static track_t *pick, *winner, *loser;
 static track_t *jousting, *crash, *beeping;
 
 static int motor_pwm[2] = { 5, 7 };
 static int motor_dir[2] = { 6, 8 };
+
+static enum { START_WAITING, CONTINUE_WAITING } waiting_state = START_WAITING;
 
 static void motor(unsigned jouster, bool forward, float duty)
 {
@@ -76,6 +79,8 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     unsigned winner_pin_mask;
     unsigned winner_pin;
 
+    stop_stop(pick_stop);
+
     fprintf(stderr, "Starting joust\n");
 
     lights_blink_one(l, pin);
@@ -108,6 +113,24 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     track_play_asynchronously(beeping, stop);
     go_to_start_position();
     stop_stop(stop);
+
+    waiting_state = START_WAITING;
+}
+
+static void waiting_for_button(unsigned ms)
+{
+    static unsigned last_play;
+
+    if (waiting_state == START_WAITING && ms > 5000) {
+	waiting_state = CONTINUE_WAITING;
+	track_play_asynchronously(pick, pick_stop);
+	fprintf(stderr, "playing waiting 1\n");
+	last_play = ms;
+    } else if (ms - last_play > 10000) {
+	track_play_asynchronously(pick, pick_stop);
+	fprintf(stderr, "playing waiting 2\n");
+	last_play = ms;
+    }
 }
 
 static pthread_mutex_t lock;
@@ -119,7 +142,7 @@ static action_t actions[] = {
 };
 
 static station_t stations[] = {
-    { actions, &lock },
+    { actions, &lock, waiting_for_button, 1000 },
     { NULL, NULL }
 };
 
@@ -136,9 +159,12 @@ main(int argc, char **argv)
     pthread_mutex_init(&lock, NULL);
 
     stop = stop_new();
+    pick_stop = stop_new();
+    stop_stopped(pick_stop);
 
     audio_device_init(&second_audio_dev, 1, 0, true);
 
+    pick = track_new_audio_dev_fatal("jousters_push.wav", &second_audio_dev);
     winner = track_new_audio_dev_fatal("jousters_crash.wav", &second_audio_dev);
     loser = track_new_audio_dev_fatal("jousters_loser.wav", &second_audio_dev);
 
