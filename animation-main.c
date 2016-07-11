@@ -23,6 +23,7 @@ static pthread_t thread[MAX_STATIONS];
 static pthread_mutex_t station_lock[MAX_STATIONS];
 static pthread_cond_t station_cond[MAX_STATIONS];
 static unsigned current_pin[MAX_STATIONS];
+static struct timespec start_waiting[MAX_STATIONS];
 
 static station_t *stations;
 
@@ -31,14 +32,6 @@ do_prop_common_locked(unsigned station, unsigned pin)
 {
     lights_select(lights[station], pin); stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
     lights_chase(lights[station]);
-}
-
-static void
-handle_button_press(unsigned station, unsigned pin)
-{
-    pthread_mutex_lock(stations[station].lock);
-    do_prop_common_locked(station, pin);
-    pthread_mutex_unlock(stations[station].lock);
 }
 
 static char *
@@ -56,6 +49,7 @@ remote_event(void *unused, const char *command)
 		    return strdup("prop is busy");
 		}
 		do_prop_common_locked(station, pin);
+		nano_gettime(&start_waiting[station]);
 		pthread_mutex_unlock(stations[station].lock);
 		return strdup(SERVER_OK);
 	     }
@@ -71,13 +65,18 @@ station_main(void *station_as_vp)
 {
     unsigned station = (unsigned) station_as_vp;
     enum { READY, LOCKOUT } state = READY;
-    struct timespec last_button;
+    struct timespec last_button, last_notify;
     unsigned pin;
     pthread_mutex_t *lock = &station_lock[station];
+    pthread_mutex_t *prop_lock = stations[station].lock;
     pthread_cond_t  *cond = &station_cond[station];
     lights_t         *l   = lights[station];
+    station_t       *s    = &stations[station];
 
     lights_chase(l);
+    nano_gettime(&start_waiting[station]);
+    last_notify = start_waiting[station];
+
     while (true) {
 	pthread_mutex_lock(lock);
 	while (current_pin[station] == -1) {
@@ -93,10 +92,31 @@ station_main(void *station_as_vp)
 		if (nano_later_than(&now, &wait_until)) {
 		    state = READY;
 		    lights_chase(l);
+		    nano_gettime(&start_waiting[station]);
+		    last_notify = start_waiting[station];
 		} else if (current_pin[station] != -1) {
 		    last_button = now;
 		    current_pin[station] = -1;
 		}
+	    } else if (s->waiting_period_ms) {
+		struct timespec now, wait_until;
+
+		wait_until = last_notify;
+		nano_add_ms(&wait_until, s->waiting_period_ms);
+		
+		pthread_cond_timedwait(cond, lock, &wait_until);
+
+		pthread_mutex_lock(prop_lock);
+		nano_gettime(&now);
+		wait_until = last_notify;
+		nano_add_ms(&wait_until, s->waiting_period_ms);
+
+		if (current_pin[station] == -1 && nano_later_than(&now, &wait_until)) {
+		    s->waiting(nano_elapsed_ms(&now, &start_waiting[station]));
+		    last_notify = now;
+		}
+		pthread_mutex_unlock(prop_lock);
+
 	    } else {
 		pthread_cond_wait(cond, lock);
 	    }
@@ -108,7 +128,9 @@ station_main(void *station_as_vp)
 
 	if (state == READY) {
 	    lights_select(l, pin);
-	    handle_button_press(station, pin);
+	    pthread_mutex_lock(prop_lock);
+	    do_prop_common_locked(station, pin);
+	    pthread_mutex_unlock(prop_lock);
 	    lights_off(l);
 	    state = LOCKOUT;
 	    nano_gettime(&last_button);
