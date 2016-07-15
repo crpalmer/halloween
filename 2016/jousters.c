@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include "animation-actions.h"
 #include "animation-common.h"
+#include "time-utils.h"
 #include "track.h"
 #include "util.h"
 #include "wb.h"
@@ -60,20 +61,43 @@ static void motor_stop(unsigned jouster)
 static void
 wait_until_start_position(void)
 {
+    unsigned pin_mask = WB_PIN_MASK(HOME_1_PIN) | WB_PIN_MASK(HOME_2_PIN);
+    struct timespec start_waiting;
+
     fprintf(stderr, "waiting for start\n");
-    if (wb_wait_for_pin_timeout(HOME_1_PIN, 0, RETURN_TO_START_MAX_MS)) {
-	fprintf(stderr, "at start\n");
-    } else {
-	fprintf(stderr, "Failed to return to start!\n");
+    nano_gettime(&start_waiting);
+    while (pin_mask != 0) {
+	unsigned max_ms = RETURN_TO_START_MAX_MS;
+	struct timespec now;
+	unsigned pin;
+
+	nano_gettime(&now);
+	if (nano_elapsed_ms(&now, &start_waiting) >= max_ms) {
+	    fprintf(stderr, "Failed to return to start!\n");
+	    motor_stop(0);
+	    motor_stop(1);
+	    return;
+	}
+
+	max_ms -= nano_elapsed_ms(&now, &start_waiting);
+
+        pin = wb_wait_for_pin_timeout(HOME_1_PIN, 0, max_ms);
+
+	if (pin) {
+	    pin_mask &= ~WB_PIN_MASK(pin);
+	    fprintf(stderr, "at start %d\n", pin == HOME_1_PIN ? 0 : 1);
+	    if (pin == HOME_1_PIN) motor_stop(0);
+	    else motor_stop(1);
+	}
     }
 }
 
 static void
 go_to_start_position(void)
 {
+    motor_backward(0, REVERSE_DUTY);
     motor_backward(1, REVERSE_DUTY);
     wait_until_start_position();
-    motor_stop(1);
 }
 
 static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
@@ -89,6 +113,7 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     lights_blink_one(l, pin);
 
     track_play_asynchronously(jousting, stop);
+    motor_forward(0, 1);
     motor_forward(1, 1);
 
     winner_pin_mask = WB_PIN_MASK(WIN_1_PIN) | WB_PIN_MASK(WIN_2_PIN);
@@ -96,11 +121,13 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     if ((winner_pin = wb_wait_for_pins_timeout(winner_pin_mask, 0, WIN_MAX_MS)) != 0) {
 	    stop_stop(stop);
 	    track_play_asynchronously(crash, stop);
+	    motor_forward(0, TROT_DUTY);
 	    motor_forward(1, TROT_DUTY);
 	    ms_sleep(TROT_MS);
     }
 
     stop_stop(stop);
+    motor_stop(0);
     motor_stop(1);
 
     fprintf(stderr, "wanted %d got %d\n", picked_winner, winner_pin);
@@ -187,8 +214,10 @@ main(int argc, char **argv)
     wb_set_pull_up(HOME_1_PIN, WB_PULL_UP_UP);
     wb_set_pull_up(WIN_1_PIN, WB_PULL_UP_UP);
 
+    motor_forward(0, 0.5);
     motor_forward(1, 0.5);
     ms_sleep(1000);
+    motor_stop(0);
     motor_stop(1);
     go_to_start_position();
 
