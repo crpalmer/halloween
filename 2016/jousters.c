@@ -12,6 +12,9 @@
 #define HOME_2_PIN  7
 #define WIN_2_PIN   8
 
+#define WINNER_LIGHT_1 3
+#define WINNER_LIGHT_2 4
+
 #define MOTOR_BANK 1
 
 #define WIN_MAX_MS		4000
@@ -102,6 +105,12 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
 
     fprintf(stderr, "wanted %d got %d\n", picked_winner, winner_pin);
 
+    if (winner_pin == WIN_1_PIN) {
+	wb_set(MOTOR_BANK, WINNER_LIGHT_1, 1);
+    } else if (winner_pin == WIN_2_PIN) {
+	wb_set(MOTOR_BANK, WINNER_LIGHT_2, 1);
+    }
+
     if (winner_pin == picked_winner) {
 	track_play(winner);
     } else {
@@ -109,6 +118,9 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     }
 
     ms_sleep(100);
+
+    wb_set(MOTOR_BANK, WINNER_LIGHT_1, 0);
+    wb_set(MOTOR_BANK, WINNER_LIGHT_2, 0);
 
     track_play_asynchronously(beeping, stop);
     go_to_start_position();
