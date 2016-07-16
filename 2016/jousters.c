@@ -206,7 +206,7 @@ main(int argc, char **argv)
     audio_device_init(&second_audio_dev, 1, 0, true);
 
     pick = track_new_audio_dev_fatal("jousters_push.wav", &second_audio_dev);
-    winner = track_new_audio_dev_fatal("jousters_crash.wav", &second_audio_dev);
+    winner = track_new_audio_dev_fatal("jousters_winner.wav", &second_audio_dev);
     loser = track_new_audio_dev_fatal("jousters_loser.wav", &second_audio_dev);
 
     jousting = track_new_fatal("jousters_jousting.wav");
