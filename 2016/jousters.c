@@ -144,10 +144,12 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
 	track_play(loser);
     }
 
-    ms_sleep(100);
+    ms_sleep(1000);
 
     wb_set(MOTOR_BANK, WINNER_LIGHT_1, 0);
     wb_set(MOTOR_BANK, WINNER_LIGHT_2, 0);
+
+    lights_off(l);
 
     track_play_asynchronously(beeping, stop);
     go_to_start_position();
