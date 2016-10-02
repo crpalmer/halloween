@@ -3,6 +3,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	animation \
+	band \
 	jousters \
 
 all: $(PROPS)
@@ -15,6 +16,9 @@ LIBS_ANIMATION = ../libanimation.a
 
 animation: animation.o $(LIB) $(LIBS_ANIMATION)
 	$(CC) -o $@ animation.o $(LIBS_ANIMATION) $(LIBS)
+
+band: band.o $(LIB) $(LIBS_ANIMATION)
+	$(CC) -o $@ band.o $(LIBS_ANIMATION) $(LIBS)
 
 jousters: jousters.o $(LIB) $(LIBS_ANIMATION)
 	$(CC) -o $@ jousters.o $(LIBS_ANIMATION) $(LIBS)
