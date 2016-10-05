@@ -21,15 +21,20 @@
 #define MANDOLIN_INTER_NOTE_LOW_MS 250
 #define MANDOLIN_INTER_NOTE_HIGH_MS 1000
 
+#define SINGER_SERVO	3
+#define SINGER_WHO	TALKING_DEER
+
 #define MANDOLIN_WAV	"band-mandolin.wav"
 #define RECORDER_WAV	"band-recorder.wav"
 #define SONG_WAV	"band-song.wav"
+#define SINGER_WAV	"band-vocals.wav"
 
 static maestro_t *m;
 
 static track_t *song;
 static talking_skull_actor_t *mandolin;
 static talking_skull_actor_t *recorder;
+static talking_skull_actor_t *singer;
 
 static struct timespec start;
 
@@ -133,6 +138,31 @@ mandolin_rest(void)
     maestro_set_servo_pos(m, MANDOLIN_SERVO, 100);
 }
 
+static void
+singer_update(void *unused, double pos)
+{
+    maestro_set_servo_pos(m, SINGER_SERVO, pos);
+    // TODO: do eyes
+}
+
+static void
+singer_init(void)
+{
+    singer = talking_skull_actor_new(SINGER_WAV, singer_update, NULL);
+    if (! mandolin) {
+	perror(SINGER_WAV);
+	exit(1);
+    }
+
+    maestro_set_servo_range(m, SINGER_SERVO, SINGER_WHO);
+}
+
+static void
+singer_rest(void)
+{
+    maestro_set_servo_pos(m, SINGER_SERVO, 0);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -151,14 +181,17 @@ main(int argc, char **argv)
 
     recorder_init();
     mandolin_init();
+    singer_init();
 
     while (1) {
 	recorder_rest();
 	mandolin_rest();
+	singer_rest();
 
 	nano_gettime(&start);
 	talking_skull_actor_play(recorder);
 	talking_skull_actor_play(mandolin);
+	talking_skull_actor_play(singer);
 	track_play(song);
     }
 
