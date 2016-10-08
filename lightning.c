@@ -38,7 +38,7 @@ load_tracks(void)
     for (track = 0; track < N_TRACKS; track++) {
 	char fname[500];
 
-	sprintf(fname, "/home/crpalmer/halloween/sound-effects/thunder/%d.wav", track);
+	sprintf(fname, "thunder/%d.wav", track);
 	if ((tracks[track] = track_new(fname)) == NULL) {
 	    fprintf(stderr, "failed to open %s\n", fname);
 	}
