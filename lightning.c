@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "track.h"
 #include "util.h"
@@ -29,6 +30,8 @@ static int bolt_times[N_TRACKS][N_BOLTS] = {
 #define HALLOWEEN_END	MINUTES(HALLOWEEN_END_HOUR, HALLOWEEN_END_MINUTES)
 
 #define MINUTES(hour, minutes) ((hour)*60 + (minutes))
+
+static int always = 0;
 
 static void
 load_tracks(void)
@@ -93,6 +96,10 @@ is_valid_time_of_day(void)
     time_t now = time(NULL);
     struct tm tm;
 
+    if (always) {
+	return true;
+    }
+
     if (localtime_r(&now, &tm)) {
 	unsigned min = MINUTES(tm.tm_hour, tm.tm_min);
 	unsigned end = is_halloween() ? HALLOWEEN_END : NORMAL_END;
@@ -105,6 +112,13 @@ int
 main(int argc, char **argv)
 {
     int last_track = -1;
+
+    if (argc == 2 && strcmp(argv[1], "--always") == 0) {
+	always = 1;
+    } else if (argc > 1) {
+	fprintf(stderr, "usage: [--always]\n");
+	exit(1);
+    }
 
     if (wb_init() < 0) {
 	fprintf(stderr, "failed to initialize wb\n");
