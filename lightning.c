@@ -106,7 +106,7 @@ main(int argc, char **argv)
 {
     int last_track = -1;
 
-    if (! wb_init()) {
+    if (wb_init() < 0) {
 	fprintf(stderr, "failed to initialize wb\n");
 	exit(1);
     }

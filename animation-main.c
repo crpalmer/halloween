@@ -185,7 +185,10 @@ animation_main(station_t *stations_)
     stations = stations_;
 
     seed_random();
-    wb_init();
+    if (wb_init() < 0) {
+	fprintf(stderr, "Failed to initialize the wb\n");
+	exit(1);
+    }
 
     init_stations();
 
