@@ -2,7 +2,7 @@ LIB=~/lib/lib.a
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I.
 
 PROPS = \
-	libanimation.a \
+	libhalloween.a \
 	lightning \
 	fogger
 
@@ -11,6 +11,8 @@ all: $(PROPS)
 LIBS = $(LIB) -lusb -lrt -lpthread
 
 ANIMATION_OBJS= animation-main.o animation-lights.o
+HALLOWEEN_OBJS = $(ANIMATION_OBJS)
+
 FOGGER_OBJS = fogger.o
 LIGHTNING_OBJS = lightning.o
 
@@ -19,8 +21,8 @@ OBJS = $(ANIMATION_OBJS) $(FOGGER_OBJS) $(LIGHTNING_OBJS)
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
 
-libanimation.a: $(ANIMATION_OBJS) $(LIB)
-	@ar r $@ $(ANIMATION_OBJS) $(LIB)
+libhalloween.a: $(HALLOWEEN_OBJS) $(LIB)
+	@ar r $@ $(HALLOWEEN_OBJS) $(LIB)
 
 fogger: $(FOGGER_OBJS) $(LIB)
 	$(CC) -o $@ $(FOGGER_OBJS) $(LIBS)
