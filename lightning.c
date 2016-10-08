@@ -5,6 +5,7 @@
 #include "track.h"
 #include "util.h"
 #include "wb.h"
+#include "ween-time.h"
 
 #define N_TRACKS	6
 #define N_BOLTS		5
@@ -20,16 +21,14 @@ static int bolt_times[N_TRACKS][N_BOLTS] = {
     { 1700, 1400,    0,    0,  0 },
 };
 
-#define START_HOUR	16
-#define START_MINUTES   15
-#define END_HOUR	20
-#define END_MINUTES	00
-#define HALLOWEEN_END_HOUR 23
-#define HALLOWEEN_END_MINUTES 00
-#define NORMAL_END	MINUTES(END_HOUR, END_MINUTES)
-#define HALLOWEEN_END	MINUTES(HALLOWEEN_END_HOUR, HALLOWEEN_END_MINUTES)
+static ween_time_constraint_t ween_time_constraints[] = {
+    { 0,	12, 00,		23, 00 },
+    { -1,	16, 15,		20, 00 },
+};
 
-#define MINUTES(hour, minutes) ((hour)*60 + (minutes))
+static int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
+
+static ween_time_constraint_t is_halloween_constraint = { 0, 0, 0, 23, 59 };
 
 static int always = 0;
 
@@ -69,45 +68,6 @@ set_flash(bool on)
     }
 }
 
-#define OCTOBER	9	/* 0 based month number */
-#define WEEN_DAY 31
-
-static bool
-is_halloween_within_days(unsigned days)
-{
-    time_t now = time(NULL);
-    struct tm tm;
-
-    if (localtime_r(&now, &tm)) {
-	return (tm.tm_mon == OCTOBER && (tm.tm_mday >= WEEN_DAY - days && tm.tm_mday <= WEEN_DAY));
-    }
-    return false;
-}
-
-static bool
-is_halloween(void)
-{
-    return is_halloween_within_days(0);
-}
-
-static bool
-is_valid_time_of_day(void)
-{
-    time_t now = time(NULL);
-    struct tm tm;
-
-    if (always) {
-	return true;
-    }
-
-    if (localtime_r(&now, &tm)) {
-	unsigned min = MINUTES(tm.tm_hour, tm.tm_min);
-	unsigned end = is_halloween() ? HALLOWEEN_END : NORMAL_END;
-	return min >= MINUTES(START_HOUR, START_MINUTES) && min < end;
-    }
-    return true;
-}
-
 int
 main(int argc, char **argv)
 {
@@ -133,12 +93,8 @@ main(int argc, char **argv)
 	int track;
 	int bolt;
 
-	if (! is_valid_time_of_day()) {
-	    printf("Exiting valid time of day, waiting for %d:%02d\n", START_HOUR, START_MINUTES);
-	    while (! is_valid_time_of_day()) {
-		ms_sleep(60*1000);
-	    }
-	    printf("Entering valid time of day at %d:%02d\n", END_HOUR, END_MINUTES);
+	if (! always) {
+	    ween_time_wait_until_valid(ween_time_constraints, n_ween_time_constraints);
 	}
 
 	ms_sleep(random_number_in_range(2000, 5000));
@@ -148,7 +104,7 @@ main(int argc, char **argv)
 	} while (track == last_track);
 	last_track = track;
 
-	track_set_volume(tracks[track], is_halloween_within_days(1) ? 100 : 75);
+	track_set_volume(tracks[track], ween_time_is_valid(&is_halloween_constraint, 1) ? 100 : 75);
 
 	track_play_asynchronously(tracks[track], NULL);
 
