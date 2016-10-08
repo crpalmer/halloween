@@ -23,7 +23,8 @@ static int bolt_times[N_TRACKS][N_BOLTS] = {
 
 static ween_time_constraint_t ween_time_constraints[] = {
     { 0,	12, 00,		23, 00 },
-    { -1,	16, 15,		20, 00 },
+    { 3,	17, 00,		23, 00 },
+    { -1,	17, 00,		20, 00 },
 };
 
 static int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
