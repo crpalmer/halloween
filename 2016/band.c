@@ -24,6 +24,8 @@
 #define SINGER_SERVO	3
 #define SINGER_WHO	TALKING_DEER
 
+#define BETWEEN_SONG_MS	1000
+
 #define MANDOLIN_WAV	"band-mandolin.wav"
 #define RECORDER_WAV	"band-recorder.wav"
 #define SONG_WAV	"band-song.wav"
@@ -187,6 +189,8 @@ main(int argc, char **argv)
 	recorder_rest();
 	mandolin_rest();
 	singer_rest();
+
+	ms_sleep(BETWEEN_SONG_MS);
 
 	nano_gettime(&start);
 	talking_skull_actor_play(recorder);
