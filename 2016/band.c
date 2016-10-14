@@ -8,11 +8,13 @@
 #include "util.h"
 
 #define RECORDER_SERVO_1 0
-#define RECORDER_SERVO_1_LOW 40
-#define RECORDER_SERVO_1_HIGH 60
+#define RECORDER_SERVO_1_LOW 27
+#define RECORDER_SERVO_1_HIGH 37
 #define RECORDER_SERVO_2 1
-#define RECORDER_SERVO_2_LOW 40
-#define RECORDER_SERVO_2_HIGH 55
+#define RECORDER_SERVO_2_LOW 35
+#define RECORDER_SERVO_2_HIGH 50
+#define RECORDER_UP_SPEED	100
+#define RECORDER_DOWN_SPEED	500
 
 #define MANDOLIN_SERVO 2
 #define MANDOLIN_PCT_LOW	32
@@ -55,17 +57,17 @@ recorder_update(void *unused, double pos)
 	} while (new_state == state);
 	state = new_state;
 	if (state & 1) {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_1, 0);
+	    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_UP_SPEED);
 	    maestro_set_servo_pos(m, RECORDER_SERVO_1, 100);
 	} else {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_1, 400);
+	    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_DOWN_SPEED);
 	    maestro_set_servo_pos(m, RECORDER_SERVO_1, 0);
 	}
 	if (state & 2) {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_2, 0);
+	    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_UP_SPEED);
 	    maestro_set_servo_pos(m, RECORDER_SERVO_2, 100);
 	} else {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_2, 400);
+	    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_DOWN_SPEED);
 	    maestro_set_servo_pos(m, RECORDER_SERVO_2, 0);
 	}
     }
@@ -89,9 +91,9 @@ recorder_init(void)
 static void
 recorder_rest(void)
 {
-    maestro_set_servo_speed(m, RECORDER_SERVO_1, 400);
+    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_DOWN_SPEED);
     maestro_set_servo_pos(m, RECORDER_SERVO_1, 0);
-    maestro_set_servo_speed(m, RECORDER_SERVO_2, 400);
+    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_DOWN_SPEED);
     maestro_set_servo_pos(m, RECORDER_SERVO_2, 0);
 }
 
