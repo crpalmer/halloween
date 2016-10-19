@@ -6,6 +6,7 @@
 #include "time-utils.h"
 #include "track.h"
 #include "util.h"
+#include "wb.h"
 
 #define RECORDER_SERVO_1 0
 #define RECORDER_SERVO_1_LOW 27
@@ -25,6 +26,7 @@
 
 #define SINGER_SERVO	3
 #define SINGER_WHO	TALKING_DEER
+#define SINGER_EYES	1, 1
 
 #define BETWEEN_SONG_MS	1000
 
@@ -145,8 +147,14 @@ mandolin_rest(void)
 static void
 singer_update(void *unused, double pos)
 {
+    static int eyes = -1;
+    int new_eyes = pos > 30;
+
     maestro_set_servo_pos(m, SINGER_SERVO, pos);
-    // TODO: do eyes
+    if (eyes != new_eyes) {
+	wb_set(SINGER_EYES, new_eyes);
+	eyes = new_eyes;
+    }
 }
 
 static void
@@ -164,13 +172,14 @@ singer_init(void)
 static void
 singer_rest(void)
 {
-    maestro_set_servo_pos(m, SINGER_SERVO, 0);
+    singer_update(NULL, 0);
 }
 
 int
 main(int argc, char **argv)
 {
     pi_usb_init();
+    wb_init();
 
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize servo controller\n");
