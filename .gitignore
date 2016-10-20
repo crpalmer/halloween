@@ -4,6 +4,7 @@
 *.o
 *.sw?
 animation
+baxter
 fogger
 fogger.duty
 lightning
