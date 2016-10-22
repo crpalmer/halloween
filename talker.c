@@ -203,6 +203,16 @@ main(int argc, char **argv)
     unsigned char *auto_play_buffer = NULL;
     size_t auto_play_bytes_left = 0;
     wav_t *auto_wav;
+    int no_input = 0;
+
+    if (argc > 1) {
+	if (strcmp(argv[1], "--no-input") == 0) {
+	    no_input = 1;
+	} else {
+	    fprintf(stderr, "usage: [--no-input]\n");
+	    exit(1);
+	}
+    }
 
     pi_usb_init();
     if ((maestro = maestro_new()) == NULL) {
@@ -239,50 +249,58 @@ main(int argc, char **argv)
     out = audio_new(&cfg, &out_dev);
     in = audio_new(&cfg, &in_dev);
 
+    size = audio_get_buffer_size(out);
+    buffer = fatal_malloc(size);
+
     if (! out) {
 	perror("out");
 	fprintf(stderr, "Failed to initialize playback\n");
 	exit(1);
     }
 
-    if (! in) {
+    if (! in && ! no_input) {
 	perror("in");
 	fprintf(stderr, "Failed to initialize capture\n");
 	exit(1);
+    } else if (in) {
+	audio_set_volume(in, 100);
+	assert(audio_get_buffer_size(in) == size);
+        fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
+    } else {
+	fprintf(stderr, "Processing remote speech commands\n");
     }
 
-    audio_set_volume(in, 100);
     audio_set_volume(out, 100);
-
-    size = audio_get_buffer_size(in);
-    assert(audio_get_buffer_size(out) == size);
-
-    buffer = fatal_malloc(size);
 
     audio_meta_init_from_config(&meta, &cfg);
     skull = talking_skull_new(&meta, false, servo_update, NULL);
 
-    fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
-
     last_audio = time(NULL);
 
-    while (audio_capture_buffer(in, buffer)) {
-	pthread_mutex_lock(&speak_lock);
-
+    while (no_input || audio_capture_buffer(in, buffer)) {
 	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS) {
 	    auto_play_buffer = wav_get_raw_data(auto_wav, &auto_play_bytes_left);
 	    gain = 3;
-	}
-	if (auto_play_bytes_left > 0) {
-	    size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
-	    memcpy(buffer, auto_play_buffer, n);
-	    auto_play_buffer += n;
-	    auto_play_bytes_left -= n;
-	}
+	    while (auto_play_bytes_left > 0) {
+		size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
+		memcpy(buffer, auto_play_buffer, n);
+		auto_play_buffer += n;
+		auto_play_bytes_left -= n;
 
-	producer_consumer_produce(pc, buffer);
-	pthread_mutex_unlock(&speak_lock);
-	buffer = fatal_malloc(size);
+		pthread_mutex_lock(&speak_lock);
+		producer_consumer_produce(pc, buffer);
+		pthread_mutex_unlock(&speak_lock);
+
+		buffer = fatal_malloc(size);
+	    }
+	} else if (no_input) {
+	    sleep(1);
+	} else {
+	    pthread_mutex_lock(&speak_lock);
+	    producer_consumer_produce(pc, buffer);
+	    pthread_mutex_unlock(&speak_lock);
+	    buffer = fatal_malloc(size);
+	}
     }
 
     fprintf(stderr, "Failed to capture buffer!\n");
