@@ -5,7 +5,8 @@ ALL = \
 	baxter \
 	libhalloween.a \
 	lightning \
-	fogger
+	fogger \
+	talker
 
 all: $(ALL)
 
@@ -21,8 +22,9 @@ HALLOWEEN_OBJS = \
 BAXTER_OBJS = baxter.o
 FOGGER_OBJS = fogger.o
 LIGHTNING_OBJS = lightning.o
+TALKER_OBJS = talker.o
 
-OBJS = $(HALLOWEEN_OBJS) $(BAXTER_OBJS) $(FOGGER_OBJS) $(LIGHTNING_OBJS)
+OBJS = $(HALLOWEEN_OBJS) $(BAXTER_OBJS) $(FOGGER_OBJS) $(LIGHTNING_OBJS) $(TALKER_OBJS)
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
@@ -38,6 +40,9 @@ fogger: $(FOGGER_OBJS) $(LIB)
 
 lightning: $(LIGHTNING_OBJS) $(LIB) libhalloween.a
 	$(CC) -o $@ $(LIGHTNING_OBJS) libhalloween.a $(LIBS)
+
+talker: $(TALKER_OBJS) $(LIB) libhalloween.a
+	$(CC) -o $@ $(TALKER_OBJS) libhalloween.a $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
