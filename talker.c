@@ -7,17 +7,16 @@
 #include "maestro.h"
 #include "mem.h"
 #include "pi-usb.h"
-#include "piface.h"
 #include "producer-consumer.h"
 #include "server.h"
 #include "talking-skull.h"
 #include "wav.h"
+#include "wb.h"
 
 static maestro_t *maestro;
-static piface_t *piface;
 
 #define SERVO_ID 0
-#define EYES 7
+#define EYES_PIN 1, 1
 
 #define HISTORY_EPSILON 5
 #define N_HISTORY 20
@@ -86,7 +85,6 @@ update_servo_and_eyes(double pos)
     if (pos > 100) pos = 100;
     if (maestro) {
 	maestro_set_servo_pos(maestro, SERVO_ID, pos);
-	//piface_set(s->p, EYES, pos > 50);
     } else {
 	printf("servo: %.0f\n", pos);
     }
@@ -94,7 +92,7 @@ update_servo_and_eyes(double pos)
     new_eyes = (pos >= 50);
     if (new_eyes != eyes) {
 	eyes = new_eyes;
-	piface_set(piface, EYES, eyes);
+	wb_set(EYES_PIN, eyes);
      }
 }
 
@@ -215,14 +213,14 @@ main(int argc, char **argv)
     }
 
     pi_usb_init();
+    wb_init();
+
     if ((maestro = maestro_new()) == NULL) {
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
         maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
 	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL2);
     }
-
-    piface = piface_new();
 
     if ((auto_wav = wav_new("chant1.wav")) == NULL) {
 	perror("chant1.wav");
