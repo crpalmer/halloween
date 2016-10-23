@@ -18,21 +18,34 @@ static maestro_t *maestro;
 #define SERVO_ID 0
 #define EYES_PIN 1, 1
 
-#define HISTORY_EPSILON 5
+#define MICROPHONE_HISTORY_EPSILON 5
+#define OTHER_HISTORY_EPSILON 0
 #define N_HISTORY 20
 #define GAIN_TARGET 75
 
-#define ANY_AUDIO_EPSILON HISTORY_EPSILON
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
 #define IDLE_AUDIO_SECS 10
 
-#define MIN_POS_TO_MOVE_SERVO HISTORY_EPSILON
+#define STATS_MICROPHONE 0
+#define STATS_AUTO	 256
+#define MAX_STATS (256+1)
 
-static double history[N_HISTORY];
-static size_t history_i;
-static double sum_history;
-static bool history_full;
+typedef struct {
+    double history[N_HISTORY];
+    size_t history_i;
+    double sum_history;
+    bool history_full;
+    double gain;
+    double epsilon;
+} stats_t;
+
+typedef struct {
+    int stats_who;
+    unsigned char *buffer;
+} event_t;
+
+stats_t stats[MAX_STATS];
 
 static pthread_mutex_t speak_lock;
 static audio_t *out;
@@ -41,21 +54,24 @@ static talking_skull_t *skull;
 static unsigned any_audio;
 static time_t last_audio;
 
-static double gain = 10;
-
 static producer_consumer_t *pc;
 size_t size;
 
+/* Only used by the single threaded consumer thread */
+static int current_stats_who;
+
 static void
-update_history_and_gain(double pos)
+update_history_and_gain(stats_t *s, double pos)
 {
-    if (pos > HISTORY_EPSILON) {
-        sum_history = sum_history - history[history_i] + pos;
-        history[history_i] = pos;
-        history_i = (history_i + 1) % N_HISTORY;
-	if (history_i == 0) history_full = true;
-	if (history_full) {
-	    gain = GAIN_TARGET / (sum_history / N_HISTORY);
+    if (pos > s->epsilon) {
+        s->sum_history = s->sum_history - s->history[s->history_i] + pos;
+        s->history[s->history_i] = pos;
+        s->history_i = (s->history_i + 1) % N_HISTORY;
+	if (s->history_i == 0) {
+	    s->history_full = true;
+	}
+	if (s->history_full) {
+	    s->gain = GAIN_TARGET / (s->sum_history / N_HISTORY);
 	}
     }
 }
@@ -63,7 +79,9 @@ update_history_and_gain(double pos)
 static void
 update_any_audio_check(double pos)
 {
-    if (pos > ANY_AUDIO_EPSILON) {
+    stats_t *s = &stats[current_stats_who];
+
+    if (pos > s->epsilon) {
 	if (any_audio < MAX_ANY_AUDIO) any_audio++;
     } else {
 	if (any_audio > 0) any_audio--;
@@ -76,19 +94,20 @@ update_servo_and_eyes(double pos)
 {
     static int eyes = -1;
     int new_eyes;
+    stats_t *s = &stats[current_stats_who];
 
-    if (pos < MIN_POS_TO_MOVE_SERVO) {
+    if (pos < s->epsilon) {
 	pos = 0;
     }
 
-    pos *= gain;
+    pos *= s->gain;
     if (pos > 100) pos = 100;
     if (maestro) {
 	maestro_set_servo_pos(maestro, SERVO_ID, pos);
     } else {
 	static double last_pos = -1;
 	if (pos != last_pos) {
-	    printf("servo: %.0f\n", pos);
+	    printf("servo: %.2f %.0f\n", s->gain, pos);
 	    last_pos = pos;
 	}
     }
@@ -103,7 +122,9 @@ update_servo_and_eyes(double pos)
 static void
 servo_update(void *unused, double pos)
 {
-    update_history_and_gain(pos);
+    if (current_stats_who != STATS_AUTO) {
+	update_history_and_gain(&stats[current_stats_who], pos);
+    }
     update_any_audio_check(pos);
     update_servo_and_eyes(pos);
 }
@@ -118,13 +139,25 @@ play_one_buffer(void *buffer, size_t size)
     }
 }
 
+static void
+produce(producer_consumer_t *pc, int stats_who, unsigned char *buffer)
+{
+    event_t *e = fatal_malloc(sizeof(*e));
+
+    e->stats_who = stats_who;
+    e->buffer = buffer;
+
+    producer_consumer_produce(pc, e);
+}
+
 static char *
 remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t addr_size)
 {
     unsigned char *data;
     size_t i, j;
+    int ip = addr->sin_addr.s_addr>>24 % 256;
 
-fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
+fprintf(stderr, "remote: %d %.5s %d bytes\n", ip, command, strlen(command));
 
     if (strncmp(command, "play ", 5) != 0) {
 	return strdup("Invalid command");
@@ -159,7 +192,7 @@ fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
 	    }
 	}
 	if (j >= size) {
-	    producer_consumer_produce(pc, data);
+	    produce(pc, ip, data);
 	    data = fatal_malloc(size + 100);
 	    j = 0;
 	}
@@ -167,7 +200,7 @@ fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
 
     if (j > 0) {
 	while (j < size) data[j++] = 0;
-	producer_consumer_produce(pc, data);
+	produce(pc, ip, data);
     } else {
 	free(data);
     }
@@ -180,12 +213,14 @@ fprintf(stderr, "remote: %.5s %d bytes\n", command, strlen(command));
 static void *
 play_thread_main(void *unused)
 {
-    void *buffer;
     unsigned seq_unused;
+    event_t *e;
 
-    while ((buffer = producer_consumer_consume(pc, &seq_unused)) != NULL) {
-	play_one_buffer(buffer, size);
-	free(buffer);
+    while ((e = (event_t *) producer_consumer_consume(pc, &seq_unused)) != NULL) {
+	current_stats_who = e->stats_who;
+	play_one_buffer(e->buffer, size);
+	free(e->buffer);
+	free(e);
     }
 
     return NULL;
@@ -206,6 +241,7 @@ main(int argc, char **argv)
     size_t auto_play_bytes_left = 0;
     wav_t *auto_wav;
     int no_input = 0;
+    size_t i;
 
     if (argc > 1) {
 	if (strcmp(argv[1], "--no-input") == 0) {
@@ -279,10 +315,17 @@ main(int argc, char **argv)
 
     last_audio = time(NULL);
 
+    for (i = 0; i < MAX_STATS; i++) {
+	stats[i].gain = 1;
+	stats[i].epsilon = OTHER_HISTORY_EPSILON;
+    }
+    stats[STATS_MICROPHONE].gain = 10;
+    stats[STATS_MICROPHONE].epsilon = MICROPHONE_HISTORY_EPSILON;
+    stats[STATS_AUTO].gain = 3;
+
     while (no_input || audio_capture_buffer(in, buffer)) {
 	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS) {
 	    auto_play_buffer = wav_get_raw_data(auto_wav, &auto_play_bytes_left);
-	    gain = 3;
 	    while (auto_play_bytes_left > 0) {
 		size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
 		memcpy(buffer, auto_play_buffer, n);
@@ -290,7 +333,7 @@ main(int argc, char **argv)
 		auto_play_bytes_left -= n;
 
 		pthread_mutex_lock(&speak_lock);
-		producer_consumer_produce(pc, buffer);
+		produce(pc, STATS_AUTO, buffer);
 		pthread_mutex_unlock(&speak_lock);
 
 		buffer = fatal_malloc(size);
@@ -299,7 +342,7 @@ main(int argc, char **argv)
 	    sleep(1);
 	} else {
 	    pthread_mutex_lock(&speak_lock);
-	    producer_consumer_produce(pc, buffer);
+	    produce(pc, STATS_MICROPHONE, buffer);
 	    pthread_mutex_unlock(&speak_lock);
 	    buffer = fatal_malloc(size);
 	}
