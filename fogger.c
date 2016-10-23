@@ -84,7 +84,7 @@ return_duty(void)
 }
 
 static char *
-remote_event(void *unused, const char *command)
+remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t size)
 {
     if (strcmp(command, "duty_up") == 0) {
 	duty += DUTY_DELTA;

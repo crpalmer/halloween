@@ -35,7 +35,7 @@ do_prop_common_locked(unsigned station, unsigned pin)
 }
 
 static char *
-remote_event(void *unused, const char *command)
+remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t size)
 {
     unsigned station;
 

@@ -119,7 +119,7 @@ play_one_buffer(void *buffer, size_t size)
 }
 
 static char *
-remote_event(void *unused, const char *command)
+remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t addr_size)
 {
     unsigned char *data;
     size_t i, j;
