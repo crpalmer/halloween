@@ -86,7 +86,11 @@ update_servo_and_eyes(double pos)
     if (maestro) {
 	maestro_set_servo_pos(maestro, SERVO_ID, pos);
     } else {
-	printf("servo: %.0f\n", pos);
+	static double last_pos = -1;
+	if (pos != last_pos) {
+	    printf("servo: %.0f\n", pos);
+	    last_pos = pos;
+	}
     }
 
     new_eyes = (pos >= 50);
