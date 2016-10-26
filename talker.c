@@ -330,18 +330,19 @@ main(int argc, char **argv)
     while (no_input || audio_capture_buffer(in, buffer)) {
 	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS) {
 	    auto_play_buffer = wav_get_raw_data(auto_wav, &auto_play_bytes_left);
-	    while (auto_play_bytes_left > 0) {
-		size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
-		memcpy(buffer, auto_play_buffer, n);
-		auto_play_buffer += n;
-		auto_play_bytes_left -= n;
+	}
 
-		pthread_mutex_lock(&speak_lock);
-		produce(pc, STATS_AUTO, buffer);
-		pthread_mutex_unlock(&speak_lock);
+	if (auto_play_bytes_left) {
+	    size_t n = auto_play_bytes_left > size ? size : auto_play_bytes_left;
+	    memcpy(buffer, auto_play_buffer, n);
+	    auto_play_buffer += n;
+	    auto_play_bytes_left -= n;
 
-		buffer = fatal_malloc(size);
-	    }
+	    pthread_mutex_lock(&speak_lock);
+	    produce(pc, STATS_AUTO, buffer);
+	    pthread_mutex_unlock(&speak_lock);
+
+	    buffer = fatal_malloc(size);
 	} else if (no_input) {
 	    sleep(1);
 	} else {
