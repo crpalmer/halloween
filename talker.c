@@ -259,7 +259,7 @@ main(int argc, char **argv)
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
         maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
-	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL2);
+	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL);
     }
 
     if ((auto_wav = wav_new("chant1.wav")) == NULL) {
