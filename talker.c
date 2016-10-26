@@ -25,7 +25,7 @@ static maestro_t *maestro;
 
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
-#define IDLE_AUDIO_SECS 10
+#define IDLE_AUDIO_SECS 1*1000*1000*1000
 
 #define STATS_MICROPHONE 0
 #define STATS_AUTO	 256
