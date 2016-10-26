@@ -21,7 +21,8 @@ static maestro_t *maestro;
 #define MICROPHONE_HISTORY_EPSILON 5
 #define OTHER_HISTORY_EPSILON 0
 #define N_HISTORY 20
-#define GAIN_TARGET 75
+#define MICROPHONE_GAIN_TARGET 75
+#define OTHER_GAIN_TARGET 50
 
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
@@ -37,6 +38,7 @@ typedef struct {
     double sum_history;
     bool history_full;
     double gain;
+    double gain_target;
     double epsilon;
 } stats_t;
 
@@ -71,7 +73,7 @@ update_history_and_gain(stats_t *s, double pos)
 	    s->history_full = true;
 	}
 	if (s->history_full) {
-	    s->gain = GAIN_TARGET / (s->sum_history / N_HISTORY);
+	    s->gain = s->gain_target / (s->sum_history / N_HISTORY);
 	}
     }
 }
@@ -317,9 +319,11 @@ main(int argc, char **argv)
 
     for (i = 0; i < MAX_STATS; i++) {
 	stats[i].gain = 1;
+	stats[i].gain_target = OTHER_GAIN_TARGET;
 	stats[i].epsilon = OTHER_HISTORY_EPSILON;
     }
     stats[STATS_MICROPHONE].gain = 10;
+    stats[STATS_MICROPHONE].gain_target = MICROPHONE_GAIN_TARGET;
     stats[STATS_MICROPHONE].epsilon = MICROPHONE_HISTORY_EPSILON;
     stats[STATS_AUTO].gain = 3;
 
