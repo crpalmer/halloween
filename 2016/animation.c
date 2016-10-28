@@ -21,7 +21,7 @@
 #define MERMAID_PIN	2, 7
 #define FOGGER_PIN	2, 8
 
-static pthread_mutex_t station_lock, eel_lock;
+static pthread_mutex_t station_lock, mermaid_lock;
 static track_t *laugh;
 static stop_t *stop;
 
@@ -83,13 +83,19 @@ static action_t main_actions[] = {
     { GATER,	do_gater,	NULL },
     { FROG,     do_frog,	NULL },
     { QUESTION, do_question,	NULL },
-    { MERMAID,	do_mermaid,	NULL },
+    { MERMAID,	do_mermaid,	NULL },		/* TODO */
     { SNAKE,	do_snake,	NULL },
+    { NULL,	NULL,		NULL },
+};
+
+static action_t mermaid_actions[] = {
+    { MERMAID,	do_mermaid,	NULL },
     { NULL,	NULL,		NULL },
 };
 
 static station_t stations[] = {
     { main_actions, &station_lock },
+    { mermaid_actions, &mermaid_lock },
     { NULL, NULL },
 };
 
@@ -97,7 +103,7 @@ int
 main(int argc, char **argv)
 {
     pthread_mutex_init(&station_lock, NULL);
-    pthread_mutex_init(&eel_lock, NULL);
+    pthread_mutex_init(&mermaid_lock, NULL);
 
     if ((laugh = track_new("laugh.wav")) == NULL) {
 	perror("laugh.wav");
