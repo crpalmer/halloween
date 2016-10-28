@@ -17,9 +17,9 @@
 #define SNAKE       "snake"
 #define QUESTION    "question"
 
-#define SNAKE_PIN	2, 6
+#define SNAKE_PIN	2, 8
 #define MERMAID_PIN	2, 7
-#define FOGGER_PIN	2, 8
+#define FOGGER_PIN	1, 8
 
 static pthread_mutex_t station_lock, mermaid_lock;
 static track_t *laugh;
@@ -51,7 +51,7 @@ do_question(void *unused, lights_t *l, unsigned pin)
 static void
 do_gater(void *unused, lights_t *l, unsigned pin)
 {
-    do_attack(pin, l, 1, 1);
+    do_attack(pin, l, 1, 1.5);
 }
 
 static void
@@ -76,15 +76,16 @@ do_mermaid(void *unused, lights_t *l, unsigned pin)
     wb_set(MERMAID_PIN, 1);
     ms_sleep(2000);
     wb_set(MERMAID_PIN, 0);
+    ms_sleep(1000);
     wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
 }
 
 static action_t main_actions[] = {
-    { GATER,	do_gater,	NULL },
+    { SNAKE,	do_snake,	NULL },
     { FROG,     do_frog,	NULL },
     { QUESTION, do_question,	NULL },
-    { MERMAID,	do_mermaid,	NULL },		/* TODO */
-    { SNAKE,	do_snake,	NULL },
+    { GATER,	do_gater,	NULL },
+    { "???",	do_frog,	NULL },		/* TODO */
     { NULL,	NULL,		NULL },
 };
 
