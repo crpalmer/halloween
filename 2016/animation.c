@@ -10,29 +10,18 @@
 #include "animation-common.h"
 #include "animation-lights.h"
 
-#define OCTO        "octo"
-#define SQUID       "squid"
-#define DIVER       "diver"
-#define CUDA        "cuda"
+#define MERMAID     "mermaid"
+#define GATER       "gater"
+#define FROG        "frog"
+#define SNAKE       "snake"
 #define QUESTION    "question"
-#define EEL	    "eel"
 
-#define CUDA_MS	        1000
-#define DIVER_MS	2000
+#define SNAKE_PIN	2, 6
+#define MERMAID_PIN	2, 7
 
 static pthread_mutex_t station_lock, eel_lock;
 static track_t *laugh;
 static stop_t *stop;
-
-static void
-do_popup(void *ms_as_vp, lights_t *l, unsigned pin)
-{
-    unsigned ms = (unsigned) ms_as_vp;
-
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
-    ms_sleep(ms);
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
-}
 
 static void
 do_attack(unsigned pin, lights_t *l, double up, double down)
@@ -58,40 +47,47 @@ do_question(void *unused, lights_t *l, unsigned pin)
 }
 
 static void
-do_squid(void *unused, lights_t *l, unsigned pin)
-{
-    do_attack(pin, l, 1, 1.75);
-}
-
-static void
-do_octo(void *unused, lights_t *l, unsigned pin)
+do_gater(void *unused, lights_t *l, unsigned pin)
 {
     do_attack(pin, l, 1, 1);
 }
 
 static void
-do_eel(void *unused, lights_t *l, unsigned pin)
+do_frog(void *unused, lights_t *l, unsigned pin)
 {
+    do_attack(pin, l, 1, 1);
+}
+
+static void
+do_snake(void *unused, lights_t *l, unsigned pin)
+{
+    wb_set(SNAKE_PIN, 1);
     do_attack(pin, l, 1, 3);
+    wb_set(SNAKE_PIN, 0);
+}
+
+static void
+do_mermaid(void *unused, lights_t *l, unsigned pin)
+{
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    ms_sleep(200);
+    wb_set(MERMAID_PIN, 1);
+    ms_sleep(2000);
+    wb_set(MERMAID_PIN, 0);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
 }
 
 static action_t main_actions[] = {
-    { SQUID,	do_squid,	NULL },
-    { CUDA,	do_popup,	(void *) CUDA_MS },
+    { GATER,	do_gater,	NULL },
+    { FROG,     do_frog,	NULL },
     { QUESTION, do_question,	NULL },
-    { DIVER,	do_popup,	(void *) DIVER_MS },
-    { OCTO,	do_octo,	NULL },
-    { NULL,	NULL,		NULL },
-};
-
-static action_t eel_actions[] = {
-    { EEL,	do_eel,		NULL },
+    { MERMAID,	do_mermaid,	NULL },
+    { SNAKE,	do_snake,	NULL },
     { NULL,	NULL,		NULL },
 };
 
 static station_t stations[] = {
     { main_actions, &station_lock },
-    { eel_actions, &eel_lock },
     { NULL, NULL },
 };
 
