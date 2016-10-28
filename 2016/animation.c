@@ -9,6 +9,7 @@
 #include "animation-actions.h"
 #include "animation-common.h"
 #include "animation-lights.h"
+#include "fogger.h"
 
 #define MERMAID     "mermaid"
 #define GATER       "gater"
@@ -18,6 +19,7 @@
 
 #define SNAKE_PIN	2, 6
 #define MERMAID_PIN	2, 7
+#define FOGGER_PIN	2, 8
 
 static pthread_mutex_t station_lock, eel_lock;
 static track_t *laugh;
@@ -104,6 +106,7 @@ main(int argc, char **argv)
 
     stop = stop_new();
 
+    fogger_run_in_background(FOGGER_PIN);
     animation_main(stations);
 
     return 0;

@@ -4,23 +4,27 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
-#include "piface.h"
 #include "server.h"
 #include "track.h"
 #include "util.h"
+#include "wb.h"
+
+#include "fogger.h"
 
 #define DUTY_FILENAME "fogger.duty"
 #define DEFAULT_DUTY_CYCLE .10
 #define DUTY_DELTA 0.01
 #define FOG_BURST_MS	5000
 
-#define FOG_OUTPUT	7
 #define OFF_DELAY	5000
 
-static piface_t *p;
 static double duty = .10;
 static pthread_mutex_t lock;
 static pthread_mutex_t fog_lock;
+static pthread_t fogger;
+
+static unsigned fogger_bank, fogger_pin;
+
 
 static double
 read_duty_cycle(void)
@@ -65,10 +69,10 @@ do_fog(unsigned ms)
     if (ms == 0) return;
 
     pthread_mutex_lock(&lock);
-    piface_set(p, FOG_OUTPUT, 1);
+    wb_set(fogger_bank, fogger_pin, 1);
     fprintf(stderr, "sleeping for ON\n");
     ms_sleep(ms);
-    piface_set(p, FOG_OUTPUT, 0);
+    wb_set(fogger_bank, fogger_pin, 0);
     fprintf(stderr, "sleeping for OFF_DELAY\n");
     ms_sleep(OFF_DELAY);
     pthread_mutex_unlock(&lock);
@@ -109,19 +113,18 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
     return strdup("ok");
 }
 
-int
-main(int argc, char **argv)
+static void *
+fogger_main(void *unused)
 {
     server_args_t server_args;
     pthread_t server_thread;
 
-    p = piface_new();
     duty = read_duty_cycle();
 
     pthread_mutex_init(&lock, NULL);
     pthread_mutex_init(&fog_lock, NULL);
 
-    server_args.port = 5555;
+    server_args.port = 5556;
     server_args.command = remote_event;
     server_args.state = NULL;
 
@@ -133,5 +136,14 @@ main(int argc, char **argv)
 	do_fog(5000 * duty);
     }
 
-    return 0;
+    return NULL;
+}
+
+void
+fogger_run_in_background(unsigned bank, unsigned pin)
+{
+    fogger_bank = bank;
+    fogger_pin = pin;
+
+    pthread_create(&fogger, NULL, fogger_main, NULL);
 }
