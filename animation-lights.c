@@ -96,6 +96,7 @@ lights_new(unsigned min_pin, unsigned max_pin)
     l->action = LIGHTS_NONE;
     l->min_pin = min_pin;
     l->max_pin = max_pin;
+    l->blink_pin = -1;
 
     pthread_mutex_init(&l->lock, NULL);
     pthread_cond_init(&l->cond, NULL);
