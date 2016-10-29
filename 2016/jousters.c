@@ -10,19 +10,19 @@
 
 #define HOME_1_PIN  5
 #define WIN_1_PIN   6
-#define HOME_2_PIN  7
-#define WIN_2_PIN   8
+#define HOME_2_PIN  3
+#define WIN_2_PIN   4
 
 #define WINNER_LIGHT_1 3
 #define WINNER_LIGHT_2 4
 
 #define MOTOR_BANK 1
 
-#define WIN_MAX_MS		4000
+#define WIN_MAX_MS		5000
 #define RETURN_TO_START_MAX_MS 12000
 
-#define REVERSE_DUTY 0.40
-#define TROT_DUTY 0.30
+#define REVERSE_DUTY 0.60
+#define TROT_DUTY 0.40
 
 #define TROT_MS		2000
 #define REVERSE_MS	7500
@@ -32,8 +32,8 @@ static stop_t *pick_stop;
 static track_t *pick, *winner, *loser;
 static track_t *jousting, *crash, *beeping;
 
-static int motor_pwm[2] = { 5, 7 };
-static int motor_dir[2] = { 6, 8 };
+static int motor_pwm[2] = { 7, 5 };
+static int motor_dir[2] = { 8, 6 };
 
 static enum { START_WAITING, CONTINUE_WAITING } waiting_state = START_WAITING;
 
@@ -81,7 +81,7 @@ wait_until_start_position(void)
 
 	max_ms -= nano_elapsed_ms(&now, &start_waiting);
 
-        pin = wb_wait_for_pin_timeout(HOME_1_PIN, 0, max_ms);
+        pin = wb_wait_for_pins_timeout(pin_mask, 0, max_ms);
 
 	if (pin) {
 	    pin_mask &= ~WB_PIN_MASK(pin);
@@ -215,12 +215,15 @@ main(int argc, char **argv)
 
     wb_set_pull_up(HOME_1_PIN, WB_PULL_UP_UP);
     wb_set_pull_up(WIN_1_PIN, WB_PULL_UP_UP);
+    wb_set_pull_up(HOME_2_PIN, WB_PULL_UP_UP);
+    wb_set_pull_up(WIN_2_PIN, WB_PULL_UP_UP);
 
     motor_forward(0, 0.5);
     motor_forward(1, 0.5);
     ms_sleep(1000);
     motor_stop(0);
     motor_stop(1);
+    ms_sleep(500);
     go_to_start_position();
 
     animation_main(stations);
