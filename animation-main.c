@@ -26,6 +26,7 @@ static unsigned current_pin[MAX_STATIONS];
 static struct timespec start_waiting[MAX_STATIONS];
 
 static station_t *stations;
+static unsigned pin_mask = 0;
 
 static void
 do_prop_common_locked(unsigned station, unsigned pin)
@@ -154,6 +155,7 @@ init_stations(void)
 	for (j = 0; stations[i].actions[j].action; j++) {
 	    wb_mask[i] |= WB_PIN_MASK(pin0 + j);
 	}
+	pin_mask |= wb_mask[i];
 	min_pin[i] = pin0;
 	max_pin[i] = pin0 + j-1;
 	lights[i] = lights_new(min_pin[i], max_pin[i]);
@@ -199,7 +201,7 @@ animation_main(station_t *stations_)
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     while (true) {
-	unsigned pin = wb_wait_for_pins(WB_PIN_MASK_ALL, WB_PIN_MASK_ALL);
+	unsigned pin = wb_wait_for_pins(pin_mask, pin_mask);
 	unsigned station;
 
 	for (station = 0; station < MAX_STATIONS; station++) {
