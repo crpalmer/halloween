@@ -190,8 +190,6 @@ static station_t stations[] = {
 int
 main(int argc, char **argv)
 {
-    audio_device_t second_audio_dev;
-
     if (wb_init() < 0) {
 	fprintf(stderr, "Failed to initialize wb\n");
 	exit(1);
@@ -203,11 +201,9 @@ main(int argc, char **argv)
     pick_stop = stop_new();
     stop_stopped(pick_stop);
 
-    audio_device_init(&second_audio_dev, 1, 0, true);
-
-    pick = track_new_audio_dev_fatal("jousters_push.wav", &second_audio_dev);
-    winner = track_new_audio_dev_fatal("jousters_winner.wav", &second_audio_dev);
-    loser = track_new_audio_dev_fatal("jousters_loser.wav", &second_audio_dev);
+    pick = track_new_fatal("jousters_push.wav");
+    winner = track_new_fatal("jousters_winner.wav");
+    loser = track_new_fatal("jousters_loser.wav");
 
     jousting = track_new_fatal("jousters_jousting.wav");
     crash = track_new_fatal("jousters_crash.wav");
