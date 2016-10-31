@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include "maestro.h"
 #include "pi-usb.h"
+#include "time-utils.h"
 #include "track.h"
 #include "util.h"
 #include "wb.h"
@@ -18,12 +19,14 @@
 
 #define PAUSE_MS		1000
 #define ANVIL_DROP_MS		1500
-#define SAVE_ME_MS		20000
+#define SAVE_ME_MS		29000
+#define SAVE_ME_REPEAT_MS	14000
 
 static maestro_t *m;
 static track_t *save_me_track, *save_you_track, *attack_track, *shake_track, *mean_track;
 static stop_t *save_me_stop;
 static pthread_mutex_t lock;
+static struct timespec last_save_me;
 
 void
 shake_head(void)
@@ -56,8 +59,16 @@ retract_anvil(void)
 static void
 action(void *unused, lights_t *l, unsigned pin)
 {
+    struct timespec now;
+
+    lights_off(l);
     stop_stop(save_me_stop);
-    track_play(save_me_track);
+
+    nano_gettime(&now);
+    if (nano_elapsed_ms(&now, &last_save_me) > SAVE_ME_REPEAT_MS) {
+	track_play(save_me_track);
+    }
+
     ms_sleep(PAUSE_MS);
     track_play(save_you_track);
     ms_sleep(PAUSE_MS);
@@ -75,6 +86,7 @@ static void
 play_save_me(unsigned ms_unused)
 {
     track_play_asynchronously(save_me_track, save_me_stop);
+    nano_gettime(&last_save_me);
 }
 
 static action_t actions[] = {
