@@ -18,12 +18,14 @@
 
 #define PAUSE_MS		1000
 #define ANVIL_DROP_MS		1500
-#define SAVE_ME_MS		20000
+#define SAVE_ME_MS		5000
+#define SAVE_ME_COUNTDOWN	4
 
 static maestro_t *m;
 static track_t *save_me_track, *save_you_track, *attack_track, *shake_track, *mean_track;
 static stop_t *save_me_stop;
 static pthread_mutex_t lock;
+static int save_me_countdown = 0;
 
 void
 shake_head(void)
@@ -66,12 +68,16 @@ action(void *unused, lights_t *l, unsigned pin)
     track_play(mean_track);
     ms_sleep(PAUSE_MS);
     retract_anvil();
+    save_me_countdown = 0;
 }
 
 static void
 play_save_me(unsigned ms_unused)
 {
-    track_play_asynchronously(save_me_track, save_me_stop);
+    if (--save_me_countdown < 0) {
+        track_play_asynchronously(save_me_track, save_me_stop);
+	save_me_countdown = SAVE_ME_COUNTDOWN;
+    }
 }
 
 static action_t actions[] = {
