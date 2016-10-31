@@ -40,6 +40,7 @@ shake_head(void)
 	maestro_set_servo_pos(m, PRINCE_SERVO, 100);
 	ms_sleep(200);
     }
+    maestro_set_servo_pos(m, PRINCE_SERVO, 0);
 }
 
 static void
