@@ -4,6 +4,7 @@ PROPS = \
 	animation \
 	band \
 	jousters \
+	princess
 
 all: $(PROPS)
 
@@ -21,6 +22,9 @@ band: band.o $(DEP_LIBS)
 
 jousters: jousters.o $(DEP_LIBS)
 	$(CC) -o $@ jousters.o $(LIBS)
+
+princess: princess.o $(DEP_LIBS)
+	$(CC) -o $@ princess.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
