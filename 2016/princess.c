@@ -59,6 +59,8 @@ static void
 action(void *unused, lights_t *l, unsigned pin)
 {
     stop_stop(save_me_stop);
+    track_play(save_me_track);
+    ms_sleep(PAUSE_MS);
     track_play(save_you_track);
     ms_sleep(PAUSE_MS);
     track_play(attack_track);
