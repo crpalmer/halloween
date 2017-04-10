@@ -1,7 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
-	107
+	107-band 107-talker
 
 all: $(PROPS)
 
@@ -11,8 +11,11 @@ all: $(PROPS)
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
-107: 107.o $(DEP_LIBS)
-	$(CC) -o $@ 107.o $(LIBS)
+107-band: 107-band.o 107-utils.o $(DEP_LIBS)
+	$(CC) -o $@ 107-band.o 107-utils.o $(LIBS)
+
+107-talker: 107-talker.o 107-utils.o $(DEP_LIBS)
+	$(CC) -o $@ 107-talker.o 107-utils.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "maestro.h"
 #include "pi-usb.h"
 #include "talking-skull.h"
@@ -7,6 +8,7 @@
 #include "track.h"
 #include "util.h"
 #include "wb.h"
+#include "107-utils.h"
 
 #define BANJO_SERVO 0
 #define BANJO_PCT_LOW	40
@@ -120,6 +122,8 @@ main(int argc, char **argv)
     pi_usb_init();
     wb_init();
 
+    room_107_die_thread(0);
+
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize servo controller\n");
 	exit(1);
@@ -137,7 +141,7 @@ main(int argc, char **argv)
 
     printf("Starting.\n");
 
-    while (1) {
+    while (true) {
 	banjo_rest();
 	singer_rest();
 
