@@ -1,7 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
-	107-band 107-talker
+	sparky
 
 all: $(PROPS)
 
@@ -10,6 +10,11 @@ all: $(PROPS)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+
+sparky: sparky.o $(DEP_LIBS)
+	$(CC) -o $@ sparky.o $(LIBS)
+
+# James class demo
 
 107-band: 107-band.o 107-utils.o $(DEP_LIBS)
 	$(CC) -o $@ 107-band.o 107-utils.o $(LIBS)
