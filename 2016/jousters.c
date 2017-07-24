@@ -183,7 +183,7 @@ static action_t actions[] = {
 };
 
 static station_t stations[] = {
-    { actions, &lock, waiting_for_button, 1000 },
+    { true, actions, &lock, waiting_for_button, 1000 },
     { NULL, NULL }
 };
 

@@ -95,8 +95,8 @@ static action_t mermaid_actions[] = {
 };
 
 static station_t stations[] = {
-    { main_actions, &station_lock },
-    { mermaid_actions, &mermaid_lock },
+    { true, main_actions, &station_lock },
+    { true, mermaid_actions, &mermaid_lock },
     { NULL, NULL },
 };
 

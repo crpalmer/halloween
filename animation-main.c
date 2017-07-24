@@ -31,8 +31,9 @@ static unsigned pin_mask = 0;
 static void
 do_prop_common_locked(unsigned station, unsigned pin)
 {
-    lights_select(lights[station], pin); stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
-    lights_chase(lights[station]);
+    if (lights[station]) lights_select(lights[station], pin);
+    stations[station].actions[pin].action(stations[station].actions[pin].action_data, lights[station], pin + min_pin[station]);
+    if (lights[station]) lights_chase(lights[station]);
 }
 
 static char *
@@ -74,7 +75,7 @@ station_main(void *station_as_vp)
     lights_t         *l   = lights[station];
     station_t       *s    = &stations[station];
 
-    lights_chase(l);
+    if (l) lights_chase(l);
     nano_gettime(&start_waiting[station]);
     last_notify = start_waiting[station];
 
@@ -92,7 +93,7 @@ station_main(void *station_as_vp)
 		nano_gettime(&now);
 		if (nano_later_than(&now, &wait_until)) {
 		    state = READY;
-		    lights_chase(l);
+		    if (l) lights_chase(l);
 		    nano_gettime(&start_waiting[station]);
 		    last_notify = start_waiting[station];
 		} else if (current_pin[station] != -1) {
@@ -128,11 +129,11 @@ station_main(void *station_as_vp)
 
 
 	if (state == READY) {
-	    lights_select(l, pin);
+	    if (l) lights_select(l, pin);
 	    pthread_mutex_lock(prop_lock);
 	    do_prop_common_locked(station, pin);
 	    pthread_mutex_unlock(prop_lock);
-	    lights_off(l);
+	    if (l) lights_off(l);
 	    state = LOCKOUT;
 	    nano_gettime(&last_button);
 	}
@@ -158,7 +159,11 @@ init_stations(void)
 	pin_mask |= wb_mask[i];
 	min_pin[i] = pin0;
 	max_pin[i] = pin0 + j-1;
-	lights[i] = lights_new(min_pin[i], max_pin[i]);
+	if (stations[i].has_lights) {
+	    lights[i] = lights_new(min_pin[i], max_pin[i]);
+	} else {
+	     lights[i] = NULL;
+	}
 
 	pin0 += max_pin[i];
 	current_pin[i] = -1;

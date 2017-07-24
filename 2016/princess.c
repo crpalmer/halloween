@@ -95,7 +95,7 @@ static action_t actions[] = {
 };
 
 static station_t station[] = {
-    { actions, &lock, play_save_me, SAVE_ME_MS},
+    { true, actions, &lock, play_save_me, SAVE_ME_MS},
     { 0, }
 };
 

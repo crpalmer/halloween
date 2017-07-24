@@ -1,6 +1,8 @@
 #ifndef __ANIMATION_ACTIONS_H__
 #define __ANIMATION_ACTIONS_H__
 
+#include <stdbool.h>
+
 #include "animation-lights.h"
 
 typedef void (*action_fn_t)(void *action_data, lights_t *l, unsigned pin);
@@ -13,6 +15,7 @@ typedef struct {
 } action_t;
 
 typedef struct {
+    bool has_lights;
     action_t *actions;
     pthread_mutex_t *lock;
     waiting_fn_t waiting;
