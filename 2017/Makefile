@@ -1,6 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
+	fortune-fish \
 	sparky
 
 all: $(PROPS)
@@ -10,6 +11,9 @@ all: $(PROPS)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+
+fortune-fish: fortune-fish.o $(DEP_LIBS)
+	$(CC) -o $@ fortune-fish.o $(LIBS)
 
 sparky: sparky.o $(DEP_LIBS)
 	$(CC) -o $@ sparky.o $(LIBS)
