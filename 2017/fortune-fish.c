@@ -9,9 +9,49 @@
 
 #define HAND_PIN  1
 
+#define FLASHING_LIGHTS_MASK 0x0f1f
+#define FLASHING_LIGHTS_MIN_MS 2000
+#define FLASHING_LIGHTS_MAX_MS 3500
+
+#define FLASHING_LIGHTS_FLASH_MIN_MS 100
+#define FLASHING_LIGHTS_FLASH_MAX_MS 150
+
+#define NUM_BLINKS	5
+
+static void flash_lights(int ms)
+{
+    int blink;
+
+    fprintf(stderr, "  Flashing lights %d ms\n", ms);
+
+    while (ms > 0) {
+	unsigned sleep_ms = random_number_in_range(FLASHING_LIGHTS_FLASH_MIN_MS, FLASHING_LIGHTS_FLASH_MAX_MS);
+	unsigned state = random_number_in_range(0, FLASHING_LIGHTS_MASK);
+
+	wb_set_outputs(FLASHING_LIGHTS_MASK, state);
+	ms_sleep(sleep_ms);
+	ms -= sleep_ms;
+    }
+    for (blink = 0; blink <= NUM_BLINKS; blink++) {
+	wb_set_outputs(FLASHING_LIGHTS_MASK, FLASHING_LIGHTS_MASK);
+	if (blink < NUM_BLINKS) {
+	    ms_sleep(random_number_in_range(FLASHING_LIGHTS_FLASH_MAX_MS, FLASHING_LIGHTS_FLASH_MAX_MS*2));
+	    wb_set_outputs(FLASHING_LIGHTS_MASK, 0);
+	    ms_sleep(random_number_in_range(FLASHING_LIGHTS_FLASH_MAX_MS, FLASHING_LIGHTS_FLASH_MAX_MS*2));
+	}
+    }
+}
+
 static void fortune(void *unused, lights_t *l, unsigned pin)
 {
     fprintf(stderr, "Fortune time!\n");
+
+    flash_lights(random_number_in_range(FLASHING_LIGHTS_MIN_MS, FLASHING_LIGHTS_MAX_MS));
+
+    ms_sleep(2000);
+
+    fprintf(stderr, "  Done.\n");
+    wb_set_outputs(FLASHING_LIGHTS_MASK, 0);
 }
 
 static void waiting_for_button(unsigned ms)
