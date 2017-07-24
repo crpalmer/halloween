@@ -18,6 +18,17 @@
 
 #define NUM_BLINKS	5
 
+static const struct {
+    int bank, pin;
+} chase_map[] = {
+    {1, 1}, {1, 2}, {1, 3}, {1, 4},
+    {1, 5},
+    {2, 4}, {2, 3}, {2, 2}, {2, 1}
+};
+static const int n_chase_map = sizeof(chase_map) / sizeof(chase_map[0]);
+
+static int chase_i;
+
 static void flash_lights(int ms)
 {
     int blink;
@@ -52,10 +63,18 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
 
     fprintf(stderr, "  Done.\n");
     wb_set_outputs(FLASHING_LIGHTS_MASK, 0);
+
+    chase_i = 0;
 }
 
 static void waiting_for_button(unsigned ms)
 {
+    int last = chase_i ? chase_i - 1 : n_chase_map-1;
+
+    wb_set(chase_map[last].bank, chase_map[last].pin, 0);
+    wb_set(chase_map[chase_i].bank, chase_map[chase_i].pin, 1);
+
+    chase_i = (chase_i + 1) % n_chase_map;
 }
 
 static pthread_mutex_t lock;
@@ -66,7 +85,7 @@ static action_t actions[] = {
 };
 
 static station_t stations[] = {
-    { actions, &lock, waiting_for_button, 1000 },
+    { false, actions, &lock, waiting_for_button, 500 },
     { NULL, NULL }
 };
 
