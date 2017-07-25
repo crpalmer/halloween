@@ -5,6 +5,7 @@
 #include "animation-common.h"
 #include "maestro.h"
 #include "pi-usb.h"
+#include "talker-auto-gain.h"
 #include "talking-skull.h"
 #include "track.h"
 #include "util.h"
@@ -32,12 +33,20 @@ static const struct {
 };
 static const int n_chase_map = sizeof(chase_map) / sizeof(chase_map[0]);
 
-static struct {
+typedef struct {
     const char            *fname;
     talking_skull_actor_t *actor;
     track_t	          *track;
-} fortunes[] = {
+    talker_auto_gain_t    *auto_gain;
+} fortune_t;
+
+static fortune_t fortunes[] = {
     { "fortune-placeholder.wav" },
+    { "laugh.wav" },
+    { "prince-youre-so-mean.wav" },
+    { "wares-666.wav" },
+    { "wares-critters.wav" },
+    { "wares-eat-children.wav" },
 };
 static const int n_fortunes = sizeof(fortunes) / sizeof(fortunes[0]);
 
@@ -45,6 +54,7 @@ static int chase_i;
 static track_t *cogs;
 static stop_t *cogs_stop;
 static maestro_t *m;
+static int last_fortune = -1, second_last_fortune = -1;
 
 static void flash_lights(int ms)
 {
@@ -78,6 +88,8 @@ static void blink_lights(void)
 
 static void fortune(void *unused, lights_t *l, unsigned pin)
 {
+    int fortune;
+
     fprintf(stderr, "Fortune time!\n");
 
     stop_reset(cogs_stop);
@@ -88,8 +100,17 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
     stop_stop(cogs_stop);
     ms_sleep(1000);
 
-    talking_skull_actor_play(fortunes[0].actor);
-    track_play(fortunes[0].track);
+    do {
+	fortune = random_number_in_range(0, n_fortunes-1);
+    } while (fortune == last_fortune || fortune == second_last_fortune);
+
+    fprintf(stderr, "  picked fortune %d (last %d %d)\n", fortune, last_fortune, second_last_fortune);
+
+    second_last_fortune = last_fortune;
+    last_fortune = fortune;
+
+    talking_skull_actor_play(fortunes[fortune].actor);
+    track_play(fortunes[fortune].track);
 
     ms_sleep(2000);
 
@@ -109,17 +130,13 @@ static void waiting_for_button(unsigned ms)
     chase_i = (chase_i + 1) % n_chase_map;
 }
 
-static void update_servo(void *unused, double pos)
+static void update_servo(void *fortune_as_vp, double pos)
 {
+    fortune_t *fortune = (fortune_t *) fortune_as_vp;
     static int eyes = -1;
     int new_eyes = pos > 30;
-static double last_pos = -1;
-double fabs(double);
 
-if (fabs(last_pos - pos) >= 1) {
-fprintf(stderr, "    servo %.0f eyes %d\n", pos, new_eyes);
-last_pos = pos;
-}
+    pos = talker_auto_gain_add(fortune->auto_gain, pos);
 
     maestro_set_servo_pos(m, SERVO, pos);
     if (eyes != new_eyes) {
@@ -138,7 +155,8 @@ static void prepare_audio(void)
     cogs_stop = stop_new();
     for (i = 0; i < n_fortunes; i++) {
 	fortunes[i].track = track_new(fortunes[i].fname);
-	fortunes[i].actor = talking_skull_actor_new(fortunes[i].fname, update_servo, NULL);
+	fortunes[i].actor = talking_skull_actor_new(fortunes[i].fname, update_servo, &fortunes[i]);
+	fortunes[i].auto_gain = talker_auto_gain_new(75, 5, 5000);
     }
 }
 
@@ -157,6 +175,8 @@ static station_t stations[] = {
 int
 main(int argc, char **argv)
 {
+    seed_random();
+
     if (wb_init() < 0) {
 	fprintf(stderr, "Failed to initialize wb\n");
 	exit(1);
