@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "maestro.h"
 #include "pi-usb.h"
 #include "util.h"
+#include "talking-skull.h"
 #include "time-utils.h"
 #include "track.h"
+#include "wb.h"
 
 #if 0
 #define INTER_LOW   5000
@@ -18,6 +21,9 @@
 #define HEAD_ID		1
 #define TAIL_ID		2
 
+#define LEFT_EYE	2,5
+#define RIGHT_EYE	2,6
+
 typedef struct {
     unsigned speed_ms;
     double delta_pct;
@@ -29,17 +35,32 @@ typedef struct {
 } action_t;
 
 static action_t actions[] = {
-    { {  800, 25.0 }, {  640,  4.4 }, "baxter/growl.wav" },
-    { { 4000, 50.0 }, { 1000,  2.8 }, "baxter/howl.wav" },
-    { {  400, 35.0 }, {  400, 11.1 }, "baxter/bark.wav" },
-    { {  600, 40.0 }, {  500, 27.8 }, "baxter/happy.wav" },
-    { {  200, 15.0 }, {  280,  3.9 }, "baxter/whine.wav" }
+    { {  800, 25.0 }, {  640,  4.4 }, "baxter/growl" },
+    { { 4000, 50.0 }, { 1000,  2.8 }, "baxter/howl" },
+    { {  400, 35.0 }, {  400, 11.1 }, "baxter/bark" },
+    { {  600, 40.0 }, {  500, 27.8 }, "baxter/happy" },
+    { {  200, 15.0 }, {  280,  3.9 }, "baxter/whine" }
 };
 
 #define N_ACTIONS (sizeof(actions) / sizeof(actions[0]))
 
 static track_t *tracks[N_ACTIONS];
+static talking_skull_actor_t *actors[N_ACTIONS];
 static maestro_t *m;
+
+static void
+update_mouth(void *unused, double pos)
+{
+    static int eyes = -1;
+    int new_eyes = pos >= 50;
+
+    maestro_set_servo_pos(m, MOUTH_ID, pos);
+    if (eyes != new_eyes) {
+        wb_set(LEFT_EYE, new_eyes);
+        wb_set(RIGHT_EYE, new_eyes);
+        eyes = new_eyes;
+    }
+}
 
 static void
 load_tracks(void)
@@ -47,9 +68,17 @@ load_tracks(void)
     size_t i;
 
     for (i = 0; i < N_ACTIONS; i++) {
-	tracks[i] = track_new(actions[i].wav_fname);
+	char fname[strlen(actions[i].wav_fname) + 100];
+	sprintf(fname, "%s.wav", actions[i].wav_fname);
+	tracks[i] = track_new(fname);
 	if (! tracks[i]) {
-	    perror(actions[i].wav_fname);
+	    perror(fname);
+	    exit(1);
+	}
+	sprintf(fname, "%s-servo.wav", actions[i].wav_fname);
+	actors[i] = talking_skull_actor_new(fname, update_mouth, NULL);
+	if (! actors[i]) {
+	    perror(fname);
 	    exit(1);
 	}
     }
@@ -83,12 +112,10 @@ play_track(action_t *a, stop_t *stop)
 	if (nano_later_than(&now, &head_at)) {
 	    head_left = !head_left;
 	    maestro_set_servo_pos(m, HEAD_ID, 50 + (-1*head_left)*a->head.delta_pct);
-	    printf("Move head to %s\n", head_left ? "left" : "right");
 	    nano_add_ms(&head_at, a->head.speed_ms);
 	}
 	if (nano_later_than(&now, &tail_at)) {
 	    tail_left = !tail_left;
-	    printf("Move tail to %s\n", tail_left ? "left" : "right");
 	    maestro_set_servo_pos(m, TAIL_ID, 50 + (-1*tail_left)*a->tail.delta_pct);
 	    nano_add_ms(&tail_at, a->tail.speed_ms);
 	}
@@ -110,6 +137,11 @@ main(int argc, char **argv)
     int last_track = -1;
 
     pi_usb_init();
+
+    if (wb_init() < 0) {
+	fprintf(stderr, "Failed to initialize the weenboard\n");
+	exit(1);
+    }
 
     if ((m = maestro_new()) == NULL) {
         fprintf(stderr, "Failed to initialize servo controller\n");
@@ -138,6 +170,7 @@ main(int argc, char **argv)
 	printf("Starting track %d\n", track);
 
 	stop_reset(stop);
+	talking_skull_actor_play(actors[track]);
 	track_play_asynchronously(tracks[track], stop);
 	play_track(&actions[track], stop);
 	reset_servos();
