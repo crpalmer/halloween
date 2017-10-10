@@ -8,96 +8,32 @@
 #include "util.h"
 #include "wb.h"
 
-#define RECORDER_SERVO_1 0
-#define RECORDER_SERVO_1_LOW 27
-#define RECORDER_SERVO_1_HIGH 37
-#define RECORDER_SERVO_2 1
-#define RECORDER_SERVO_2_LOW 45
-#define RECORDER_SERVO_2_HIGH 60
-#define RECORDER_UP_SPEED	100
-#define RECORDER_DOWN_SPEED	500
-
-#define MANDOLIN_SERVO 2
+#define MANDOLIN_SERVO 3
 #define MANDOLIN_PCT_LOW	32
 #define MANDOLIN_PCT_HIGH	58
 #define MANDOLIN_NOTE_MS	150
 #define MANDOLIN_INTER_NOTE_LOW_MS 500
 #define MANDOLIN_INTER_NOTE_HIGH_MS 1250
 
-#define SINGER_SERVO	3
-#define SINGER_WHO	TALKING_DEER
-#define SINGER_EYES	1, 1
+#define SINGER_SERVO	0
+#define SINGER_WHO	BAXTER_MOUTH
+#define SINGER_LEFT_EYE	2, 5
+#define SINGER_RIGHT_EYE 2, 6
+#define SINGER_SCALE	1.0
 
 #define BETWEEN_SONG_MS	1000
 
-#define MANDOLIN_WAV	"band-mandolin.wav"
-#define RECORDER_WAV	"band-recorder.wav"
-#define SONG_WAV	"band-song.wav"
-#define SINGER_WAV	"band-vocals.wav"
+#define MANDOLIN_WAV	"monster-mash-singer.wav"
+#define SONG_WAV	"monster-mash.wav"
+#define SINGER_WAV	"monster-mash-singer.wav"
 
 static maestro_t *m;
 
 static track_t *song;
 static talking_skull_actor_t *mandolin;
-static talking_skull_actor_t *recorder;
 static talking_skull_actor_t *singer;
 
 static struct timespec start;
-
-static void
-recorder_update(void *unused, double pos)
-{
-    static int last_is_trigger = 0;
-    static int state = 0;
-    int cur_is_trigger = (pos > 50);
-
-    if (cur_is_trigger && last_is_trigger != cur_is_trigger) {
-	int new_state;
-
-	do {
-	    new_state = random_number_in_range(0, 3);
-	} while (new_state == state);
-	state = new_state;
-	if (state & 1) {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_UP_SPEED);
-	    maestro_set_servo_pos(m, RECORDER_SERVO_1, 100);
-	} else {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_DOWN_SPEED);
-	    maestro_set_servo_pos(m, RECORDER_SERVO_1, 0);
-	}
-	if (state & 2) {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_UP_SPEED);
-	    maestro_set_servo_pos(m, RECORDER_SERVO_2, 100);
-	} else {
-	    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_DOWN_SPEED);
-	    maestro_set_servo_pos(m, RECORDER_SERVO_2, 0);
-	}
-    }
-    last_is_trigger = cur_is_trigger;
-}
-
-static void
-recorder_init(void)
-{
-    recorder = talking_skull_actor_new(RECORDER_WAV, recorder_update, NULL);
-    if (! recorder) {
-	perror(RECORDER_WAV);
-	exit(1);
-    }
-
-    maestro_set_servo_range_pct(m, RECORDER_SERVO_1, RECORDER_SERVO_1_LOW, RECORDER_SERVO_1_HIGH);
-    maestro_set_servo_range_pct(m, RECORDER_SERVO_2, RECORDER_SERVO_2_LOW, RECORDER_SERVO_2_HIGH);
-    maestro_set_servo_is_inverted(m, RECORDER_SERVO_1, 1);
-}
-
-static void
-recorder_rest(void)
-{
-    maestro_set_servo_speed(m, RECORDER_SERVO_1, RECORDER_DOWN_SPEED);
-    maestro_set_servo_pos(m, RECORDER_SERVO_1, 0);
-    maestro_set_servo_speed(m, RECORDER_SERVO_2, RECORDER_DOWN_SPEED);
-    maestro_set_servo_pos(m, RECORDER_SERVO_2, 0);
-}
 
 static void
 mandolin_update(void *unused, double pos)
@@ -145,14 +81,21 @@ mandolin_rest(void)
 }
 
 static void
-singer_update(void *unused, double pos)
+singer_update(void *unused, double new_pos)
 {
     static int eyes = -1;
-    int new_eyes = pos > 30;
+    int new_eyes;
+    double pos;
 
+    pos = new_pos * SINGER_SCALE;
+    if (pos > 100) pos = 100;
+    
     maestro_set_servo_pos(m, SINGER_SERVO, pos);
+
+    new_eyes = pos > 30;
     if (eyes != new_eyes) {
-	wb_set(SINGER_EYES, new_eyes);
+	wb_set(SINGER_LEFT_EYE, new_eyes);
+	wb_set(SINGER_RIGHT_EYE, new_eyes);
 	eyes = new_eyes;
     }
 }
@@ -192,19 +135,16 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    recorder_init();
     mandolin_init();
     singer_init();
 
     while (1) {
-	recorder_rest();
 	mandolin_rest();
 	singer_rest();
 
 	ms_sleep(BETWEEN_SONG_MS);
 
 	nano_gettime(&start);
-	talking_skull_actor_play(recorder);
 	talking_skull_actor_play(mandolin);
 	talking_skull_actor_play(singer);
 	track_play(song);
