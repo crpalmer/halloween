@@ -18,13 +18,13 @@
 
 #define MOTOR_BANK 1
 
-#define WIN_MAX_MS		5000
 #define RETURN_TO_START_MAX_MS 12000
 
 #define REVERSE_DUTY 0.60
 #define TROT_DUTY 0.40
 
-#define TROT_MS		2000
+#define WIN_MS		2000
+#define TROT_MS		3500
 #define REVERSE_MS	7500
 
 static stop_t *stop;
@@ -101,8 +101,8 @@ go_to_start_position(void)
 static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
 {
     unsigned picked_winner = (unsigned) picked_winner_as_vp;
-    unsigned winner_pin_mask;
-    unsigned winner_pin;
+    unsigned want_winner = picked_winner == WIN_2_PIN;
+    unsigned winner_id = random_number_in_range(0, 1);
 
     stop_stop(pick_stop);
 
@@ -113,30 +113,26 @@ static void joust(void *picked_winner_as_vp, lights_t *l, unsigned pin)
     track_play_asynchronously(jousting, stop);
     motor_forward(0, 1);
     motor_forward(1, 1);
-
-    winner_pin_mask = WB_PIN_MASK(WIN_1_PIN) | WB_PIN_MASK(WIN_2_PIN);
-
-    if ((winner_pin = wb_wait_for_pins_timeout(winner_pin_mask, 0, WIN_MAX_MS)) != 0) {
-	    stop_stop(stop);
-	    track_play_asynchronously(crash, stop);
-	    motor_forward(0, TROT_DUTY);
-	    motor_forward(1, TROT_DUTY);
-	    ms_sleep(TROT_MS);
-    }
+    ms_sleep(WIN_MS);
+    stop_stop(stop);
+    track_play_asynchronously(crash, stop);
+    motor_forward(0, TROT_DUTY);
+    motor_forward(1, TROT_DUTY);
+    ms_sleep(TROT_MS);
 
     stop_stop(stop);
     motor_stop(0);
     motor_stop(1);
 
-    fprintf(stderr, "wanted %d got %d\n", picked_winner, winner_pin);
+    fprintf(stderr, "wanted %d got %d\n", want_winner, winner_id);
 
-    if (winner_pin == WIN_1_PIN) {
+    if (winner_id == 0) {
 	wb_set(MOTOR_BANK, WINNER_LIGHT_1, 1);
-    } else if (winner_pin == WIN_2_PIN) {
+    } else {
 	wb_set(MOTOR_BANK, WINNER_LIGHT_2, 1);
     }
 
-    if (winner_pin == picked_winner) {
+    if (winner_id == want_winner) {
 	track_play(winner);
     } else {
 	track_play(loser);
