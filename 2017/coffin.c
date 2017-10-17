@@ -8,17 +8,17 @@
 #include "util.h"
 #include "wb.h"
 
-#define FOGGER_PIN	2, 1
-#define LIGHT_PIN	2, 5
+#define LIGHT_PIN	2, 1
+#define FOGGER_PIN	2, 5
 #define LID_PIN		2, 8
 
-#define INTERDELAY_LOW	15000
-#define INTERDELAY_HIGH 45000
+#define INTERDELAY_LOW	2000
+#define INTERDELAY_HIGH 5000
 
-#define LID_OPEN_LOW	100
-#define LID_OPEN_HIGH	200
+#define LID_OPEN_LOW	400
+#define LID_OPEN_HIGH	500
 #define LID_CLOSED_LOW	500
-#define LID_CLOSED_HIGH	1000
+#define LID_CLOSED_HIGH	750
 
 #define LIGHT_LOW	50
 #define LIGHT_HIGH	200
@@ -48,6 +48,8 @@ main(int argc, char **argv)
     stop_t *stop;
     track_t *track;
 
+    seed_random();
+
     if (wb_init() < 0) {
 	perror("wb_init");
 	exit(1);
@@ -57,6 +59,8 @@ main(int argc, char **argv)
 	perror("coffin-dog.wav");
 	exit(1);
     }
+
+    //track_set_volume(track, 50);
 
     stop = stop_new();
 
