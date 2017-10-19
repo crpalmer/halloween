@@ -125,7 +125,7 @@ play_track(action_t *a, stop_t *stop)
 static void
 reset_servos(void)
 {
-    maestro_set_servo_pos(m, MOUTH_ID, 50);
+    maestro_set_servo_pos(m, MOUTH_ID, 0);
     maestro_set_servo_pos(m, HEAD_ID, 50);
     maestro_set_servo_pos(m, TAIL_ID, 50);
 }
@@ -150,11 +150,8 @@ main(int argc, char **argv)
 
     stop = stop_new();
 
-    maestro_set_servo_range(m, MOUTH_ID, HITEC_HS81);
-    maestro_set_servo_range_pct(m, MOUTH_ID, 45, 95);
-    maestro_set_servo_is_inverted(m, MOUTH_ID, true);
-
-    maestro_set_servo_range(m, HEAD_ID, PARALLAX_STANDARD);
+    maestro_set_servo_range(m, MOUTH_ID, BAXTER_MOUTH);
+    maestro_set_servo_range(m, HEAD_ID, BAXTER_HEAD);
 
     load_tracks();
     while (1) {
