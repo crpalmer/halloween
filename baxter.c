@@ -136,6 +136,7 @@ main(int argc, char **argv)
     stop_t *stop;
     int last_track = -1;
 
+    seed_random();
     pi_usb_init();
 
     if (wb_init() < 0) {
