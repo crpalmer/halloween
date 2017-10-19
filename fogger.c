@@ -12,12 +12,12 @@
 #include "fogger.h"
 
 #define DUTY_FILENAME "fogger.duty"
-#define DEFAULT_DUTY_CYCLE .10
-#define DUTY_DELTA 0.01
 #define FOG_BURST_MS	5000
 
 #define OFF_DELAY	5000
 
+static double default_duty = .1;
+static double delta_duty = 0.01;
 static double duty = .10;
 static pthread_mutex_t lock;
 static pthread_mutex_t fog_lock;
@@ -34,12 +34,12 @@ read_duty_cycle(void)
 
     if (f == NULL) {
 	perror(DUTY_FILENAME);
-	return DEFAULT_DUTY_CYCLE;
+	return default_duty;
     }
 
     if (fscanf(f, "%lf", &x) != 1) {
 	fprintf(stderr, "Failed to ready duty cycle.\n");
-	return DEFAULT_DUTY_CYCLE;
+	return default_duty;
     }
 
     fclose(f);
@@ -91,13 +91,18 @@ static char *
 remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t size)
 {
     if (strcmp(command, "duty_up") == 0) {
-	duty += DUTY_DELTA;
+	duty += delta_duty;
 	if (duty >= 1) duty = 1;
 	write_duty_cycle(duty);
 	return return_duty();
     } else if (strcmp(command, "duty_down") == 0) {
-	duty -= DUTY_DELTA;
+	duty -= delta_duty;
 	if (duty <= 0) duty = 0;
+	write_duty_cycle(duty);
+	return return_duty();
+    } else if (strcmp(command, "duty_set") == 0) {
+	duty = atoi(&command[strlen("duty_set")]);
+	if (duty < 0) duty = 0;
 	write_duty_cycle(duty);
 	return return_duty();
     } else if (strcmp(command, "fog") == 0) {
@@ -114,10 +119,16 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 }
 
 static void *
-fogger_main(void *unused)
+fogger_main(void *args_as_vp)
 {
     server_args_t server_args;
     pthread_t server_thread;
+    fogger_args_t *args = (fogger_args_t *) args_as_vp;
+
+    if (args) {
+	default_duty = args->default_duty;
+	delta_duty = args->delta_duty;
+    }
 
     duty = read_duty_cycle();
 
@@ -140,10 +151,10 @@ fogger_main(void *unused)
 }
 
 void
-fogger_run_in_background(unsigned bank, unsigned pin)
+fogger_run_in_background(unsigned bank, unsigned pin, fogger_args_t *args)
 {
     fogger_bank = bank;
     fogger_pin = pin;
 
-    pthread_create(&fogger, NULL, fogger_main, NULL);
+    pthread_create(&fogger, NULL, fogger_main, args);
 }
