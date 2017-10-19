@@ -153,6 +153,7 @@ main(int argc, char **argv)
 
     maestro_set_servo_range(m, MOUTH_ID, BAXTER_MOUTH);
     maestro_set_servo_range(m, HEAD_ID, BAXTER_HEAD);
+    maestro_set_servo_range(m, TAIL_ID, BAXTER_TAIL);
 
     load_tracks();
     while (1) {
