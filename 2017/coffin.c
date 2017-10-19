@@ -47,6 +47,10 @@ main(int argc, char **argv)
 {
     stop_t *stop;
     track_t *track;
+    fogger_args_t fogger_args = {
+	.default_duty = 0.01,
+	.delta_duty = 0.001,
+    };
 
     seed_random();
 
@@ -64,7 +68,7 @@ main(int argc, char **argv)
 
     stop = stop_new();
 
-    fogger_run_in_background(FOGGER_PIN);
+    fogger_run_in_background(FOGGER_PIN, &fogger_args);
 
     wb_set(LIGHT_PIN, 1);
     wb_set(LID_PIN, 0);
