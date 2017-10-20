@@ -23,7 +23,7 @@
 
 #define TAIL_SERVO	2
 #define TAIL_WHO	BAXTER_TAIL
-#define TAIL_MS		1000
+#define TAIL_MS		500
 
 #define BETWEEN_SONG_MS	1000
 
