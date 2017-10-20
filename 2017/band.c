@@ -19,7 +19,7 @@
 #define SINGER_WHO	BAXTER_MOUTH
 #define SINGER_LEFT_EYE	2, 5
 #define SINGER_RIGHT_EYE 2, 6
-#define SINGER_SCALE	1.0
+#define SINGER_SCALE	2.0
 
 #define TAIL_SERVO	2
 #define TAIL_WHO	BAXTER_TAIL
@@ -111,7 +111,10 @@ singer_update(void *unused, double new_pos)
     tail_update();
 
     pos = new_pos * SINGER_SCALE;
-    if (pos > 100) pos = 100;
+    if (pos > 100) {
+fprintf(stderr, "clipping %f * %f = %f\n", new_pos, SINGER_SCALE, pos);
+	pos = 100;
+    }
     
     maestro_set_servo_pos(m, SINGER_SERVO, pos);
 
