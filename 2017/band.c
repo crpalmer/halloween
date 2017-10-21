@@ -8,7 +8,7 @@
 #include "util.h"
 #include "wb.h"
 
-#define MANDOLIN_SERVO 3
+#define MANDOLIN_SERVO 4
 #define MANDOLIN_PCT_LOW	32
 #define MANDOLIN_PCT_HIGH	58
 #define MANDOLIN_NOTE_MS	150
@@ -17,25 +17,32 @@
 
 #define SINGER_SERVO	0
 #define SINGER_WHO	BAXTER_MOUTH
-#define SINGER_LEFT_EYE	2, 5
-#define SINGER_RIGHT_EYE 2, 6
+#define SINGER_LEFT_EYE	1, 5
+#define SINGER_RIGHT_EYE 1, 6
 #define SINGER_SCALE	2.0
 
 #define TAIL_SERVO	2
 #define TAIL_WHO	BAXTER_TAIL
 #define TAIL_MS		500
 
+#define BACKUP_SERVO	3
+#define BACKUP_WHO	TALKING_DEER
+#define BACKUP_EYES	1, 8
+#define BACKUP_SCALE	1.0
+
 #define BETWEEN_SONG_MS	1000
 
 #define MANDOLIN_WAV	"monster-mash-singer.wav"
 #define SONG_WAV	"monster-mash.wav"
 #define SINGER_WAV	"monster-mash-singer.wav"
+#define BACKUP_WAV	"monster-mash-backup.wav"
 
 static maestro_t *m;
 
 static track_t *song;
 static talking_skull_actor_t *mandolin;
 static talking_skull_actor_t *singer;
+static talking_skull_actor_t *backup;
 
 static struct timespec start;
 
@@ -111,10 +118,7 @@ singer_update(void *unused, double new_pos)
     tail_update();
 
     pos = new_pos * SINGER_SCALE;
-    if (pos > 100) {
-fprintf(stderr, "clipping %f * %f = %f\n", new_pos, SINGER_SCALE, pos);
-	pos = 100;
-    }
+    if (pos > 100) pos = 100;
     
     maestro_set_servo_pos(m, SINGER_SERVO, pos);
 
@@ -130,19 +134,57 @@ static void
 singer_init(void)
 {
     singer = talking_skull_actor_new(SINGER_WAV, singer_update, NULL);
-    if (! mandolin) {
+    if (! singer) {
 	perror(SINGER_WAV);
 	exit(1);
     }
 
     maestro_set_servo_range(m, SINGER_SERVO, SINGER_WHO);
     maestro_set_servo_range(m, TAIL_SERVO, TAIL_WHO);
+    singer_update(NULL, 0);
 }
 
 static void
 singer_rest(void)
 {
     singer_update(NULL, 0);
+}
+
+static void
+backup_update(void *unused, double new_pos)
+{
+    static int eyes = -1;
+    int new_eyes;
+    double pos;
+
+    pos = new_pos > 50 ? 100 : 0;
+
+    maestro_set_servo_pos(m, BACKUP_SERVO, pos);
+
+    new_eyes = pos > 30;
+    if (eyes != new_eyes) {
+	wb_set(BACKUP_EYES, new_eyes);
+	eyes = new_eyes;
+    }
+}
+
+static void
+backup_init(void)
+{
+    backup = talking_skull_actor_new(BACKUP_WAV, backup_update, NULL);
+    if (! mandolin) {
+	perror(BACKUP_WAV);
+	exit(1);
+    }
+
+    maestro_set_servo_range(m, BACKUP_SERVO, BACKUP_WHO);
+    backup_update(NULL, 0);
+}
+
+static void
+backup_rest(void)
+{
+    backup_update(NULL, 0);
 }
 
 int
@@ -164,16 +206,19 @@ main(int argc, char **argv)
 
     mandolin_init();
     singer_init();
+    backup_init();
 
     while (1) {
 	mandolin_rest();
 	singer_rest();
+	backup_rest();
 
 	ms_sleep(BETWEEN_SONG_MS);
 
 	nano_gettime(&start);
 	talking_skull_actor_play(mandolin);
 	talking_skull_actor_play(singer);
+	talking_skull_actor_play(backup);
 	track_play(song);
     }
 
