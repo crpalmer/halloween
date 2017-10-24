@@ -11,9 +11,9 @@
 #define MANDOLIN_SERVO 4
 #define MANDOLIN_PCT_LOW	32
 #define MANDOLIN_PCT_HIGH	58
-#define MANDOLIN_NOTE_MS	150
-#define MANDOLIN_INTER_NOTE_LOW_MS 500
-#define MANDOLIN_INTER_NOTE_HIGH_MS 1250
+#define MANDOLIN_NOTE_MS	100
+#define MANDOLIN_INTER_NOTE_LOW_MS 150
+#define MANDOLIN_INTER_NOTE_HIGH_MS 250
 
 #define SINGER_SERVO	0
 #define SINGER_WHO	BAXTER_MOUTH
@@ -36,7 +36,6 @@
 
 #define BETWEEN_SONG_MS	1000
 
-#define MANDOLIN_WAV	"monster-mash-singer.wav"
 #define SONG_WAV	"monster-mash.wav"
 #define SINGER_WAV	"monster-mash-singer.wav"
 #define BACKUP_WAV	"monster-mash-backup.wav"
@@ -44,29 +43,26 @@
 static maestro_t *m;
 
 static track_t *song;
-static talking_skull_actor_t *mandolin;
 static talking_skull_actor_t *singer;
 static talking_skull_actor_t *backup;
 
 static struct timespec start;
 
 static void
-mandolin_update(void *unused, double pos)
+mandolin_update(void)
 {
     static int is_up = 1;
     static struct timespec next_change = { 0 };
     struct timespec now;
 
     nano_gettime(&now);
-    if (pos < 5) return;
     if (! nano_later_than(&now, &next_change)) return;
 
     next_change = now;
     is_up = ! is_up;
 
     if (is_up) {
-	unsigned delta = random_number_in_range(0, MANDOLIN_INTER_NOTE_HIGH_MS - MANDOLIN_INTER_NOTE_LOW_MS);
-	unsigned ms = MANDOLIN_INTER_NOTE_LOW_MS + delta * (100 - pos) / 100;
+	unsigned ms = random_number_in_range(MANDOLIN_INTER_NOTE_LOW_MS, MANDOLIN_INTER_NOTE_HIGH_MS);
 	nano_add_ms(&next_change, MANDOLIN_NOTE_MS + ms);
 	maestro_set_servo_pos(m, MANDOLIN_SERVO, 100);
     } else {
@@ -78,12 +74,6 @@ mandolin_update(void *unused, double pos)
 static void
 mandolin_init(void)
 {
-    mandolin = talking_skull_actor_new(MANDOLIN_WAV, mandolin_update, NULL);
-    if (! mandolin) {
-	perror(MANDOLIN_WAV);
-	exit(1);
-    }
-
     maestro_set_servo_range_pct(m, MANDOLIN_SERVO, MANDOLIN_PCT_LOW, MANDOLIN_PCT_HIGH);
     maestro_set_servo_is_inverted(m, MANDOLIN_SERVO, 1);
     maestro_set_servo_speed(m, MANDOLIN_SERVO, MANDOLIN_NOTE_MS);
@@ -93,7 +83,6 @@ static void
 mandolin_rest(void)
 {
     maestro_set_servo_pos(m, MANDOLIN_SERVO, 100);
-    maestro_set_servo_pos(m, TAIL_SERVO, 50);
 }
 
 static void
@@ -172,6 +161,8 @@ static void
 singer_rest(void)
 {
     singer_update(NULL, 0);
+    maestro_set_servo_pos(m, TAIL_SERVO, 50);
+    mandolin_rest();
 }
 
 static void
@@ -196,7 +187,7 @@ static void
 backup_init(void)
 {
     backup = talking_skull_actor_new(BACKUP_WAV, backup_update, NULL);
-    if (! mandolin) {
+    if (! backup) {
 	perror(BACKUP_WAV);
 	exit(1);
     }
@@ -233,14 +224,12 @@ main(int argc, char **argv)
     backup_init();
 
     while (1) {
-	mandolin_rest();
 	singer_rest();
 	backup_rest();
 
 	ms_sleep(BETWEEN_SONG_MS);
 
 	nano_gettime(&start);
-	talking_skull_actor_play(mandolin);
 	talking_skull_actor_play(singer);
 	talking_skull_actor_play(backup);
 	track_play(song);
