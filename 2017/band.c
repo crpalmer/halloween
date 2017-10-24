@@ -21,6 +21,10 @@
 #define SINGER_RIGHT_EYE 1, 6
 #define SINGER_SCALE	2.0
 
+#define HEAD_SERVO	1
+#define HEAD_WHO	BAXTER_HEAD
+#define HEAD_MS		1000
+
 #define TAIL_SERVO	2
 #define TAIL_WHO	BAXTER_TAIL
 #define TAIL_MS		500
@@ -109,6 +113,23 @@ tail_update(void)
 }
 
 static void
+head_update(void)
+{
+    static struct timespec next_change = { 0 };
+    static int is_high = 0;
+    struct timespec now;
+
+    nano_gettime(&now);
+    if (nano_later_than(&now, &next_change)) {
+	is_high = !is_high;
+	next_change = now;
+	nano_add_ms(&next_change, HEAD_MS);
+printf("%d %d\n", HEAD_SERVO, is_high ? 100 : 0);
+	maestro_set_servo_pos(m, HEAD_SERVO, is_high ? 100 : 0);
+    }
+}
+
+static void
 singer_update(void *unused, double new_pos)
 {
     static int eyes = -1;
@@ -116,6 +137,8 @@ singer_update(void *unused, double new_pos)
     double pos;
 
     tail_update();
+    head_update();
+    mandolin_update();
 
     pos = new_pos * SINGER_SCALE;
     if (pos > 100) pos = 100;
@@ -141,6 +164,7 @@ singer_init(void)
 
     maestro_set_servo_range(m, SINGER_SERVO, SINGER_WHO);
     maestro_set_servo_range(m, TAIL_SERVO, TAIL_WHO);
+    maestro_set_servo_range(m, HEAD_SERVO, HEAD_WHO);
     singer_update(NULL, 0);
 }
 
