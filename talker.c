@@ -29,7 +29,7 @@ static maestro_t *maestro;
 
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
-#define IDLE_AUDIO_SECS 1*1000*1000*1000
+#define IDLE_AUDIO_SECS (5*60)
 
 #define STATS_MICROPHONE 0
 #define STATS_AUTO	 256
@@ -276,7 +276,7 @@ main(int argc, char **argv)
 #endif
     }
 
-    if ((auto_wav = wav_new("chant1.wav")) == NULL) {
+    if ((auto_wav = wav_new("werewolf.wav")) == NULL) {
 	perror("chant1.wav");
 	exit(1);
     }
