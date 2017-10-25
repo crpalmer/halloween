@@ -16,7 +16,8 @@
 static maestro_t *maestro;
 
 #define SERVO_ID 0
-#define EYES_PIN 1, 1
+#define RIGHT_EYE_PIN 2, 1
+#define LEFT_EYE_PIN 2, 2
 
 #define N_HISTORY 20
 #define MICROPHONE_HISTORY_EPSILON 5
@@ -121,7 +122,8 @@ update_servo_and_eyes(double pos)
     new_eyes = (pos >= 50);
     if (new_eyes != eyes) {
 	eyes = new_eyes;
-	wb_set(EYES_PIN, eyes);
+	wb_set(RIGHT_EYE_PIN, eyes);
+	wb_set(LEFT_EYE_PIN, eyes);
      }
 }
 
