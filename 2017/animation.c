@@ -10,15 +10,16 @@
 #include "animation-common.h"
 #include "animation-lights.h"
 
-#define MERMAID     "mermaid"
-#define GATER       "gater"
-#define FROG        "frog"
-#define SNAKE       "snake"
+#define DOG  	    "dog"
+#define CAT         "cat"
 #define QUESTION    "question"
+#define TOAD        "toad"
+#define SNAKE       "snake"
 
 #define SNAKE_PIN	2, 8
-#define MERMAID_PIN	2, 7
-#define FOGGER_PIN	1, 8
+
+#define DOG_MIN_MS	5000
+#define DOG_MAX_MS	6000
 
 static pthread_mutex_t station_lock, mermaid_lock;
 static track_t *laugh;
@@ -38,6 +39,20 @@ do_attack(unsigned pin, lights_t *l, double up, double down)
 }
 
 static void
+do_dog(void *unused, lights_t *l, unsigned pin)
+{
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    ms_sleep(random_number_in_range(DOG_MIN_MS, DOG_MAX_MS));
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
+}
+
+static void
+do_cat(void *unused, lights_t *l, unsigned pin)
+{
+    do_attack(pin, l, 2, 3.0);
+}
+
+static void
 do_question(void *unused, lights_t *l, unsigned pin)
 {
     track_play_asynchronously(laugh, stop);
@@ -48,15 +63,9 @@ do_question(void *unused, lights_t *l, unsigned pin)
 }
 
 static void
-do_gater(void *unused, lights_t *l, unsigned pin)
+do_toad(void *unused, lights_t *l, unsigned pin)
 {
     do_attack(pin, l, 1, 1.5);
-}
-
-static void
-do_frog(void *unused, lights_t *l, unsigned pin)
-{
-    do_attack(pin, l, 1, 1);
 }
 
 static void
@@ -67,35 +76,17 @@ do_snake(void *unused, lights_t *l, unsigned pin)
     wb_set(SNAKE_PIN, 0);
 }
 
-static void
-do_mermaid(void *unused, lights_t *l, unsigned pin)
-{
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
-    ms_sleep(200);
-    wb_set(MERMAID_PIN, 1);
-    ms_sleep(2000);
-    wb_set(MERMAID_PIN, 0);
-    ms_sleep(1000);
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
-}
-
 static action_t main_actions[] = {
-    { SNAKE,	do_snake,	NULL },
-    { FROG,     do_frog,	NULL },
+    { DOG,	do_dog,		NULL },
+    { CAT,	do_cat,		NULL },		/* TODO */
     { QUESTION, do_question,	NULL },
-    { GATER,	do_gater,	NULL },
-    { "???",	do_frog,	NULL },		/* TODO */
-    { NULL,	NULL,		NULL },
-};
-
-static action_t mermaid_actions[] = {
-    { MERMAID,	do_mermaid,	NULL },
+    { TOAD,     do_toad,	NULL },
+    { SNAKE,	do_snake,	NULL },
     { NULL,	NULL,		NULL },
 };
 
 static station_t stations[] = {
     { true, main_actions, &station_lock },
-    { true, mermaid_actions, &mermaid_lock },
     { NULL, NULL },
 };
 
