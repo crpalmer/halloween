@@ -12,7 +12,7 @@
 #include "wb.h"
 
 #define HAND_PIN  1
-#define EYES	  2,5
+#define BUBBLER	  2,5
 #define SERVO	  0
 
 #define FLASHING_LIGHTS_MASK 0x0f1f
@@ -95,6 +95,8 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
     stop_reset(cogs_stop);
     track_play_asynchronously(cogs, cogs_stop);
 
+    wb_set(BUBBLER, 1);
+
     flash_lights(random_number_in_range(FLASHING_LIGHTS_MIN_MS, FLASHING_LIGHTS_MAX_MS));
     blink_lights();
     stop_stop(cogs_stop);
@@ -116,6 +118,7 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
 
     fprintf(stderr, "  Done.\n");
     wb_set_outputs(FLASHING_LIGHTS_MASK, 0);
+    wb_set(BUBBLER, 0);
 
     chase_i = 0;
 }
@@ -130,19 +133,14 @@ static void waiting_for_button(unsigned ms)
     chase_i = (chase_i + 1) % n_chase_map;
 }
 
-static void update_servo(void *fortune_as_vp, double pos)
+static void update_servo(void *fortune_as_vp, double original_pos)
 {
     fortune_t *fortune = (fortune_t *) fortune_as_vp;
-    static int eyes = -1;
-    int new_eyes = pos > 30;
+    double pos = talker_auto_gain_add(fortune->auto_gain, original_pos);
 
-    pos = talker_auto_gain_add(fortune->auto_gain, pos);
+fprintf(stderr, "%3.0f %3.0f\n", original_pos, pos);
 
     maestro_set_servo_pos(m, SERVO, pos);
-    if (eyes != new_eyes) {
-	wb_set(EYES, new_eyes);
-	eyes = new_eyes;
-    }
 }
 
 static void prepare_audio(void)
@@ -190,7 +188,7 @@ main(int argc, char **argv)
     }
 
     maestro_set_servo_is_inverted(m, SERVO, 1);
-    maestro_set_servo_range_pct(m, SERVO, 33, 53);
+    maestro_set_servo_range_pct(m, SERVO, 30, 65);
 
     pthread_mutex_init(&lock, NULL);
 
