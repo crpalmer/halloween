@@ -13,6 +13,8 @@
 
 #define HAND_PIN  1
 #define BUBBLER	  2,5
+#define HAND_LIGHT 1,7
+#define BOWL_LIGHT 1,8
 #define SERVO	  0
 
 #define FLASHING_LIGHTS_MASK 0x0f1f
@@ -97,7 +99,9 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
     stop_reset(cogs_stop);
     track_play_asynchronously(cogs, cogs_stop);
 
+    wb_set(HAND_LIGHT, 0);
     wb_set(BUBBLER, 1);
+    wb_set(BOWL_LIGHT, 1);
 
     flash_lights(random_number_in_range(FLASHING_LIGHTS_MIN_MS, FLASHING_LIGHTS_MAX_MS));
     blink_lights();
@@ -121,6 +125,8 @@ static void fortune(void *unused, lights_t *l, unsigned pin)
     fprintf(stderr, "  Done.\n");
     wb_set_outputs(FLASHING_LIGHTS_MASK, 0);
     wb_set(BUBBLER, 0);
+    wb_set(BOWL_LIGHT, 0);
+    wb_set(HAND_LIGHT, 1);
 
     chase_i = 0;
 }
@@ -195,6 +201,7 @@ main(int argc, char **argv)
     pthread_mutex_init(&lock, NULL);
 
     wb_set_pull_up(HAND_PIN, WB_PULL_UP_DOWN);
+    wb_set(HAND_LIGHT, 1);
 
     prepare_audio();
 
