@@ -42,11 +42,13 @@ typedef struct {
 
 static fortune_t fortunes[] = {
     { "fortune-placeholder.wav" },
-    { "laugh.wav" },
-    { "prince-youre-so-mean.wav" },
-    { "wares-666.wav" },
-    { "wares-critters.wav" },
-    { "wares-eat-children.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
+    { "fortune-placeholder.wav" },
 };
 static const int n_fortunes = sizeof(fortunes) / sizeof(fortunes[0]);
 
