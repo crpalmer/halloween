@@ -43,14 +43,24 @@ typedef struct {
 } fortune_t;
 
 static fortune_t fortunes[] = {
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
-    { "fortune-placeholder.wav" },
+    { "fortune-fish/affection.wav" },
+    { "fortune-fish/afraidof.wav" },
+    { "fortune-fish/cats.wav" },
+    { "fortune-fish/chinesetakeout.wav" },
+    { "fortune-fish/collectscandy.wav" },
+    { "fortune-fish/dino.wav" },
+    { "fortune-fish/dream.wav" },
+    { "fortune-fish/fruitloop.wav" },
+    { "fortune-fish/handbitoff.wav" },
+    { "fortune-fish/highbloodcount.wav" },
+    { "fortune-fish/marriage.wav" },
+    { "fortune-fish/meetzombie.wav" },
+    { "fortune-fish/nastysurprise.wav" },
+    { "fortune-fish/ricecrispies.wav" },
+    { "fortune-fish/scaresomeone.wav" },
+    { "fortune-fish/tall-dark-zombie.wav" },
+    { "fortune-fish/tasty.wav" },
+    { "fortune-fish/worldsucks.wav" },
 };
 static const int n_fortunes = sizeof(fortunes) / sizeof(fortunes[0]);
 
