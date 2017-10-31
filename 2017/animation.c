@@ -9,6 +9,7 @@
 #include "animation-actions.h"
 #include "animation-common.h"
 #include "animation-lights.h"
+#include "fogger.h"
 
 #define DOG  	    "dog"
 #define CAT         "cat"
@@ -103,6 +104,7 @@ main(int argc, char **argv)
 
     stop = stop_new();
 
+    fogger_run_in_background(FOGGER_PIN, NULL);
     animation_main(stations);
 
     return 0;
