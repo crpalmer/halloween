@@ -11,7 +11,30 @@
 #define MS_WAIT_FOR_UP 100
 
 #define MOLARi(i) 1, i
+#define BUTTON_OUT 1, 6
+#define BUTTON_IN 6
 
+static void
+test()
+{
+    int i;
+
+    printf("Testing the button\n");
+    wb_set(BUTTON_OUT, 1);
+    while (! wb_get(BUTTON_IN)) {}
+    wb_set(BUTTON_OUT, 0);
+    for (i = 1; i <= 5; i++) {
+	printf("Testing tooth %d\n", i);
+	wb_set(MOLARi(i), 1);
+	ms_sleep(MS_WAIT_FOR_UP);
+	printf("   waiting for it to be not triggered\n");
+	while (wb_get(i)) {}
+	printf("   waiting for it to be triggered\n");
+	while (! wb_get(i)) {}
+	wb_set(MOLARi(i), 0);
+    }
+}
+    
 int
 main(int argc, char **argv)
 {
@@ -22,6 +45,11 @@ main(int argc, char **argv)
     if (wb_init() < 0) {
 	perror("wb_init");
 	exit(1);
+    }
+
+    if (argc == 2 && strcmp(argv[1], "--test") == 0) {
+	test();
+	exit(0);
     }
 
     if ((track = track_new("beep.wav")) == NULL) {
