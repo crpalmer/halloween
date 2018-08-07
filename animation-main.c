@@ -143,9 +143,8 @@ station_main(void *station_as_vp)
 }
 
 static void
-init_stations(void)
+init_stations(unsigned pin0)
 {
-    unsigned pin0 = 1;
     unsigned i;
 
     for (i = 0; stations[i].actions && i < MAX_STATIONS; i++) {
@@ -186,6 +185,12 @@ init_stations(void)
 void
 animation_main(station_t *stations_)
 {
+    animation_main_with_pin0(stations_, 1);
+}
+
+void
+animation_main_with_pin0(station_t *stations_, unsigned pin0)
+{
     server_args_t server_args;
     pthread_t server_thread;
 
@@ -197,7 +202,7 @@ animation_main(station_t *stations_)
 	exit(1);
     }
 
-    init_stations();
+    init_stations(pin0);
 
     server_args.port = 5555;
     server_args.command = remote_event;

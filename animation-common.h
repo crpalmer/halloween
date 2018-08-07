@@ -9,5 +9,6 @@
 #include "animation-actions.h"
 
 void animation_main(station_t *);
+void animation_main_with_pin0(station_t *, unsigned pin0);
 
 #endif
