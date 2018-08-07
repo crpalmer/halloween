@@ -7,12 +7,20 @@
 #include "util.h"
 #include "wb.h"
 
+#include "animation-actions.h"
+#include "animation-common.h"
+#include "animation-lights.h"
+
+#define GAME_MS		15000
 #define MS_TO_HIT 1000
 #define MS_WAIT_FOR_UP 100
 
 #define MOLARi(i) 1, i
 #define BUTTON_OUT 1, 6
 #define BUTTON_IN 6
+
+static track_t *track;
+static pthread_mutex_t station_lock;
 
 static void
 test()
@@ -34,12 +42,47 @@ test()
 	wb_set(MOLARi(i), 0);
     }
 }
-    
+
+#define PLAY "play"
+
+static void
+play()
+{
+    struct timespec game_start;
+
+    nano_gettime(&game_start);
+    while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
+	struct timespec start;
+	wb_set(MOLARi(1), 1);
+	ms_sleep(MS_WAIT_FOR_UP);
+	printf("up\n"); fflush(stdout);
+	nano_gettime(&start);
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && wb_get(1)) {}
+	printf("ready\n"); fflush(stdout);
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT) {
+	    if (wb_get(1)) {
+		track_play(track);
+		printf("hit\n"); fflush(stdout);
+		break;
+	    }
+	}
+	wb_set(MOLARi(1), 0);
+    }
+}
+
+static action_t main_actions[] = {
+    { PLAY,     play,           NULL },
+    { NULL,     NULL,           NULL },
+};
+
+static station_t stations[] = {
+    { true, main_actions, &station_lock },
+    { NULL, NULL },
+};
+
 int
 main(int argc, char **argv)
 {
-    track_t *track;
-
     seed_random();
 
     if (wb_init() < 0) {
@@ -57,25 +100,9 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    while (true) {
-	struct timespec start;
+    pthread_mutex_init(&station_lock, NULL);
 
-	ms_sleep(random_number_in_range(1000, 2000));
-	wb_set(MOLARi(1), 1);
-	ms_sleep(MS_WAIT_FOR_UP);
-	printf("up\n"); fflush(stdout);
-	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && wb_get(1)) {}
-	printf("ready\n"); fflush(stdout);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT) {
-	    if (wb_get(1)) {
-		track_play(track);
-		printf("hit\n"); fflush(stdout);
-		break;
-	    }
-	}
-	wb_set(MOLARi(1), 0);
-    }
-	
+    animation_main_with_pin0(stations, BUTTON_IN);
+
     return 0;
 }
