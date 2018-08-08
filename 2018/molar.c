@@ -14,6 +14,7 @@
 #define GAME_MS		15000
 #define MS_TO_HIT 1000
 #define MS_WAIT_FOR_UP 100
+#define MS_BETWEEN	500
 
 #define MOLARi(i) 1, i
 #define BUTTON_OUT 1, 6
@@ -67,6 +68,7 @@ play()
 	    }
 	}
 	wb_set(MOLARi(1), 0);
+	ms_sleep(MS_BETWEEN);
     }
 }
 
