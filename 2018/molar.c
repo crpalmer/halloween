@@ -28,6 +28,8 @@
 static track_t *track;
 static pthread_mutex_t station_lock;
 
+static const int points[] = { 10, 15, 20 };
+
 static void
 test()
 {
@@ -51,12 +53,20 @@ test()
 
 #define PLAY "play"
 
-static void
+static int
 molars_set(unsigned molars, unsigned val)
 {
     int i;
+    int n = 0;
 
-    for (i = 0; i < N_MOLARS; i++) if (molars & (1 << i)) wb_set(MOLARi(i+1), val);
+    for (i = 0; i < N_MOLARS; i++) {
+	if (molars & (1 << i)) {
+	    wb_set(MOLARi(i+1), val);
+	    n++;
+	}
+    }
+
+    return n;
 }
 
 static void
@@ -64,19 +74,21 @@ play()
 {
     struct timespec game_start;
     int n_hit = 0;
+    int score = 0;
 
     nano_gettime(&game_start);
     while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
 	int n = random_number_in_range(1, 3);
 	int i;
 	int molars;
+	int this_n_hit = 0;
 	struct timespec start;
 
 	for (i = molars = 0; i < n; i++) {
 	    molars |= 1 << random_number_in_range(0, N_MOLARS-1);
 	}
 	
-	molars_set(molars, MOLAR_UP);
+	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
 	printf("up %x\n", molars); fflush(stdout);
 	nano_gettime(&start);
@@ -85,19 +97,21 @@ play()
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = wb_get_all();
 	    if ((molars & hit) != 0) {
-		/* TODO: check for more than one at the same time even if unlikely */
-		n_hit++;
+		int n_down;
+
 		track_play(track);
-		molars_set(molars & hit, MOLAR_DOWN);
+		n_down = molars_set(molars & hit, MOLAR_DOWN);
 		molars = molars & ~hit;
-		printf("hit %x\n", molars);
+		n_hit += n_down;
+		printf("hit %d - %x\n", n_down, molars);
+		while (n_down--) score += points[this_n_hit++];
 	    }
 	}
 	printf("done %x\n", molars);
 	molars_set(molars, MOLAR_DOWN);
 	ms_sleep(MS_BETWEEN);
     }
-    printf("done with %d hit\n", n_hit);
+    printf("done with %d hit, score %d\n", n_hit, score);
 }
 
 static action_t main_actions[] = {
