@@ -12,13 +12,18 @@
 #include "animation-lights.h"
 
 #define GAME_MS		15000
-#define MS_TO_HIT 1000
-#define MS_WAIT_FOR_UP 100
-#define MS_BETWEEN	500
+#define MS_TO_HIT 700
+#define MS_WAIT_FOR_UP 300
+#define MS_BETWEEN	250
+
+#define N_MOLARS 4
 
 #define MOLARi(i) 1, i
 #define BUTTON_OUT 1, 6
 #define BUTTON_IN 6
+
+#define MOLAR_UP 1
+#define MOLAR_DOWN 0
 
 static track_t *track;
 static pthread_mutex_t station_lock;
@@ -30,46 +35,69 @@ test()
 
     printf("Testing the button\n");
     wb_set(BUTTON_OUT, 1);
-    while (! wb_get(BUTTON_IN)) {}
+//    while (! wb_get(BUTTON_IN)) {}
     wb_set(BUTTON_OUT, 0);
-    for (i = 1; i <= 5; i++) {
+    for (i = 1; i <= N_MOLARS; i++) {
 	printf("Testing tooth %d\n", i);
-	wb_set(MOLARi(i), 1);
+	wb_set(MOLARi(i), MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
 	printf("   waiting for it to be not triggered\n");
 	while (wb_get(i)) {}
 	printf("   waiting for it to be triggered\n");
 	while (! wb_get(i)) {}
-	wb_set(MOLARi(i), 0);
+	wb_set(MOLARi(i), MOLAR_DOWN);
     }
 }
 
 #define PLAY "play"
 
 static void
+molars_set(unsigned molars, unsigned val)
+{
+    int i;
+
+    for (i = 0; i < N_MOLARS; i++) if (molars & (1 << i)) wb_set(MOLARi(i+1), val);
+}
+
+static void
 play()
 {
     struct timespec game_start;
+    int n_hit = 0;
 
     nano_gettime(&game_start);
     while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
+	int n = random_number_in_range(1, 3);
+	int i;
+	int molars;
 	struct timespec start;
-	wb_set(MOLARi(1), 1);
+
+	for (i = molars = 0; i < n; i++) {
+	    molars |= 1 << random_number_in_range(0, N_MOLARS-1);
+	}
+	
+	molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
-	printf("up\n"); fflush(stdout);
+	printf("up %x\n", molars); fflush(stdout);
 	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && wb_get(1)) {}
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all() & molars) != 0) {}
 	printf("ready\n"); fflush(stdout);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT) {
-	    if (wb_get(1)) {
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
+	    int hit = wb_get_all();
+	    if ((molars & hit) != 0) {
+		/* TODO: check for more than one at the same time even if unlikely */
+		n_hit++;
 		track_play(track);
-		printf("hit\n"); fflush(stdout);
-		break;
+		molars_set(molars & hit, MOLAR_DOWN);
+		molars = molars & ~hit;
+		printf("hit %x\n", molars);
 	    }
 	}
-	wb_set(MOLARi(1), 0);
+	printf("done %x\n", molars);
+	molars_set(molars, MOLAR_DOWN);
 	ms_sleep(MS_BETWEEN);
     }
+    printf("done with %d hit\n", n_hit);
 }
 
 static action_t main_actions[] = {
