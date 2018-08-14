@@ -15,6 +15,8 @@
 #define MS_TO_HIT 700
 #define MS_WAIT_FOR_UP 300
 #define MS_BETWEEN	250
+#define DEBOUNCE_MS	2
+#define UP_DEBOUNCE_MS	10
 
 #define N_MOLARS 4
 
@@ -135,10 +137,10 @@ play()
 	ms_sleep(MS_WAIT_FOR_UP);
 	if (DEBUG_PLAY) printf("%4d up %x\n", 0, molars);
 	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all() & molars) != 0) {}
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != 0) {}
 	if (DEBUG_PLAY) printf("%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
-	    int hit = wb_get_all();
+	    int hit = wb_get_all_with_debounce(DEBOUNCE_MS);
 	    if ((molars & hit) != 0) {
 		int n_down;
 
