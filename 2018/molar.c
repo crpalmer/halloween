@@ -42,7 +42,7 @@ test()
 
     printf("Testing the button\n");
     wb_set(BUTTON_OUT, 1);
-//    while (! wb_get(BUTTON_IN)) {}
+    while (! wb_get(BUTTON_IN)) {}
     wb_set(BUTTON_OUT, 0);
     for (i = 1; i <= N_MOLARS; i++) {
 	printf("Testing tooth %d\n", i);
