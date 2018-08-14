@@ -35,6 +35,10 @@ static int hit_sound_needed;
 
 static const int points[] = { 10, 15, 20 };
 
+#define DEBUG_PLAY	1
+#define DEBUG_AUDIO	0
+#define DEBUG_SHOW_SCORES 1
+
 static void
 test()
 {
@@ -68,11 +72,11 @@ hit_sound_main(void *unused)
 
     while (true) {
 	pthread_mutex_lock(&hit_sound_lock);
-	printf("Waiting for hit_sound request\n");
+	if (DEBUG_AUDIO) printf("Waiting for hit_sound request\n");
 	while (! hit_sound_needed) pthread_cond_wait(&hit_sound_cond, &hit_sound_lock);
 	hit_sound_needed = 0;
 	stop_reset(hit_sound_stop);
-	printf("playing track\n");
+	if (DEBUG_AUDIO) printf("playing track\n");
 	pthread_mutex_unlock(&hit_sound_lock);
 
 	track_play_with_stop(track, hit_sound_stop);
@@ -83,7 +87,7 @@ static void
 hit_sound_play()
 {
     pthread_mutex_lock(&hit_sound_lock);
-    printf("requesting track\n");
+    if (DEBUG_AUDIO) printf("requesting track\n");
     hit_sound_needed = 1;
     stop_request_stop(hit_sound_stop);
     pthread_mutex_unlock(&hit_sound_lock);
@@ -129,10 +133,10 @@ play()
 	
 	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
-	printf("%4d up %x\n", 0, molars);
+	if (DEBUG_PLAY) printf("%4d up %x\n", 0, molars);
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all() & molars) != 0) {}
-	printf("%4d ready\n", nano_elapsed_ms_now(&start));
+	if (DEBUG_PLAY) printf("%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = wb_get_all();
 	    if ((molars & hit) != 0) {
@@ -142,15 +146,15 @@ play()
 		n_down = molars_set(molars & hit, MOLAR_DOWN);
 		molars = molars & ~hit;
 		n_hit += n_down;
-		printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
+		if (DEBUG_PLAY) printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
 		while (n_down--) score += points[this_n_hit++];
 	    }
 	}
-	printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
+	if (DEBUG_PLAY) printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
 	molars_set(molars, MOLAR_DOWN);
 	ms_sleep(MS_BETWEEN);
     }
-    printf("done with %d hit, score %d\n", n_hit, score);
+    if (DEBUG_SHOW_SCORES) printf("done with %d hit, score %d\n", n_hit, score);
 }
 
 static action_t main_actions[] = {
