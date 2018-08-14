@@ -121,6 +121,8 @@ play()
     int n_hit = 0;
     int score = 0;
 
+    wb_set(BUTTON_OUT, 0);
+
     nano_gettime(&game_start);
     while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
 	int n = random_number_in_range(1, 3);
