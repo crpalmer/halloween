@@ -192,6 +192,7 @@ main(int argc, char **argv)
 
     pthread_create(&hit_sound_thread, NULL, hit_sound_main, NULL);
 
+    molars_set((1<<N_MOLARS)-1, 0);
     animation_main_with_pin0(stations, BUTTON_IN);
 
     return 0;
