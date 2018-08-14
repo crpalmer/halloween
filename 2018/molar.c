@@ -129,10 +129,10 @@ play()
 	
 	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
-	printf("up %x\n", molars); fflush(stdout);
+	printf("%4d up %x\n", 0, molars);
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all() & molars) != 0) {}
-	printf("ready\n"); fflush(stdout);
+	printf("%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = wb_get_all();
 	    if ((molars & hit) != 0) {
@@ -142,11 +142,11 @@ play()
 		n_down = molars_set(molars & hit, MOLAR_DOWN);
 		molars = molars & ~hit;
 		n_hit += n_down;
-		printf("hit %d - %x\n", n_down, molars);
+		printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
 		while (n_down--) score += points[this_n_hit++];
 	    }
 	}
-	printf("done %x\n", molars);
+	printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
 	molars_set(molars, MOLAR_DOWN);
 	ms_sleep(MS_BETWEEN);
     }
