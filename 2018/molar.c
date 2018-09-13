@@ -11,14 +11,18 @@
 #include "animation-common.h"
 #include "animation-lights.h"
 
+#define MAX_AT_ONCE	3
 #define GAME_MS		15000
-#define MS_TO_HIT 700
-#define MS_WAIT_FOR_UP 300
+#define MS_TO_HIT 	500
+#define MS_WAIT_FOR_UP	250
 #define MS_BETWEEN	250
 #define DEBOUNCE_MS	2
 #define UP_DEBOUNCE_MS	10
 
-#define N_MOLARS 4
+#define N_MOLARS	5
+#define BROKENi(i)	(1 << ((i) - 1))
+#define BROKEN_MOLARS	0 // (BROKENi(4) | BROKENi(5))
+
 
 #define MOLARi(i) 1, i
 #define BUTTON_OUT 1, 6
@@ -125,24 +129,30 @@ play()
 
     nano_gettime(&game_start);
     while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
-	int n = random_number_in_range(1, 3);
+	int n = random_number_in_range(1, MAX_AT_ONCE);
 	int i;
 	int molars;
 	int this_n_hit = 0;
 	struct timespec start;
 
 	for (i = molars = 0; i < n; i++) {
-	    molars |= 1 << random_number_in_range(0, N_MOLARS-1);
+	    int molar;
+
+	    do {
+		molar = 1 << random_number_in_range(0, N_MOLARS-1);
+	    } while ((BROKEN_MOLARS & molar) != 0);
+
+	    molars |= molar;
 	}
 	
 	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
 	if (DEBUG_PLAY) printf("%4d up %x\n", 0, molars);
 	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != 0) {}
+	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {}
 	if (DEBUG_PLAY) printf("%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
-	    int hit = wb_get_all_with_debounce(DEBOUNCE_MS);
+	    int hit = ~wb_get_all_with_debounce(DEBOUNCE_MS);
 	    if ((molars & hit) != 0) {
 		int n_down;
 
@@ -174,12 +184,16 @@ static station_t stations[] = {
 int
 main(int argc, char **argv)
 {
+    int i;
+
     seed_random();
 
     if (wb_init() < 0) {
 	perror("wb_init");
 	exit(1);
     }
+
+    for (i = 0; i < N_MOLARS; i++) wb_set_pull_up(i+1, WB_PULL_UP_UP);
 
     if (argc == 2 && strcmp(argv[1], "--test") == 0) {
 	test();
