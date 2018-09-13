@@ -13,7 +13,8 @@
 
 #define MAX_AT_ONCE	3
 #define GAME_MS		15000
-#define MS_TO_HIT 	500
+#define MS_TO_LOWER	400
+#define MS_TO_HIT 	(MS_TO_LOWER + 100)
 #define MS_WAIT_FOR_UP	250
 #define MS_BETWEEN	250
 #define DEBOUNCE_MS	2
@@ -134,6 +135,7 @@ play()
 	int molars;
 	int this_n_hit = 0;
 	struct timespec start;
+	int are_up = 1;
 
 	for (i = molars = 0; i < n; i++) {
 	    int molar;
@@ -163,9 +165,14 @@ play()
 		if (DEBUG_PLAY) printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
 		while (n_down--) score += points[this_n_hit++];
 	    }
+	    if (are_up && nano_elapsed_ms_now(&start) > MS_TO_LOWER) {
+		if (DEBUG_PLAY) printf("%4d down\n", nano_elapsed_ms_now(&start));
+		molars_set(molars, MOLAR_DOWN);
+		are_up = 0;
+	    }
+	
 	}
 	if (DEBUG_PLAY) printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
-	molars_set(molars, MOLAR_DOWN);
 	ms_sleep(MS_BETWEEN);
     }
     if (DEBUG_SHOW_SCORES) printf("done with %d hit, score %d\n", n_hit, score);
