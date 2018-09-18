@@ -172,6 +172,7 @@ play()
 	    }
 	
 	}
+	molars_set(molars, MOLAR_DOWN); /* just incase */
 	if (DEBUG_PLAY) printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
 	ms_sleep(MS_BETWEEN);
     }
