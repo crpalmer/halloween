@@ -37,7 +37,7 @@ singer_update(void *unused, double new_pos)
     
     maestro_set_servo_pos(m, SINGER_SERVO, pos);
 
-    new_eyes = pos > 30;
+    new_eyes = pos < 50;
     if (eyes != new_eyes) {
 	wb_set(SINGER_LEFT_EYE, new_eyes);
 	wb_set(SINGER_RIGHT_EYE, new_eyes);
@@ -54,13 +54,13 @@ singer_init(void)
     }
 
     maestro_set_servo_physical_range(m, SINGER_SERVO, 896, 1248);
-    singer_update(NULL, 0);
+    singer_update(NULL, 100);
 }
 
 static void
 singer_rest(void)
 {
-    singer_update(NULL, 0);
+    singer_update(NULL, 100);
 }
 
 int
