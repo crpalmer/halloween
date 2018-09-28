@@ -1,6 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
+	band \
 	molar \
 
 
@@ -11,6 +12,9 @@ all: $(PROPS)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+
+band: band.o $(DEP_LIBS)
+	$(CC) -o $@ band.o $(LIBS)
 
 molar: molar.o $(DEP_LIBS)
 	$(CC) -o $@ molar.o $(LIBS)
