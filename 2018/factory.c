@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 #include "track.h"
 #include "util.h"
 #include "wb.h"
@@ -9,21 +10,16 @@
 static void
 set_lights(bool on1, bool on2)
 {
-    wb_set(1, 1, on1);
-    wb_set(1, 2, on2);
+    wb_set(1, 7, on1);
+    wb_set(1, 8, on2);
 }
 
-int
-main(int argc, char **argv)
+static void *
+sparky_main(void *unused)
 {
     track_t *track;
     stop_t *stop;
     int last_state = 0;
-
-    if (wb_init() < 0) {
-	fprintf(stderr, "failed to initialize wb\n");
-	exit(1);
-    }
 
     set_lights(false, false);
 
@@ -49,4 +45,34 @@ main(int argc, char **argv)
 	    ms_sleep(ms);
 	}
     }
+
+    return NULL;
+}
+
+static void
+blink_main(void)
+{
+    unsigned mask = 31 | (31 << 8);	/* bits 1-5 of both banks*/
+
+    while (1) {
+	ms_sleep(random_number_in_range(200, 500));
+	wb_set_outputs(mask, random_number_in_range(0, mask));
+    }
+}
+
+int
+main(int argc, char **argv)
+{
+    static pthread_t sparky_thread;
+
+    if (wb_init() < 0) {
+	fprintf(stderr, "failed to initialize wb\n");
+	exit(1);
+    }
+
+    pthread_create(&sparky_thread, NULL, sparky_main, NULL);
+
+    blink_main();
+
+    return 0;
 }
