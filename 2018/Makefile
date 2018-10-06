@@ -2,6 +2,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	band \
+	factory \
 	molar \
 
 
@@ -15,6 +16,9 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 band: band.o $(DEP_LIBS)
 	$(CC) -o $@ band.o $(LIBS)
+
+factory: factory.o $(DEP_LIBS)
+	$(CC) -o $@ factory.o $(LIBS)
 
 molar: molar.o $(DEP_LIBS)
 	$(CC) -o $@ molar.o $(LIBS)
