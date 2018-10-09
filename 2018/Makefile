@@ -4,6 +4,7 @@ PROPS = \
 	band \
 	factory \
 	molar \
+	orc \
 
 
 all: $(PROPS)
@@ -22,6 +23,9 @@ factory: factory.o $(DEP_LIBS)
 
 molar: molar.o $(DEP_LIBS)
 	$(CC) -o $@ molar.o $(LIBS)
+
+orc: orc.o $(DEP_LIBS)
+	$(CC) -o $@ orc.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c
