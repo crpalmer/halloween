@@ -48,9 +48,9 @@ static int high_score;
 
 static const int points[] = { 10, 15, 20 };
 
-#define DEBUG_PLAY	1
+#define DEBUG_PLAY	0
 #define DEBUG_AUDIO	0
-#define DEBUG_SHOW_SCORES 1
+#define DEBUG_SHOW_SCORES 0
 
 static struct {
     const char *fname;
@@ -121,19 +121,19 @@ hit_sound_main(void *unused)
 
     while (true) {
 	pthread_mutex_lock(&hit_sound_lock);
-	if (DEBUG_AUDIO) printf("Waiting for hit_sound request\n");
+	if (DEBUG_AUDIO) fprintf(stderr, "Waiting for hit_sound request\n");
 	while (! hit_sound_needed) pthread_cond_wait(&hit_sound_cond, &hit_sound_lock);
 	hit_sound_needed = 0;
-	if (DEBUG_AUDIO) printf("request received: is_default_track = %d, hit_sound stopped? %d\n", is_default_track, stop_is_stopped(hit_sound_stop));
+	if (DEBUG_AUDIO) fprintf(stderr, "request received: is_default_track = %d, hit_sound stopped? %d\n", is_default_track, stop_is_stopped(hit_sound_stop));
 	if (is_default_track || stop_is_stopped(hit_sound_stop)) {
-	    if (DEBUG_AUDIO) printf("playing track\n");
+	    if (DEBUG_AUDIO) fprintf(stderr, "playing track\n");
 	    stop_request_stop(hit_sound_stop);
 	    stop_reset(hit_sound_stop);
 	    pthread_mutex_unlock(&hit_sound_lock);
 
 	    track_play_with_stop(pick_hit_track(&is_default_track), hit_sound_stop);
 	} else {
-	    if (DEBUG_AUDIO) printf("ignoring track\n");
+	    if (DEBUG_AUDIO) fprintf(stderr, "ignoring track\n");
 	    pthread_mutex_unlock(&hit_sound_lock);
 	}
     }
@@ -143,7 +143,7 @@ static void
 hit_sound_play()
 {
     pthread_mutex_lock(&hit_sound_lock);
-    if (DEBUG_AUDIO) printf("requesting track\n");
+    if (DEBUG_AUDIO) fprintf(stderr, "requesting track\n");
     hit_sound_needed = 1;
     pthread_mutex_unlock(&hit_sound_lock);
     pthread_cond_signal(&hit_sound_cond);
@@ -206,10 +206,10 @@ play()
 	
 	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
-	if (DEBUG_PLAY) printf("%4d up %x\n", 0, molars);
+	if (DEBUG_PLAY) fprintf(stderr, "%4d up %x\n", 0, molars);
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {}
-	if (DEBUG_PLAY) printf("%4d ready\n", nano_elapsed_ms_now(&start));
+	if (DEBUG_PLAY) fprintf(stderr, "%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = ~wb_get_all_with_debounce(DEBOUNCE_MS);
 	    if ((molars & hit) != 0) {
@@ -219,22 +219,22 @@ play()
 		n_down = molars_set(molars & hit, MOLAR_DOWN);
 		molars = molars & ~hit;
 		n_hit += n_down;
-		if (DEBUG_PLAY) printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
+		if (DEBUG_PLAY) fprintf(stderr, "%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
 		while (n_down--) score += points[this_n_hit++];
 		digital_counter_set(score_display, score);
 	    }
 	    if (are_up && nano_elapsed_ms_now(&start) > MS_TO_LOWER) {
-		if (DEBUG_PLAY) printf("%4d down\n", nano_elapsed_ms_now(&start));
+		if (DEBUG_PLAY) fprintf(stderr, "%4d down\n", nano_elapsed_ms_now(&start));
 		molars_set(molars, MOLAR_DOWN);
 		are_up = 0;
 	    }
 	
 	}
 	molars_set(molars, MOLAR_DOWN); /* just incase */
-	if (DEBUG_PLAY) printf("%4d done %x\n", nano_elapsed_ms_now(&start), molars);
+	if (DEBUG_PLAY) fprintf(stderr, "%4d done %x\n", nano_elapsed_ms_now(&start), molars);
 	ms_sleep(MS_BETWEEN);
     }
-    if (DEBUG_SHOW_SCORES) printf("done with %d hit, score %d\n", n_hit, score);
+    if (DEBUG_SHOW_SCORES) fprintf(stderr, "done with %d hit, score %d\n", n_hit, score);
     ms_sleep(1000);
     hit_sound_wait();
     if (score > high_score) {
