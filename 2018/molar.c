@@ -52,6 +52,21 @@ static const int points[] = { 10, 15, 20 };
 #define DEBUG_AUDIO	0
 #define DEBUG_SHOW_SCORES 1
 
+static struct {
+    const char *fname;
+    double	pct;
+    track_t    *track;
+} hit_tracks[] = {
+    { "elfie-hit.wav",   85, },
+    { "elfie-hit-1.wav",  4, },
+    { "elfie-hit-2.wav",  4, },
+    { "elfie-hit-3.wav",  4, },
+    { "elfie-hit-4.wav",  1, },
+    { "elfie-hit-long.wav", 2 }
+};
+
+static const int n_hit_tracks = sizeof(hit_tracks) / sizeof(hit_tracks[0]);
+
 static void
 test()
 {
@@ -73,14 +88,35 @@ test()
     }
 }
 
+static track_t *
+pick_hit_track(int *is_default_track)
+{
+    double pct = random_number() * 100;
+    int i;
+
+    for (i = 0; i < n_hit_tracks; i++) {
+	if (pct < hit_tracks[i].pct) {
+	    *is_default_track = (i == 0);
+	    return hit_tracks[i].track;
+	}
+        pct -= hit_tracks[i].pct;
+    }
+
+    *is_default_track = 1;
+
+    return hit_tracks[0].track;
+}
+
 static void *
 hit_sound_main(void *unused)
 {
-    track_t *track;
+    int i;
+    int is_default_track = 1;
 
-    if ((track = track_new("beep.wav")) == NULL) {
-	perror("beep.wav");
-	exit(1);
+    for (i = 0; i < n_hit_tracks; i++) {
+	if ((hit_tracks[i].track = track_new(hit_tracks[i].fname)) == NULL) {
+	    exit(1);
+	}
     }
 
     while (true) {
@@ -88,11 +124,18 @@ hit_sound_main(void *unused)
 	if (DEBUG_AUDIO) printf("Waiting for hit_sound request\n");
 	while (! hit_sound_needed) pthread_cond_wait(&hit_sound_cond, &hit_sound_lock);
 	hit_sound_needed = 0;
-	stop_reset(hit_sound_stop);
-	if (DEBUG_AUDIO) printf("playing track\n");
-	pthread_mutex_unlock(&hit_sound_lock);
+	if (DEBUG_AUDIO) printf("request received: is_default_track = %d, hit_sound stopped? %d\n", is_default_track, stop_is_stopped(hit_sound_stop));
+	if (is_default_track || stop_is_stopped(hit_sound_stop)) {
+	    if (DEBUG_AUDIO) printf("playing track\n");
+	    stop_request_stop(hit_sound_stop);
+	    stop_reset(hit_sound_stop);
+	    pthread_mutex_unlock(&hit_sound_lock);
 
-	track_play_with_stop(track, hit_sound_stop);
+	    track_play_with_stop(pick_hit_track(&is_default_track), hit_sound_stop);
+	} else {
+	    if (DEBUG_AUDIO) printf("ignoring track\n");
+	    pthread_mutex_unlock(&hit_sound_lock);
+	}
     }
 }
 
@@ -102,9 +145,14 @@ hit_sound_play()
     pthread_mutex_lock(&hit_sound_lock);
     if (DEBUG_AUDIO) printf("requesting track\n");
     hit_sound_needed = 1;
-    stop_request_stop(hit_sound_stop);
     pthread_mutex_unlock(&hit_sound_lock);
     pthread_cond_signal(&hit_sound_cond);
+}
+
+static void
+hit_sound_wait()
+{
+    while (! stop_is_stopped(hit_sound_stop)) {}
 }
 
 #define PLAY "play"
@@ -188,6 +236,7 @@ play()
     }
     if (DEBUG_SHOW_SCORES) printf("done with %d hit, score %d\n", n_hit, score);
     ms_sleep(1000);
+    hit_sound_wait();
     if (score > high_score) {
 	high_score = score;
 	digital_counter_set(high_score_display, high_score);
@@ -223,15 +272,15 @@ main(int argc, char **argv)
     high_score_display = digital_counter_new(2, 3, -1, 4);
     digital_counter_set_pause(high_score_display, 20, -1, -1);
 
-    if ((go_track = track_new("go.wav")) == NULL) {
+    if ((go_track = track_new("elfie-ready-set-go.wav")) == NULL) {
 	exit(1);
     }
 
-    if ((high_score_track = track_new("high-score.wav")) == NULL) {
+    if ((high_score_track = track_new("elfie-winner.wav")) == NULL) {
 	exit(1);
     }
 
-    if ((game_over_track = track_new("game-over.wav")) == NULL) {
+    if ((game_over_track = track_new("elfie-loser.wav")) == NULL) {
 	exit(1);
     }
 
