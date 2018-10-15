@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "digital-counter.h"
 #include "time-utils.h"
 #include "track.h"
 #include "util.h"
@@ -39,6 +40,11 @@ static pthread_mutex_t hit_sound_lock;
 static pthread_cond_t hit_sound_cond;
 static stop_t *hit_sound_stop;
 static int hit_sound_needed;
+static digital_counter_t *score_display, *high_score_display;
+static track_t *go_track;
+static track_t *game_over_track;
+static track_t *high_score_track;
+static int high_score;
 
 static const int points[] = { 10, 15, 20 };
 
@@ -128,6 +134,9 @@ play()
 
     wb_set(BUTTON_OUT, 0);
 
+    digital_counter_set(score_display, 0);
+    track_play(go_track);
+
     nano_gettime(&game_start);
     while (nano_elapsed_ms_now(&game_start) < GAME_MS) {
 	int n = random_number_in_range(1, MAX_AT_ONCE);
@@ -164,6 +173,7 @@ play()
 		n_hit += n_down;
 		if (DEBUG_PLAY) printf("%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
 		while (n_down--) score += points[this_n_hit++];
+		digital_counter_set(score_display, score);
 	    }
 	    if (are_up && nano_elapsed_ms_now(&start) > MS_TO_LOWER) {
 		if (DEBUG_PLAY) printf("%4d down\n", nano_elapsed_ms_now(&start));
@@ -177,6 +187,14 @@ play()
 	ms_sleep(MS_BETWEEN);
     }
     if (DEBUG_SHOW_SCORES) printf("done with %d hit, score %d\n", n_hit, score);
+    ms_sleep(1000);
+    if (score > high_score) {
+	high_score = score;
+	digital_counter_set(high_score_display, high_score);
+	track_play(high_score_track);
+    } else {
+	track_play(game_over_track);
+    }
 }
 
 static action_t main_actions[] = {
@@ -198,6 +216,22 @@ main(int argc, char **argv)
 
     if (wb_init() < 0) {
 	perror("wb_init");
+	exit(1);
+    }
+
+    score_display = digital_counter_new(2, 1, -1, 2);
+    high_score_display = digital_counter_new(2, 3, -1, 4);
+    digital_counter_set_pause(high_score_display, 20, -1, -1);
+
+    if ((go_track = track_new("go.wav")) == NULL) {
+	exit(1);
+    }
+
+    if ((high_score_track = track_new("high-score.wav")) == NULL) {
+	exit(1);
+    }
+
+    if ((game_over_track = track_new("game-over.wav")) == NULL) {
 	exit(1);
     }
 
