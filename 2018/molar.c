@@ -268,9 +268,11 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    score_display = digital_counter_new(2, 1, -1, 2);
-    high_score_display = digital_counter_new(2, 3, -1, 4);
-    digital_counter_set_pause(high_score_display, 20, -1, -1);
+    score_display = digital_counter_new(2, 3, -1, 4);
+    high_score_display = digital_counter_new(2, 1, -1, 2);
+    digital_counter_set_pause(score_display, 20, 1000, 1000);
+    digital_counter_set_pause(high_score_display, 25, 1000, 1000);
+    digital_counter_set(high_score_display, 0);
 
     if ((go_track = track_new("elfie-ready-set-go.wav")) == NULL) {
 	exit(1);
