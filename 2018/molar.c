@@ -219,6 +219,7 @@ play()
 	int this_n_hit = 0;
 	struct timespec start;
 	int are_up = 1;
+	int stuck = 1;
 
 	for (i = molars = 0; i < n; i++) {
 	    int molar;
@@ -238,6 +239,7 @@ play()
 	if (DEBUG_PLAY) fprintf(stderr, "%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = ~wb_get_all_with_debounce(DEBOUNCE_MS);
+	    stuck = 0;
 	    if ((molars & hit) != 0) {
 		int n_down;
 
@@ -257,6 +259,9 @@ play()
 	
 	}
 	molars_set(molars, MOLAR_DOWN); /* just incase */
+	if (stuck) {
+	    fprintf(stderr, "%4d STUCK TEETH %x\n", nano_elapsed_ms_now(&start), molars);
+	}
 	if (DEBUG_PLAY) fprintf(stderr, "%4d done %x\n", nano_elapsed_ms_now(&start), molars);
 	ms_sleep(MS_BETWEEN);
     }
