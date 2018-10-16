@@ -35,11 +35,11 @@
 
 static pthread_mutex_t station_lock;
 
-static pthread_t hit_sound_thread;
-static pthread_mutex_t hit_sound_lock;
-static pthread_cond_t hit_sound_cond;
-static stop_t *hit_sound_stop;
-static int hit_sound_needed;
+static pthread_t hit_sound_thread, special_sound_thread;
+static pthread_mutex_t hit_sound_lock, special_sound_lock;
+static pthread_cond_t hit_sound_cond, special_sound_cond;
+static stop_t *hit_sound_stop, *special_sound_stop;
+static int hit_sound_needed, special_sound_needed;
 static digital_counter_t *score_display, *high_score_display;
 static track_t *go_track;
 static track_t *game_over_track;
@@ -57,12 +57,12 @@ static struct {
     double	pct;
     track_t    *track;
 } hit_tracks[] = {
-    { "elfie-hit.wav",   85, },
-    { "elfie-hit-1.wav",  4, },
-    { "elfie-hit-2.wav",  4, },
-    { "elfie-hit-3.wav",  4, },
-    { "elfie-hit-4.wav",  1, },
-    { "elfie-hit-long.wav", 2 }
+    { "elfie-hit.wav",   -1, },
+    { "elfie-hit-1.wav",  28, },
+    { "elfie-hit-2.wav",  28, },
+    { "elfie-hit-3.wav",  28, },
+    { "elfie-hit-4.wav",  6, },
+    { "elfie-hit-long.wav", 10 }
 };
 
 static const int n_hit_tracks = sizeof(hit_tracks) / sizeof(hit_tracks[0]);
@@ -89,29 +89,50 @@ test()
 }
 
 static track_t *
-pick_hit_track(int *is_default_track)
+pick_special_track(void)
 {
     double pct = random_number() * 100;
     int i;
 
-    for (i = 0; i < n_hit_tracks; i++) {
+    for (i = 1; i < n_hit_tracks; i++) {
 	if (pct < hit_tracks[i].pct) {
-	    *is_default_track = (i == 0);
 	    return hit_tracks[i].track;
 	}
         pct -= hit_tracks[i].pct;
     }
 
-    *is_default_track = 1;
-
     return hit_tracks[0].track;
+}
+
+static void *
+special_sound_main(void *unused)
+{
+    while (true) {
+	pthread_mutex_lock(&special_sound_lock);
+	if (DEBUG_AUDIO) fprintf(stderr, "Waiting for special_sound request\n");
+	while (! special_sound_needed) pthread_cond_wait(&special_sound_cond, &special_sound_lock);
+	special_sound_needed = 0;
+	if (DEBUG_AUDIO) fprintf(stderr, "request received: special_sound stopped? %d\n", stop_is_stopped(special_sound_stop));
+	if (stop_is_stopped(special_sound_stop)) {
+	    if (DEBUG_AUDIO) fprintf(stderr, "playing track\n");
+	    stop_reset(special_sound_stop);
+	    pthread_mutex_unlock(&special_sound_lock);
+
+	    ms_sleep(250);
+	    track_play_with_stop(pick_special_track(), special_sound_stop);
+	} else {
+	    if (DEBUG_AUDIO) fprintf(stderr, "ignoring track\n");
+	    pthread_mutex_unlock(&special_sound_lock);
+	}
+    }
+
+    return NULL;
 }
 
 static void *
 hit_sound_main(void *unused)
 {
     int i;
-    int is_default_track = 1;
 
     for (i = 0; i < n_hit_tracks; i++) {
 	if ((hit_tracks[i].track = track_new(hit_tracks[i].fname)) == NULL) {
@@ -119,23 +140,19 @@ hit_sound_main(void *unused)
 	}
     }
 
+    pthread_create(&special_sound_thread, NULL, special_sound_main, NULL);
+
     while (true) {
 	pthread_mutex_lock(&hit_sound_lock);
 	if (DEBUG_AUDIO) fprintf(stderr, "Waiting for hit_sound request\n");
 	while (! hit_sound_needed) pthread_cond_wait(&hit_sound_cond, &hit_sound_lock);
 	hit_sound_needed = 0;
-	if (DEBUG_AUDIO) fprintf(stderr, "request received: is_default_track = %d, hit_sound stopped? %d\n", is_default_track, stop_is_stopped(hit_sound_stop));
-	if (is_default_track || stop_is_stopped(hit_sound_stop)) {
-	    if (DEBUG_AUDIO) fprintf(stderr, "playing track\n");
-	    stop_request_stop(hit_sound_stop);
-	    stop_reset(hit_sound_stop);
-	    pthread_mutex_unlock(&hit_sound_lock);
+	if (DEBUG_AUDIO) fprintf(stderr, "request received\n");
+	if (DEBUG_AUDIO) fprintf(stderr, "playing track\n");
+	stop_reset(hit_sound_stop);
+	pthread_mutex_unlock(&hit_sound_lock);
 
-	    track_play_with_stop(pick_hit_track(&is_default_track), hit_sound_stop);
-	} else {
-	    if (DEBUG_AUDIO) fprintf(stderr, "ignoring track\n");
-	    pthread_mutex_unlock(&hit_sound_lock);
-	}
+	track_play_with_stop(hit_tracks[0].track, hit_sound_stop);
     }
 }
 
@@ -145,14 +162,23 @@ hit_sound_play()
     pthread_mutex_lock(&hit_sound_lock);
     if (DEBUG_AUDIO) fprintf(stderr, "requesting track\n");
     hit_sound_needed = 1;
+    stop_request_stop(hit_sound_stop);
     pthread_mutex_unlock(&hit_sound_lock);
     pthread_cond_signal(&hit_sound_cond);
+
+    if (random_number() < .2) {
+	pthread_mutex_lock(&special_sound_lock);
+	if (DEBUG_AUDIO) fprintf(stderr, "requesting special track\n");
+	special_sound_needed = 1;
+	pthread_mutex_unlock(&special_sound_lock);
+	pthread_cond_signal(&special_sound_cond);
+    }
 }
 
 static void
 hit_sound_wait()
 {
-    while (! stop_is_stopped(hit_sound_stop)) {}
+    while (! stop_is_stopped(hit_sound_stop) && ! stop_is_stopped(special_sound_stop)) {}
 }
 
 #define PLAY "play"
@@ -298,6 +324,10 @@ main(int argc, char **argv)
     pthread_cond_init(&hit_sound_cond, NULL);
 
     hit_sound_stop = stop_new();
+    special_sound_stop = stop_new();
+
+    stop_stopped(hit_sound_stop);
+    stop_stopped(special_sound_stop);
 
     pthread_create(&hit_sound_thread, NULL, hit_sound_main, NULL);
 
