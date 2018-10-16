@@ -83,6 +83,8 @@ init_servos(void)
     }
 
     maestro_set_servo_physical_range(m, LEAD_SERVO, 896, 1248);
+    maestro_set_servo_physical_range(m, BACKUP_SERVO, 560, 800);
+    maestro_set_servo_physical_range(m, BASS_SERVO, 1408, 1904);
     /* TODO: add other ranges here */
 
     rest_servos();
