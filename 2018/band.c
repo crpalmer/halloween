@@ -20,7 +20,7 @@
 
 #define BETWEEN_SONG_MS	1000
 
-#define SONG_WAV	"brush-test.wav"
+#define SONG_WAV	"brush.wav"
 #define LEAD_VSA	"brush-lead.csv"
 #define BACKUP_VSA	"brush-backup.csv"
 #define BASS_VSA	"brush-bass.csv"
