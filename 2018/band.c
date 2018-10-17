@@ -9,9 +9,8 @@
 #include "wb.h"
 
 #define EYE_BANK	1
-#define LEAD_LEFT_EYE	5
-#define LEAD_RIGHT_EYE	6
-#define BACKUP_EYES	7
+#define LEAD_EYES	5
+#define BACKUP_EYES	6
 
 #define LEAD_SERVO	0
 #define BACKUP_SERVO	1
@@ -36,12 +35,13 @@ static struct timespec start;
 typedef struct {
     int		servo;
     int		eyes;
-    int		eye_pins[2];
+    int		eyes_high;
+    int		eye_pin;
 } servo_state_t;
 
-static servo_state_t lead_state = { LEAD_SERVO, 0, { LEAD_LEFT_EYE, LEAD_RIGHT_EYE } };
-static servo_state_t backup_state = { BACKUP_SERVO, 0, { BACKUP_EYES, -1 } };
-static servo_state_t bass_state   = { BASS_SERVO,   0, { -1, -1 } };
+static servo_state_t lead_state = { LEAD_SERVO, 0, 0, LEAD_EYES };
+static servo_state_t backup_state = { BACKUP_SERVO, 0, 1, BACKUP_EYES };
+static servo_state_t bass_state   = { BASS_SERVO,   0, 0, -1 };
 
 static void
 servo_update(void *state_as_vp, double new_pos)
@@ -55,10 +55,11 @@ servo_update(void *state_as_vp, double new_pos)
     
     maestro_set_servo_pos(m, s->servo, pos);
 
-    new_eyes = pos < 50;
+    new_eyes = pos >= 50;
+    if (! s->eyes_high) new_eyes = !new_eyes;
+
     if (s->eyes != new_eyes) {
-	if (s->eye_pins[0] >= 0) wb_set(EYE_BANK, s->eye_pins[0], new_eyes);
-	if (s->eye_pins[1] >= 0) wb_set(EYE_BANK, s->eye_pins[1], new_eyes);
+	if (s->eye_pin >= 0) wb_set(EYE_BANK, s->eye_pin, new_eyes);
 	s->eyes = new_eyes;
     }
 }
@@ -68,7 +69,7 @@ rest_servos(void)
 {
     servo_update(&lead_state, 100);
     servo_update(&backup_state, 0);
-    servo_update(&bass_state, 50);
+    servo_update(&bass_state, 49);
 }
 
 static void
