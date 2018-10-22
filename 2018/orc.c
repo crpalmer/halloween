@@ -9,6 +9,7 @@
 #define ORC_PERIOD_LOW	5000
 #define ORC_PERIOD_HIGH 6000
 #define ORC_SPEED_SLOW	2500
+#define ORC_DEFAULT_POS	65
 #define ORC_TURNED_POS	25
 #define ORC_PAUSE_LOW	500
 #define ORC_PAUSE_HIGH  1000
@@ -30,7 +31,7 @@ main(int argc, char **argv)
     }
 
     maestro_set_servo_range(m, ORC_HEAD, HITEC_HS425);
-    maestro_set_servo_pos(m, ORC_HEAD, 50);
+    maestro_set_servo_pos(m, ORC_HEAD, ORC_DEFAULT_POS);
 
     while (true) {
 	ms_sleep(random_number_in_range(ORC_PERIOD_LOW, ORC_PERIOD_HIGH));
@@ -40,7 +41,7 @@ main(int argc, char **argv)
 	track_play(t);
 	ms_sleep(random_number_in_range(ORC_PAUSE_LOW, ORC_PAUSE_HIGH));
 	maestro_set_servo_speed(m, ORC_HEAD, ORC_SPEED_SLOW);
-	maestro_set_servo_pos(m, ORC_HEAD, 50);
+	maestro_set_servo_pos(m, ORC_HEAD, ORC_DEFAULT_POS);
 	ms_sleep(ORC_SPEED_SLOW/2);
     }
 
