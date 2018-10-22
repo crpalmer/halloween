@@ -3,9 +3,12 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include "fogger.h"
 #include "track.h"
 #include "util.h"
 #include "wb.h"
+
+#define FOGGER_PIN	1, 6
 
 static void
 set_lights(bool on1, bool on2)
@@ -63,14 +66,24 @@ blink_main(void)
 int
 main(int argc, char **argv)
 {
-    static pthread_t sparky_thread;
+    pthread_t sparky_thread;
+    fogger_args_t fogger_args = { 0.01, 0.01 };
+    track_t *cogs;
 
     if (wb_init() < 0) {
 	fprintf(stderr, "failed to initialize wb\n");
 	exit(1);
     }
 
+    if ((cogs = track_new("cogs.wav")) == NULL) {
+	exit(1);
+    }
+
     pthread_create(&sparky_thread, NULL, sparky_main, NULL);
+
+    fogger_run_in_background(FOGGER_PIN, &fogger_args);
+
+    track_play_loop(cogs, NULL);
 
     blink_main();
 
