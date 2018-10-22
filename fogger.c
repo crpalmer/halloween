@@ -100,8 +100,8 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 	if (duty <= 0) duty = 0;
 	write_duty_cycle(duty);
 	return return_duty();
-    } else if (strcmp(command, "duty_set") == 0) {
-	duty = atoi(&command[strlen("duty_set")]);
+    } else if (strncmp(command, "duty_set", strlen("duty_set")) == 0) {
+	duty = atof(&command[strlen("duty_set")]);
 	if (duty < 0) duty = 0;
 	write_duty_cycle(duty);
 	return return_duty();
