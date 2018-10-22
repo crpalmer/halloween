@@ -88,6 +88,25 @@ test()
     }
 }
 
+static const char *
+bits_to_teeth(unsigned bits)
+{
+   int i;
+   static char buf[50];
+   char one[20];
+
+   buf[0] = '\0';
+
+   for (i = 0; i < N_MOLARS; i++) {
+	if ((bits & (1<<i)) != 0) {
+	    sprintf(one, "%s%d", buf[0] ? ", " : "", i+1);
+	    strcat(buf, one);
+	}
+    }
+
+    return buf;
+}
+
 static track_t *
 pick_special_track(void)
 {
@@ -233,7 +252,7 @@ play()
 	
 	n = molars_set(molars, MOLAR_UP);
 	ms_sleep(MS_WAIT_FOR_UP);
-	if (DEBUG_PLAY) fprintf(stderr, "%4d up %x\n", 0, molars);
+	if (DEBUG_PLAY) fprintf(stderr, "%4d up %s\n", 0, bits_to_teeth(molars));
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {}
 	if (DEBUG_PLAY) fprintf(stderr, "%4d ready\n", nano_elapsed_ms_now(&start));
@@ -247,7 +266,7 @@ play()
 		n_down = molars_set(molars & hit, MOLAR_DOWN);
 		molars = molars & ~hit;
 		n_hit += n_down;
-		if (DEBUG_PLAY) fprintf(stderr, "%4d hit %d - %x\n", nano_elapsed_ms_now(&start), n_down, molars);
+		if (DEBUG_PLAY) fprintf(stderr, "%4d hit %d - %s\n", nano_elapsed_ms_now(&start), n_down, bits_to_teeth(molars));
 		while (n_down--) score += points[this_n_hit++];
 		digital_counter_set(score_display, score);
 	    }
@@ -260,9 +279,9 @@ play()
 	}
 	molars_set(molars, MOLAR_DOWN); /* just incase */
 	if (stuck) {
-	    fprintf(stderr, "%4d STUCK TEETH %x\n", nano_elapsed_ms_now(&start), molars);
+	    fprintf(stderr, "%4d STUCK TEETH %s\n", nano_elapsed_ms_now(&start), bits_to_teeth(molars));
 	}
-	if (DEBUG_PLAY) fprintf(stderr, "%4d done %x\n", nano_elapsed_ms_now(&start), molars);
+	if (DEBUG_PLAY) fprintf(stderr, "%4d done %s\n", nano_elapsed_ms_now(&start), bits_to_teeth(molars));
 	ms_sleep(MS_BETWEEN);
     }
     if (DEBUG_SHOW_SCORES) fprintf(stderr, "done with %d hit, score %d\n", n_hit, score);
