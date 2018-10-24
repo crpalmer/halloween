@@ -7,6 +7,7 @@
 #include "track.h"
 #include "util.h"
 #include "wb.h"
+#include "ween-time.h"
 
 #define EYE_BANK	1
 #define LEAD_EYES	5
@@ -42,6 +43,14 @@ typedef struct {
 static servo_state_t lead_state = { LEAD_SERVO, 0, 0, LEAD_EYES };
 static servo_state_t backup_state = { BACKUP_SERVO, 0, 1, BACKUP_EYES };
 static servo_state_t bass_state   = { BASS_SERVO,   0, 0, -1 };
+
+static ween_time_constraint_t ween_time_constraints[] = {
+    { 0,        12, 00,         23, 00 },
+    { 5,        17, 00,         23, 00 },
+    { -1,       15, 30,         20, 00 },
+};
+
+static int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
 
 static void
 servo_update(void *state_as_vp, double new_pos)
@@ -112,6 +121,8 @@ main(int argc, char **argv)
 
     while (1) {
 	rest_servos();
+
+	ween_time_wait_until_valid(ween_time_constraints, n_ween_time_constraints);
 
 	ms_sleep(BETWEEN_SONG_MS);
 
