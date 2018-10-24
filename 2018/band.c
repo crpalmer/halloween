@@ -11,13 +11,14 @@
 #define EYE_BANK	1
 #define LEAD_EYES	5
 #define BACKUP_EYES	6
+#define LIGHTS		1,1
 
 #define LEAD_SERVO	0
 #define BACKUP_SERVO	1
 #define BASS_SERVO	2
 #define TRIANGLE_SERVO	3
 
-#define BETWEEN_SONG_MS	1000
+#define BETWEEN_SONG_MS	5000
 
 #define SONG_WAV	"brush.wav"
 #define LEAD_VSA	"brush-lead.csv"
@@ -97,6 +98,8 @@ main(int argc, char **argv)
     pi_usb_init();
     wb_init();
 
+    wb_set(LIGHTS, 0);
+
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize servo controller\n");
 	exit(1);
@@ -111,11 +114,13 @@ main(int argc, char **argv)
     init_servos();
 
     while (1) {
+	wb_set(LIGHTS, 0);
 	rest_servos();
 
 	ms_sleep(BETWEEN_SONG_MS);
 
 	nano_gettime(&start);
+	wb_set(LIGHTS, 1);
 	talking_skull_actor_play(lead);
 	talking_skull_actor_play(backup);
 	talking_skull_actor_play(bass);
