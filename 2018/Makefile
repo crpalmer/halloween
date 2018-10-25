@@ -32,10 +32,19 @@ orc: orc.o $(DEP_LIBS)
 	$(CC) -o $@ orc.o $(LIBS)
 
 # compile and generate dependency info
-%.o: %.c
+%.o: %.c %.d
 	@echo "Building: $*.c"
 	@gcc -c $(CFLAGS) $*.c -o $*.o
+
+%.d: %.c
+	@echo "Depends:  $*.c"
 	@gcc -MM $(CFLAGS) $*.c > $*.d
 
 clean:
 	-rm *.o *.d */*.o */*.d $(PROPS)
+
+include animation.d
+include band.d
+include factory.d
+include molar.d
+include orc.d
