@@ -7,6 +7,7 @@
 #include "track.h"
 #include "util.h"
 #include "wb.h"
+#include "ween2018.h"
 
 #define EYE_BANK	1
 #define LEAD_EYES	5
@@ -116,6 +117,9 @@ main(int argc, char **argv)
     while (1) {
 	wb_set(LIGHTS, 0);
 	rest_servos();
+
+        ween2018_wait_until_valid();
+	ween2018_set_volume(song);
 
 	ms_sleep(BETWEEN_SONG_MS);
 

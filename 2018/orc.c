@@ -4,6 +4,7 @@
 #include "pi-usb.h"
 #include "track.h"
 #include "util.h"
+#include "ween2018.h"
 
 #define ORC_HEAD	0
 #define ORC_PERIOD_LOW	5000
@@ -34,10 +35,12 @@ main(int argc, char **argv)
     maestro_set_servo_pos(m, ORC_HEAD, ORC_DEFAULT_POS);
 
     while (true) {
+	ween2018_wait_until_valid();
 	ms_sleep(random_number_in_range(ORC_PERIOD_LOW, ORC_PERIOD_HIGH));
 	maestro_set_servo_speed(m, ORC_HEAD, 0);
 	maestro_set_servo_pos(m, ORC_HEAD, ORC_TURNED_POS);
 	ms_sleep(250);
+	ween2018_set_volume(t);
 	track_play(t);
 	ms_sleep(random_number_in_range(ORC_PAUSE_LOW, ORC_PAUSE_HIGH));
 	maestro_set_servo_speed(m, ORC_HEAD, ORC_SPEED_SLOW);
