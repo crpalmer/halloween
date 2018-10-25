@@ -11,11 +11,11 @@
 #include "animation-lights.h"
 #include "fogger.h"
 
-#define DOG  	    "dog"
-#define CAT         "cat"
-#define QUESTION    "question"
 #define TOAD        "toad"
+#define HOP	    "hop"
+#define QUESTION    "question"
 #define SNAKE       "snake"
+#define CAT         "cat"
 
 #define FOGGER_PIN	1, 8
 #define SNAKE_PIN	2, 8
@@ -41,11 +41,9 @@ do_attack(unsigned pin, lights_t *l, double up, double down)
 }
 
 static void
-do_dog(void *unused, lights_t *l, unsigned pin)
+do_hop(void *unused, lights_t *l, unsigned pin)
 {
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
-    ms_sleep(random_number_in_range(DOG_MIN_MS, DOG_MAX_MS));
-    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
+    do_attack(pin, l, 1, 1.5);
 }
 
 static void
@@ -79,11 +77,11 @@ do_snake(void *unused, lights_t *l, unsigned pin)
 }
 
 static action_t main_actions[] = {
-    { DOG,	do_dog,		NULL },
-    { CAT,	do_cat,		NULL },		/* TODO */
-    { QUESTION, do_question,	NULL },
     { TOAD,     do_toad,	NULL },
+    { HOP,	do_hop,		NULL },
+    { QUESTION, do_question,	NULL },
     { SNAKE,	do_snake,	NULL },
+    { CAT,	do_cat,		NULL },
     { NULL,	NULL,		NULL },
 };
 
