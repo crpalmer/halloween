@@ -17,6 +17,7 @@
 #define TOAD        "toad"
 #define SNAKE       "snake"
 
+#define FOGGER_PIN	1, 8
 #define SNAKE_PIN	2, 8
 
 #define DOG_MIN_MS	5000
