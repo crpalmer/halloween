@@ -2,6 +2,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	animation \
+	animation2 \
 	band \
 	factory \
 	molar \
@@ -18,6 +19,9 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 animation: animation.o $(DEP_LIBS)
 	$(CC) -o $@ animation.o $(LIBS)
+
+animation2: animation2.o $(DEP_LIBS)
+	$(CC) -o $@ animation2.o $(LIBS)
 
 band: band.o $(DEP_LIBS)
 	$(CC) -o $@ band.o $(LIBS)
@@ -44,6 +48,7 @@ clean:
 	-rm *.o *.d */*.o */*.d $(PROPS)
 
 include animation.d
+include animation2.d
 include band.d
 include factory.d
 include molar.d
