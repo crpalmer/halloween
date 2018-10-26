@@ -1,9 +1,17 @@
 #ifndef __WEEN2018_H__
 #define __WEEN2018_H__
 
+#include <sys/stat.h>
 #include "audio.h"
 #include "ween-time.h"
- 
+
+static inline int ween2018_is_ignored()
+{
+    struct stat s;
+
+    return (stat("/tmp/ween-ignore", &s) >= 0);
+}
+
 static inline void ween2018_wait_until_valid()
 {
     static ween_time_constraint_t ween_time_constraints[] = {
@@ -14,20 +22,9 @@ static inline void ween2018_wait_until_valid()
     };
     const int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
 
-    ween_time_wait_until_valid(ween_time_constraints, n_ween_time_constraints);
-}
-
-static inline void ween2018_set_volume(track_t *t)
-{
-    static ween_time_constraint_t ween_time_constraints[] = {
-        { 0,        12, 00,         23, 00 },
-    };
-
-    if (ween_time_is_valid(ween_time_constraints, 1)) {
-	track_set_volume(t, 100);
-    } else {
-	track_set_volume(t, 50);
+    while (! (ween2018_is_ignored() || ween_time_is_valid(ween_time_constraints, n_ween_time_constraints))) {
+	ms_sleep(1000);
     }
 }
 
-#endif     
+#endif

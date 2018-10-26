@@ -119,7 +119,6 @@ main(int argc, char **argv)
 	rest_servos();
 
         ween2018_wait_until_valid();
-	ween2018_set_volume(song);
 
 	ms_sleep(BETWEEN_SONG_MS);
 
