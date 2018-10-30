@@ -273,14 +273,7 @@ main(int argc, char **argv)
     if ((maestro = maestro_new()) == NULL) {
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
-#if 1
-        maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
 	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL);
-#else
-	maestro_set_servo_range(maestro, SERVO_ID, HITEC_HS425);
-	maestro_set_servo_range_pct(maestro, SERVO_ID, 85, 100);
-	maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
-#endif
     }
 
     for (n_idle_tracks = 0; n_idle_tracks < MAX_IDLE_TRACKS; n_idle_tracks++) {
