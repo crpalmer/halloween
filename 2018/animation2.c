@@ -9,10 +9,11 @@
 #include "animation-common.h"
 #include "animation-lights.h"
 
+#define DOG		"dog"
 #define FROG		"frog"
-#define HOP		"hop"
 
-#define SNAKE_PIN	2, 8
+#define DOG_MIN_MS      5000
+#define DOG_MAX_MS      6000
 
 static pthread_mutex_t station_lock;
 
@@ -30,20 +31,22 @@ do_attack(unsigned pin, lights_t *l, double up, double down)
 }
 
 static void
+do_dog(void *unused, lights_t *l, unsigned pin)
+{
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    ms_sleep(random_number_in_range(DOG_MIN_MS, DOG_MAX_MS));
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
+}
+
+static void
 do_frog(void *unused, lights_t *l, unsigned pin)
 {
     do_attack(pin, l, 1, 1);
 }
 
-static void
-do_hop(void *unused, lights_t *l, unsigned pin)
-{
-    do_attack(pin, l, 1, 1.5);
-}
-
 static action_t main_actions[] = {
+    { DOG,	do_dog,		NULL },
     { FROG,	do_frog,	NULL },
-    { HOP,	do_hop,		NULL },
     { NULL,	NULL,		NULL },
 };
 
