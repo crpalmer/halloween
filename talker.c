@@ -266,7 +266,7 @@ main(int argc, char **argv)
     if ((maestro = maestro_new()) == NULL) {
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
-#if 0
+#if 1
         maestro_set_servo_is_inverted(maestro, SERVO_ID, true);
 	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL);
 #else
@@ -315,7 +315,7 @@ main(int argc, char **argv)
 	fprintf(stderr, "Failed to initialize capture\n");
 	exit(1);
     } else if (in) {
-	audio_set_volume(in, 100);
+	audio_set_volume(in, 50);
 	assert(audio_get_buffer_size(in) == size);
         fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
     } else {
@@ -323,7 +323,6 @@ main(int argc, char **argv)
     }
 
     audio_set_volume(out, 100);
-    audio_set_volume(in, 50);
 
     audio_meta_init_from_config(&meta, &cfg);
     skull = talking_skull_new(&meta, false, servo_update, NULL);
