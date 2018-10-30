@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include "audio.h"
 #include "maestro.h"
 #include "mem.h"
@@ -252,9 +253,11 @@ main(int argc, char **argv)
     pthread_t play_thread;
     unsigned char *auto_play_buffer = NULL;
     size_t auto_play_bytes_left = 0;
-    int no_input = 0;
+    int no_input;
+    struct stat stat_unused;
     size_t i;
 
+    no_input = (stat("/tmp/talker-no-input", &stat_unused) >= 0);
     if (argc > 1) {
 	if (strcmp(argv[1], "--no-input") == 0) {
 	    no_input = 1;
