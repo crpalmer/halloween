@@ -20,10 +20,10 @@ static maestro_t *maestro;
 #define RIGHT_EYE_PIN 2, 1
 #define LEFT_EYE_PIN 2, 2
 
-#define N_HISTORY 20
+#define N_HISTORY 50
 #define MICROPHONE_HISTORY_EPSILON 5
 #define MICROPHONE_GAIN_TARGET     65
-#define MICROPHONE_MAX_GAIN	   2
+#define MICROPHONE_MAX_GAIN	   5
 #define OTHER_MAX_GAIN		   100
 #define OTHER_GAIN_TARGET          40
 #define OTHER_HISTORY_EPSILON      0
@@ -34,7 +34,7 @@ static maestro_t *maestro;
 
 #define STATS_MICROPHONE 0
 #define STATS_AUTO	 256
-#define MAX_STATS (256+1)
+#define MAX_STATS (STATS_AUTO+1)
 
 typedef struct {
     double history[N_HISTORY];
