@@ -63,6 +63,11 @@ static time_t last_audio;
 static producer_consumer_t *pc;
 size_t size;
 
+#define MAX_IDLE_TRACKS		20
+#define IDLE_TRACK_PREFIX	"toothfairy-talker"
+static wav_t *idle_tracks[MAX_IDLE_TRACKS];
+static int n_idle_tracks;
+
 /* Only used by the single threaded consumer thread */
 static int current_stats_who;
 
@@ -247,7 +252,6 @@ main(int argc, char **argv)
     pthread_t play_thread;
     unsigned char *auto_play_buffer = NULL;
     size_t auto_play_bytes_left = 0;
-    wav_t *auto_wav;
     int no_input = 0;
     size_t i;
 
@@ -276,10 +280,14 @@ main(int argc, char **argv)
 #endif
     }
 
-    if ((auto_wav = wav_new("werewolf.wav")) == NULL) {
-	perror("chant1.wav");
-	exit(1);
+    for (n_idle_tracks = 0; n_idle_tracks < MAX_IDLE_TRACKS; n_idle_tracks++) {
+	char fname[128];
+
+	sprintf(fname, "%s-%d.wav", IDLE_TRACK_PREFIX, n_idle_tracks+1);
+	if ((idle_tracks[n_idle_tracks] = wav_new(fname)) == NULL) break;
     }
+
+    fprintf(stderr, "Using %d idle tracks\n", n_idle_tracks);
 
     pthread_mutex_init(&speak_lock, NULL);
     server_args.port = 5555;
@@ -341,8 +349,8 @@ main(int argc, char **argv)
     stats[STATS_AUTO].gain = 3;
 
     while (no_input || audio_capture_buffer(in, buffer)) {
-	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS) {
-	    auto_play_buffer = wav_get_raw_data(auto_wav, &auto_play_bytes_left);
+	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS && n_idle_tracks > 0) {
+	    auto_play_buffer = wav_get_raw_data(idle_tracks[random_number_in_range(0, n_idle_tracks-1)], &auto_play_bytes_left);
 	}
 
 	if (auto_play_bytes_left) {
