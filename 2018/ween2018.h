@@ -15,7 +15,7 @@ static inline int ween2018_is_ignored()
 static inline void ween2018_wait_until_valid()
 {
     static ween_time_constraint_t ween_time_constraints[] = {
-        { 0,        12, 00,         23, 00 },
+        { 0,        15, 30,         23, 00 },
         { 5,        15, 30,         20, 00 },
         { -1,       15, 30,         17, 00 },
         { -1,       18, 30,         20, 00 },
