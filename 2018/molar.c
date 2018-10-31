@@ -13,12 +13,12 @@
 #include "animation-lights.h"
 
 #define MAX_AT_ONCE	3
-#define GAME_MS		15000
+#define GAME_MS		8000
 #define MS_TO_LOWER	400
-#define MS_FOR_STUCK	200
-#define MS_TO_HIT 	(MS_TO_LOWER + 100)
-#define MS_WAIT_FOR_UP	250
-#define MS_BETWEEN	250
+#define MS_FOR_STUCK	150
+#define MS_TO_HIT 	(MS_TO_LOWER)
+#define MS_WAIT_FOR_UP	200
+#define MS_BETWEEN	350
 #define DEBOUNCE_MS	2
 #define UP_DEBOUNCE_MS	10
 
