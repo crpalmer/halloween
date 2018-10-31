@@ -15,6 +15,7 @@
 #define MAX_AT_ONCE	3
 #define GAME_MS		15000
 #define MS_TO_LOWER	400
+#define MS_FOR_STUCK	200
 #define MS_TO_HIT 	(MS_TO_LOWER + 100)
 #define MS_WAIT_FOR_UP	250
 #define MS_BETWEEN	250
@@ -254,7 +255,10 @@ play()
 	ms_sleep(MS_WAIT_FOR_UP);
 	if (DEBUG_PLAY) fprintf(stderr, "%4d up %s\n", 0, bits_to_teeth(molars));
 	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {}
+	while (nano_elapsed_ms_now(&start) < MS_FOR_STUCK && (wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {}
+	if ((wb_get_all_with_debounce(UP_DEBOUNCE_MS) & molars) != molars) {
+	    goto down;
+	}
 	if (DEBUG_PLAY) fprintf(stderr, "%4d ready\n", nano_elapsed_ms_now(&start));
 	while (nano_elapsed_ms_now(&start) < MS_TO_HIT && molars) {
 	    int hit = ~wb_get_all_with_debounce(DEBOUNCE_MS);
@@ -277,6 +281,7 @@ play()
 	    }
 	
 	}
+down:
 	molars_set(molars, MOLAR_DOWN); /* just incase */
 	if (stuck) {
 	    fprintf(stderr, "%4d STUCK TEETH %s\n", nano_elapsed_ms_now(&start), bits_to_teeth(molars));
