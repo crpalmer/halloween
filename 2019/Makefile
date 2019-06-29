@@ -1,7 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
-	earth-invaders \
+	earth-invaders earth-invaders-test \
 
 
 all: $(PROPS)
@@ -14,6 +14,9 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 earth-invaders: earth-invaders.o $(DEP_LIBS)
 	$(CXX) -o $@ earth-invaders.o $(LIBS)
+
+earth-invaders-test: earth-invaders-test.o $(DEP_LIBS)
+	$(CXX) -o $@ earth-invaders-test.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c %.d
@@ -28,7 +31,12 @@ earth-invaders: earth-invaders.o $(DEP_LIBS)
 	@echo "Depends:  $*.c"
 	@gcc -MM $(CFLAGS) $*.c > $*.d
 
+%.d: %.cpp
+	@echo "Depends:  $*.c"
+	@g++ -MM $(CFLAGS) $*.cpp > $*.d
+
 clean:
 	-rm *.o *.d */*.o */*.d $(PROPS)
 
 -include earth-invaders.d
+-include earth-invaders-test.d
