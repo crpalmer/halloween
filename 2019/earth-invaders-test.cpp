@@ -76,15 +76,15 @@ static void
 test_scores()
 {
     printf("Testing score boards:\n");
-    printf("   Setting P1 score to 10: ");
+    printf("   Setting P1 score to 100: ");
     input();
-    io->score[0]->set(10);
-    printf("   Setting P2 score to 10: ");
+    io->score[0]->set(100);
+    printf("   Setting P2 score to 100: ");
     input();
-    io->score[1]->set(10);
-    printf("   Setting high score to 10: ");
+    io->score[1]->set(100);
+    printf("   Setting high score to 100: ");
     input();
-    io->high_score->set(10);
+    io->high_score->set(100);
     printf("   Setting all scores back to 0: ");
     input();
     io->score[0]->set(0);
