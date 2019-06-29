@@ -5,6 +5,7 @@
 #include "l298n.h"
 #include "mcp23017.h"
 #include "pca9685.h"
+#include "util.h"
 #include "wb.h"
 
 #define BUTTON_PUSHED   0
@@ -19,6 +20,8 @@ public:
      earth_invaders_io_t() {
 	mcp = new MCP23017();
 	pca = new PCA9685();
+
+	ms_sleep(500);		// let the relays stabilize after resetting pca
 
 	laser = mcp->get_output(1, 5);
 	triggers[0] = mcp->get_input(1, 3);
@@ -35,9 +38,13 @@ public:
 	    targets[target] = mcp->get_input(0, target);
 	}
 
-	score[1] = new digital_counter_t(pca->get_output(0), NULL, pca->get_output(1));
-	high_score = new digital_counter_t(pca->get_output(2), NULL, pca->get_output(3));
-	score[0] = new digital_counter_t(pca->get_output(4), NULL, pca->get_output(5));
+	score[1] = new digital_counter_t(pca->get_output(1), NULL, pca->get_output(0));
+	high_score = new digital_counter_t(pca->get_output(3), NULL, pca->get_output(2));
+	score[0] = new digital_counter_t(pca->get_output(5), NULL, pca->get_output(4));
+
+	score[0]->set_pause(-1, 500, 500);
+	high_score->set_pause(-1, 500, 500);
+	score[1]->set_pause(-1, 500, 500);
 
 	triggers[0]->set_pullup_up();
 	triggers[1]->set_pullup_up();
