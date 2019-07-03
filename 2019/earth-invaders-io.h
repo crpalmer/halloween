@@ -35,7 +35,7 @@ public:
 	motor = new L298N(pca->get_output(13), pca->get_output(14), pca->get_output(15));
 
 	for (int target = 0; target < 6; target++) {
-	    targets[target / 3][target % 3] = mcp->get_input(0, target);
+	    targets[target / 3][target % 3] = mcp->get_input(0, 2+target);
 	}
 
 	for (int light = 0; light < 6; light++) {
