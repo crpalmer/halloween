@@ -65,7 +65,7 @@ game(void)
 
     nano_gettime(&start);
     while (nano_elapsed_ms_now(&start) < 30000) {
-	if (io->targets[0]->get() == TARGET_HIT && (io->triggers[0]->get() == BUTTON_PUSHED || io->triggers[1]->get() == BUTTON_PUSHED)) {
+	if (io->targets[0][0]->get() == TARGET_HIT && (io->triggers[0]->get() == BUTTON_PUSHED || io->triggers[1]->get() == BUTTON_PUSHED)) {
 	    printf("hit\n");
 	    io->score[0]->set(++hits);
 	    track_play_asynchronously(hit_track, NULL);

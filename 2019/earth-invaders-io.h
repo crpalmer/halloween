@@ -35,16 +35,20 @@ public:
 	motor = new L298N(pca->get_output(13), pca->get_output(14), pca->get_output(15));
 
 	for (int target = 0; target < 6; target++) {
-	    targets[target] = mcp->get_input(0, target);
+	    targets[target / 3][target % 3] = mcp->get_input(0, target);
 	}
+
+	for (int light = 0; light < 6; light++) {
+	    lights[light / 3][light % 3] = wb_get_output(1, light+1);
+        }
 
 	score[1] = new digital_counter_t(pca->get_output(1), NULL, pca->get_output(0));
 	high_score = new digital_counter_t(pca->get_output(3), NULL, pca->get_output(2));
 	score[0] = new digital_counter_t(pca->get_output(5), NULL, pca->get_output(4));
 
-	score[0]->set_pause(-1, 500, 500);
-	high_score->set_pause(-1, 500, 500);
-	score[1]->set_pause(-1, 500, 500);
+	score[0]->set_pause(50, 500, 500);
+	high_score->set_pause(50, 500, 500);
+	score[1]->set_pause(50, 500, 500);
 
 	triggers[0]->set_pullup_up();
 	triggers[1]->set_pullup_up();
@@ -60,7 +64,8 @@ public:
      input_t	*endstop_motor, *endstop_idler;
      motor_t	*motor;
 
-     input_t	*targets[6];
+     output_t   *lights[3][3];
+     input_t	*targets[3][3];
 
      digital_counter_t *score[2];
      digital_counter_t *high_score;
