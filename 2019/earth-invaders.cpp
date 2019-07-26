@@ -16,7 +16,10 @@ static double speed = 0;
 
 static earth_invaders_io_t *io;
 
+static track_t *game_over_track;
 static track_t *hit_track;
+static track_t *start_track;
+static track_t *winner_track;
 static bool game_active;
 static int high_score;
 static int scores[2];
@@ -122,15 +125,28 @@ start_pushed(void)
     io->score[0]->set(0);
     io->score[1]->set(1);
     motor_start();
+
+    track_play(start_track);
+
     io->laser->on();
     game_active = true;
+
     ms_sleep(GAME_PLAY_MS);
+
     game_active = false;
     motor_stop();
     io->laser->off();
+
+    int old_high_score = high_score;
     if (scores[0] > high_score) high_score = scores[0];
     if (scores[1] > high_score) high_score = scores[1];
-    io->high_score->set(high_score);
+
+    if (high_score > old_high_score) {
+	io->high_score->set(high_score);
+	track_play(winner_track);
+    } else {
+	track_play(game_over_track);
+    }
 }
 
 int main(int argc, char **argv)
@@ -145,7 +161,10 @@ int main(int argc, char **argv)
 
 if (argc > 1) return(0);
 
+    game_over_track = track_new("game-over.wav");
     hit_track = track_new("hit.wav");
+    start_track = track_new("elfie-ready-set-go.wav");
+    winner_track = track_new("elfie-winner.wav");
 
     pthread_t motor_thread, p1_thread, p2_thread;
     pthread_create(&motor_thread, NULL, motor_main, NULL);
