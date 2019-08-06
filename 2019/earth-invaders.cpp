@@ -17,7 +17,7 @@ static double speed = 0;
 static earth_invaders_io_t *io;
 
 static track_t *game_over_track;
-static track_t *hit_track;
+static track_t *hit_track[2];
 static track_t *start_track;
 static track_t *winner_track;
 static bool game_active;
@@ -91,7 +91,7 @@ player_main(void *p_as_void)
         while (game_active) {
 #if 1
 	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
-		track_play_asynchronously(hit_track, NULL);
+		track_play_asynchronously(hit_track[p], NULL);
 		int last_target = active_target;
 		while (last_target == active_target) active_target = random_number_in_range(0, 2);
 		set_active_target(p, active_target);
@@ -101,7 +101,7 @@ player_main(void *p_as_void)
 #else
 	    int need_new_target = nano_elapsed_ms_now(&active_at) > 1*1000;
 	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
-		track_play_asynchronously(hit_track, NULL);
+		track_play_asynchronously(hit_track[p], NULL);
 		scores[p]++;
 		io->score[p]->set(scores[p]);
 		need_new_target = true;
@@ -162,7 +162,8 @@ int main(int argc, char **argv)
 if (argc > 1) return(0);
 
     game_over_track = track_new("game-over.wav");
-    hit_track = track_new("hit.wav");
+    hit_track[0] = track_new("hit1.wav");
+    hit_track[1] = track_new("hit2.wav");
     start_track = track_new("elfie-ready-set-go.wav");
     winner_track = track_new("elfie-winner.wav");
 
