@@ -55,6 +55,19 @@ public:
 	start_button->set_pullup_up();
      }
 
+    void change_motor(bool direction, double speed)
+    {
+        motor->speed(0);
+        ms_sleep(50);
+        motor->direction(direction);
+        motor->speed(speed);
+    }
+
+    void stop_motor()
+    {
+	motor->speed(0);
+    }
+
      output_t	*laser;
      input_t	*triggers[2];
 

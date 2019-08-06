@@ -29,16 +29,6 @@ static void yield()
     ms_sleep(1);
 }
 
-static void
-change_motor(bool direction)
-{
-printf("motor going %s\n", direction ? "forward" : "backward");
-    io->motor->speed(0);
-    ms_sleep(50);
-    io->motor->direction(direction);
-    io->motor->speed(speed);
-}
-
 static void *
 motor_main(void *unused)
 {
@@ -47,10 +37,10 @@ motor_main(void *unused)
     while (1) {
 	if (direction == TO_IDLER && io->endstop_idler->get() == ENDSTOP_TRIGGERED) {
 	    direction = TO_MOTOR;
-	    change_motor(direction);
+	    io->change_motor(direction, speed);
 	} else if (direction == TO_MOTOR && io->endstop_motor->get() == ENDSTOP_TRIGGERED) {
 	    direction = TO_IDLER;
-	    change_motor(direction);
+	    io->change_motor(direction, speed);
 	}
     }
 }
