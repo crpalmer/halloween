@@ -73,6 +73,22 @@ test_endstops()
 }
 
 static void
+test_motor()
+{
+    printf("Testing the motor:\n");
+    printf("   Hit enter to move motor toward motor: ");
+    input();
+    io->change_motor(TO_MOTOR, 0.75);
+    ms_sleep(2*1000);
+    io->stop_motor();
+    printf("   Hit enter to move motor toward idler: ");
+    input();
+    io->change_motor(TO_IDLER, 0.75);
+    ms_sleep(2*1000);
+    io->stop_motor();
+}
+   
+static void
 test_scores()
 {
     printf("Testing score boards:\n");
@@ -175,6 +191,7 @@ int main(int argc, char **argv)
     if (test_is_enabled(argc, argv, "blaster")) test_blasters();
     if (test_is_enabled(argc, argv, "start")) test_start();
     if (test_is_enabled(argc, argv, "endstops")) test_endstops();
+    if (test_is_enabled(argc, argv, "motor")) test_motor();
     if (test_is_enabled(argc, argv, "scores")) test_scores();
     if (test_is_enabled(argc, argv, "lights")) test_lights();
     if (test_is_enabled(argc, argv, "targets")) test_targets();
