@@ -1,6 +1,10 @@
 #ifndef __ANIMATION_ACTIONS_H__
 #define __ANIMATION_ACTIONS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 #include "animation-lights.h"
@@ -21,5 +25,9 @@ typedef struct {
     waiting_fn_t waiting;
     unsigned waiting_period_ms;
 } station_t;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
