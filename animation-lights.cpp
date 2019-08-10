@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <malloc.h>
+#include <list>
 #include "mem.h"
 #include "util.h"
 #include "wb.h"
@@ -8,160 +9,202 @@
 #include "animation-common.h"
 #include "animation-lights.h"
 
-typedef enum {
-    LIGHTS_NONE, LIGHTS_BLINK, LIGHTS_CHASE
-} lights_action_t;
+using namespace std;
 
-struct lightsS {
-    pthread_t        thread;
-    pthread_mutex_t  lock;
-    pthread_cond_t   cond;
-    lights_action_t  action;
-    unsigned	     min_pin, max_pin;
-    unsigned	     blink_pin;
+class Action {
+public:
+    virtual ~Action();
+    virtual void step() = 0;
 };
 
+class BlinkOneAction : public Action {
+public:
+    BlinkOneAction(output_t *light) : light(light), state(1)
+    {}
+
+    void step() {
+	light->set(state);
+	state = !state;
+    }
+
+private:
+    output_t *light;
+    int      state;
+};
+
+class BlinkAllAction : public Action {
+public:
+    BlinkAllAction(Lights *lights) : lights(lights), state(1)
+    {}
+
+    void step() {
+	lights->set_all(state);
+	state = !state;
+    }
+
+private:
+    Lights *lights;
+    output_t *light;
+    int      state;
+};
+
+class ChaseAction : public Action {
+public:
+    ChaseAction(list<output_t *> lights) : lights(lights), last(NULL)
+    {
+	it = lights.begin();
+    }
+
+    void step() {
+	if (last) {
+	    last->off();
+	    if (it == lights.end()) it = lights.begin();
+	    else it++;
+	}
+	last = *it;
+	last->on();
+    }
+
+private:
+    list<output_t *> lights;
+    list<output_t *>::iterator it;
+    output_t *last;
+};
 
 #define ANIMATION_SLEEP_MS	200
 
-static void
-set_all(lights_t *l, unsigned value)
+void
+Lights::add(output_t *light)
 {
-    unsigned pin;
+    lights.push_back(light);
+}
 
-    for (pin = l->min_pin; pin <= l->max_pin; pin++) {
-	wb_set(LIGHTS_OUTPUT_BANK, pin, value);
+void
+Lights::set_all(unsigned value)
+{
+    list<output_t *> :: iterator it;
+
+    for (it = lights.begin(); it != lights.end(); it++) {
+	(*it)->set(value);
     }
 }
 
-static void
-blink_locked(lights_t *l)
+void *
+Lights::work(void *this_as_vp)
 {
-    if (l->blink_pin == -1) set_all(l, 1);
-    else wb_set(LIGHTS_OUTPUT_BANK, l->blink_pin, 1);
+    Lights *l = (Lights *) this_as_vp;
 
-    pthread_mutex_unlock(&l->lock);
-    ms_sleep(ANIMATION_SLEEP_MS);
     pthread_mutex_lock(&l->lock);
-    if (l->action == LIGHTS_BLINK) {
-	if (l->blink_pin == -1) set_all(l, 0);
-	else wb_set(LIGHTS_OUTPUT_BANK, l->blink_pin, 0);
-
-	ms_sleep(ANIMATION_SLEEP_MS);
-    }
-}
-
-static void
-chase_locked(lights_t *l)
-{
-    unsigned pin;
-
-    for (pin = l->min_pin; pin <= l->max_pin && l->action == LIGHTS_CHASE; pin++) {
-	set_all(l, 0);
-	wb_set(LIGHTS_OUTPUT_BANK, pin, 1);
-	if (l->max_pin - l->min_pin + 1 >= 3) {
-	    /* If we only have 2 lights, only light up one at a time */
-	    wb_set(LIGHTS_OUTPUT_BANK, pin < l->max_pin ? pin+1 : l->min_pin, 1);
-	}
-	pthread_mutex_unlock(&l->lock);
-	ms_sleep(ANIMATION_SLEEP_MS);
-	pthread_mutex_lock(&l->lock);
-    }
-}
-
-static void *
-lights_work(void *l_as_vp)
-{
-    lights_t *l = (lights_t *) l_as_vp;
-
     while (true) {
-	pthread_mutex_lock(&l->lock);
-	if (l->action == LIGHTS_NONE) {
+	if (l->action == NULL) {
 	    pthread_cond_wait(&l->cond, &l->lock);
-	} else if (l->action == LIGHTS_BLINK) {
-	    blink_locked(l);
-	} else if (l->action == LIGHTS_CHASE) {
-	    chase_locked(l);
+	} else {
+	    l->action->step();
+	    pthread_mutex_unlock(&l->lock);
+	    ms_sleep(ANIMATION_SLEEP_MS);
+	    pthread_mutex_lock(&l->lock);
 	}
-	pthread_mutex_unlock(&l->lock);
     }
     return NULL;
 }
 
-lights_t *
-lights_new(unsigned min_pin, unsigned max_pin)
+Lights::Lights()
 {
-    lights_t *l = fatal_malloc(sizeof(*l));
+    action = NULL;
 
-    l->action = LIGHTS_NONE;
-    l->min_pin = min_pin;
-    l->max_pin = max_pin;
-    l->blink_pin = -1;
+    pthread_mutex_init(&lock, NULL);
+    pthread_cond_init(&cond, NULL);
 
-    pthread_mutex_init(&l->lock, NULL);
-    pthread_cond_init(&l->cond, NULL);
-
-    pthread_create(&l->thread, NULL, lights_work, l);
-
-    return l;
+    pthread_create(&thread, NULL, work, NULL);
 }
     
 void
+Lights::set_action(Action *new_action)
+{
+    pthread_mutex_lock(&lock);
+    if (action) delete action;
+    action = new_action;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&lock);
+}
+
+void
+Lights::blink_all()
+{
+    set_action(new BlinkAllAction(this));
+}
+
+void
+Lights::blink_one(output_t *l)
+{
+    set_action(new BlinkOneAction(l));
+}
+
+void
+Lights::chase()
+{
+    set_action(new ChaseAction(lights));
+}
+
+/* C compatibility code */
+
+struct lightsS {
+    Lights *lights;
+    output_t **outputs;
+    unsigned min_pin;
+};
+
+lights_t *
+lights_new(unsigned min_pin, unsigned max_pin)
+{
+    lights_t *lights = (lights_t *) fatal_malloc(sizeof(*lights));
+    Lights *l = new Lights();
+
+    lights->lights = l;
+    lights->min_pin = min_pin;
+    lights->outputs = (output_t **) fatal_malloc(sizeof(*lights->outputs) * (max_pin - min_pin + 1));
+
+    for (unsigned pin = min_pin; pin <= max_pin; pin++) {
+	lights->outputs[pin - min_pin] = wb_get_output(pin);
+	l->add(lights->outputs[pin - min_pin]);
+    }
+
+    return lights;
+}
+
+void
 lights_chase(lights_t *l)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 0);
-    if (l->min_pin == l->max_pin) l->action = LIGHTS_BLINK;
-    else l->action = LIGHTS_CHASE;
-    pthread_cond_signal(&l->cond);
-    pthread_mutex_unlock(&l->lock);
-} 
+    l->lights->chase();
+}
+
 void
 lights_on(lights_t *l)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 1);
-    l->action = LIGHTS_NONE;
-    pthread_mutex_unlock(&l->lock);
+    l->lights->on();
 }
 
 void
 lights_off(lights_t *l)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 0);
-    l->action = LIGHTS_NONE;
-    pthread_mutex_unlock(&l->lock);
+    l->lights->off();
 }
 
 void
 lights_select(lights_t *l, unsigned selected)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 0);
-    wb_set(LIGHTS_OUTPUT_BANK, selected + l->min_pin, 1);
-    l->action = LIGHTS_NONE;
-    pthread_mutex_unlock(&l->lock);
+    l->lights->off();
+    wb_set(0, selected, 1);
 }
 
 void
 lights_blink(lights_t *l)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 0);
-    l->blink_pin = -1;
-    l->action = LIGHTS_BLINK;
-    pthread_cond_signal(&l->cond);
-    pthread_mutex_unlock(&l->lock);
+    l->lights->blink_all();
 }
 
 void
 lights_blink_one(lights_t *l, unsigned pin)
 {
-    pthread_mutex_lock(&l->lock);
-    set_all(l, 0);
-    l->blink_pin = pin;
-    l->action = LIGHTS_BLINK;
-    pthread_cond_signal(&l->cond);
-    pthread_mutex_unlock(&l->lock);
+    l->lights->blink_one(l->outputs[pin - l->min_pin]);
 }
