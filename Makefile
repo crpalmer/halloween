@@ -47,5 +47,10 @@ talker: $(TALKER_OBJS) $(LIB) libhalloween.a
 	@gcc -c $(CFLAGS) $*.c -o $*.o
 	@gcc -MM $(CFLAGS) $*.c > $*.d
 
+%.o: %.cpp
+	@echo "Building: $*.cpp"
+	@g++ -c $(CFLAGS) $*.cpp -o $*.o
+	@g++ -MM $(CFLAGS) $*.cpp > $*.d
+
 clean:
 	-rm *.o *.d */*.o */*.d $(PROPS)
