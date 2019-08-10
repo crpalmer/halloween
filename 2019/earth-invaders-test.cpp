@@ -101,10 +101,14 @@ test_scores()
     printf("   Setting high score to 100: ");
     input();
     io->high_score->set(100);
-    printf("   Setting all scores back to 0: ");
+    printf("   Setting P1 score back to 0: ");
     input();
     io->score[0]->set(0);
+    printf("   Setting P2 score back to 0: ");
+    input();
     io->score[1]->set(0);
+    printf("   Setting high score back to 0: ");
+    input();
     io->high_score->set(0);
     printf("   All scores should now be zero: ");
     input();
