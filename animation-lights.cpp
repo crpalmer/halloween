@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <malloc.h>
 #include <list>
+#include <assert.h>
 #include "mem.h"
 #include "util.h"
 #include "wb.h"
@@ -13,7 +14,7 @@ using namespace std;
 
 class Action {
 public:
-    virtual ~Action();
+    virtual ~Action() {}
     virtual void step() = 0;
 };
 
@@ -52,14 +53,14 @@ class ChaseAction : public Action {
 public:
     ChaseAction(list<output_t *> lights) : lights(lights), last(NULL)
     {
-	it = lights.begin();
+	it = this->lights.begin();
     }
 
     void step() {
 	if (last) {
 	    last->off();
+	    it++;
 	    if (it == lights.end()) it = lights.begin();
-	    else it++;
 	}
 	last = *it;
 	last->on();
@@ -76,6 +77,7 @@ private:
 void
 Lights::add(output_t *light)
 {
+    assert(light);
     lights.push_back(light);
 }
 
@@ -115,7 +117,7 @@ Lights::Lights()
     pthread_mutex_init(&lock, NULL);
     pthread_cond_init(&cond, NULL);
 
-    pthread_create(&thread, NULL, work, NULL);
+    pthread_create(&thread, NULL, work, this);
 }
     
 void
@@ -143,7 +145,8 @@ Lights::blink_one(output_t *l)
 void
 Lights::chase()
 {
-    set_action(new ChaseAction(lights));
+    if (lights.size() > 1) set_action(new ChaseAction(lights));
+    else blink_all();
 }
 
 /* C compatibility code */
