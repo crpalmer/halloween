@@ -18,22 +18,22 @@ DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 animation: animation.o $(DEP_LIBS)
-	$(CC) -o $@ animation.o $(LIBS)
+	$(CXX) -o $@ animation.o $(LIBS)
 
 animation2: animation2.o $(DEP_LIBS)
-	$(CC) -o $@ animation2.o $(LIBS)
+	$(CXX) -o $@ animation2.o $(LIBS)
 
 band: band.o $(DEP_LIBS)
-	$(CC) -o $@ band.o $(LIBS)
+	$(CXX) -o $@ band.o $(LIBS)
 
 factory: factory.o $(DEP_LIBS)
-	$(CC) -o $@ factory.o $(LIBS)
+	$(CXX) -o $@ factory.o $(LIBS)
 
 molar: molar.o $(DEP_LIBS)
-	$(CC) -o $@ molar.o $(LIBS)
+	$(CXX) -o $@ molar.o $(LIBS)
 
 orc: orc.o $(DEP_LIBS)
-	$(CC) -o $@ orc.o $(LIBS)
+	$(CXX) -o $@ orc.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c %.d
