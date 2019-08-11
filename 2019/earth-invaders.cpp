@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 #include "digital-counter.h"
 #include "earth-invaders-io.h"
 #include "l298n.h"
@@ -8,6 +10,7 @@
 #include "time-utils.h"
 #include "track.h"
 #include "util.h"
+#include "animation-station.h"
 
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
@@ -23,6 +26,7 @@ static track_t *winner_track;
 static bool game_active;
 static int high_score;
 static int scores[2];
+static bool mean_mode[2];
 
 static void yield()
 {
@@ -79,17 +83,7 @@ player_main(void *p_as_void)
 	struct timespec active_at;
 	nano_gettime(&active_at);
         while (game_active) {
-#if 1
-	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
-		track_play_asynchronously(hit_track[p], NULL);
-		int last_target = active_target;
-		while (last_target == active_target) active_target = random_number_in_range(0, 2);
-		set_active_target(p, active_target);
-		scores[p]++;
-		io->score[p]->set(scores[p]);
-	    }
-#else
-	    int need_new_target = nano_elapsed_ms_now(&active_at) > 1*1000;
+	    int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
 	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
 		track_play_asynchronously(hit_track[p], NULL);
 		scores[p]++;
@@ -102,9 +96,9 @@ player_main(void *p_as_void)
 		set_active_target(p, active_target);
 		nano_gettime(&active_at);
 	    }
-#endif
 	}
 	io->lights[p][active_target]->off();
+	mean_mode[p] = false;
     }
 }
 
@@ -139,6 +133,35 @@ start_pushed(void)
     }
 }
 
+class StartButton : public AnimationStationAction {
+    output_t *get_light() override { return io->start_light; }
+    bool is_triggered() override { return io->start_button->get() == BUTTON_PUSHED; }
+    void act(Lights *lights) override {
+	start_pushed();
+    }
+};
+
+class ResetHighScore : public AnimationStationAction {
+    char *handle_remote_cmd(const char *cmd) override {
+	if (strcmp(cmd, "reset-high-score") == 0) {
+	     io->high_score->set(0);
+	     high_score = 0;
+	     return strdup("high score reset");
+	}
+	return NULL;
+    }
+};
+
+class MeanMode : public AnimationStationAction {
+    char *handle_remote_cmd(const char *cmd) override {
+	if (strcmp(cmd, "mean-mode 0") == 0 || strcmp(cmd, "mean-mode 1") == 0) {
+	     mean_mode[atoi(&cmd[10])] = true;
+	     return strdup("mean mode active");
+	}
+	return NULL;
+    }
+};
+
 int main(int argc, char **argv)
 {
     gpioInitialise();
@@ -162,8 +185,11 @@ if (argc > 1) return(0);
     pthread_create(&p1_thread, NULL, player_main, (void *) 0);
     pthread_create(&p2_thread, NULL, player_main, (void *) 1);
 
-    while (1) {
-	while (io->start_button->get() != BUTTON_PUSHED) yield();
-	start_pushed();
-    }
+    AnimationStation *as = new AnimationStation();
+    as->add_action(new StartButton());
+    as->add_action(new ResetHighScore());
+    as->add_action(new MeanMode());
+    AnimationStationController *asc = new AnimationStationController();
+    asc->add_station(as);
+    asc->main();
 }
