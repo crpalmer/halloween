@@ -1,6 +1,17 @@
 #ifndef __EARTH_INVADERS_IO_H__
 #define __EARTH_INVADERS_IO_H_
 
+/* IMPORTANT:
+ *
+ * The wiring is labelled from the backside.  That means:
+ *
+ * Green = "Player 1" in labels and in the code
+ * Red   = "Player 2" in labels and in the code
+ *
+ * Lights and targets are numbered from the back.  That means that light 1
+ * is the furthest to the right when looking at it from the front.
+ */
+
 #include "digital-counter.h"
 #include "l298n.h"
 #include "mcp23017.h"

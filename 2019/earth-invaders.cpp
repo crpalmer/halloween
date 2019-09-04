@@ -12,6 +12,10 @@
 #include "util.h"
 #include "animation-station.h"
 
+/* PLAYER_x : see the comment in *-io to explain the numbering */
+#define PLAYER_1	1
+#define PLAYER_2	0
+
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
 
@@ -182,8 +186,8 @@ if (argc > 1) return(0);
 
     pthread_t motor_thread, p1_thread, p2_thread;
     pthread_create(&motor_thread, NULL, motor_main, NULL);
-    pthread_create(&p1_thread, NULL, player_main, (void *) 0);
-    pthread_create(&p2_thread, NULL, player_main, (void *) 1);
+    pthread_create(&p1_thread, NULL, player_main, (void *) PLAYER_1);
+    pthread_create(&p2_thread, NULL, player_main, (void *) PLAYER_2);
 
     AnimationStation *as = new AnimationStation();
     as->add_action(new StartButton());
