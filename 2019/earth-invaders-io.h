@@ -19,6 +19,10 @@
 #include "util.h"
 #include "wb.h"
 
+/* PLAYER_x : see the comment in *-io to explain the numbering */
+#define PLAYER_1        1
+#define PLAYER_2        0
+
 #define BUTTON_PUSHED   0
 #define TARGET_HIT      1
 #define ENDSTOP_TRIGGERED 1

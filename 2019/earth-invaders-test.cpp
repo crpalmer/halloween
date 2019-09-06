@@ -94,19 +94,19 @@ test_scores()
     printf("Testing score boards:\n");
     printf("   Setting P1 score to 100: ");
     input();
-    io->score[0]->set(100);
+    io->score[PLAYER_1]->set(100);
     printf("   Setting P2 score to 100: ");
     input();
-    io->score[1]->set(100);
+    io->score[PLAYER_2]->set(100);
     printf("   Setting high score to 100: ");
     input();
     io->high_score->set(100);
     printf("   Setting P1 score back to 0: ");
     input();
-    io->score[0]->set(0);
+    io->score[PLAYER_1]->set(0);
     printf("   Setting P2 score back to 0: ");
     input();
-    io->score[1]->set(0);
+    io->score[PLAYER_2]->set(0);
     printf("   Setting high score back to 0: ");
     input();
     io->high_score->set(0);
@@ -120,30 +120,30 @@ test_lights()
 {
     printf("   Enabling player 1 light 1");
     input();
-    io->lights[0][0]->on();
+    io->lights[PLAYER_1][0]->on();
     printf("   Enabling player 1 light 2");
     input();
-    io->lights[0][0]->off();
-    io->lights[0][1]->on();
+    io->lights[PLAYER_1][0]->off();
+    io->lights[PLAYER_1][1]->on();
     printf("   Enabling player 1 light 3");
     input();
-    io->lights[0][1]->off();
-    io->lights[0][2]->on();
+    io->lights[PLAYER_1][1]->off();
+    io->lights[PLAYER_1][2]->on();
     printf("   Enabling player 2 light 1");
     input();
-    io->lights[0][2]->off();
-    io->lights[1][0]->on();
+    io->lights[PLAYER_1][2]->off();
+    io->lights[PLAYER_2][0]->on();
     printf("   Enabling player 2 light 2");
     input();
-    io->lights[1][0]->off();
-    io->lights[1][1]->on();
+    io->lights[PLAYER_2][0]->off();
+    io->lights[PLAYER_2][1]->on();
     printf("   Enabling player 2 light 3");
     input();
-    io->lights[1][1]->off();
-    io->lights[1][2]->on();
+    io->lights[PLAYER_2][1]->off();
+    io->lights[PLAYER_2][2]->on();
     printf("   Turn off light: ");
     input();
-    io->lights[1][2]->off();
+    io->lights[PLAYER_2][2]->off();
 }
 
 static void
@@ -152,7 +152,7 @@ test_target(int player, int target)
     if (io->targets[player][target]->get() == TARGET_HIT) {
 	printf("   *** TARGET HIT BEFORE SHOOTING IT!\n");
     }
-    printf("   Shoot player %d target %d: ", player, target);
+    printf("   Shoot target (%d, %d): ", player, target);
     fflush(stdout);
     io->lights[player][target]->on();
     while (io->targets[player][target]->get() != TARGET_HIT) {}
@@ -163,7 +163,7 @@ test_target(int player, int target)
 static void
 test_targets()
 {
-    printf("Testing targets:\n");
+    printf("Testing targets, shoot each target as it lights:\n");
     io->laser->on();
     for (int player = 0; player < 2; player++) {
 	for (int target = 0; target < 3; target++) {

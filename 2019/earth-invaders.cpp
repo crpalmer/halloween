@@ -12,9 +12,7 @@
 #include "util.h"
 #include "animation-station.h"
 
-/* PLAYER_x : see the comment in *-io to explain the numbering */
-#define PLAYER_1	1
-#define PLAYER_2	0
+#define SCORE_INC	10
 
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
@@ -90,7 +88,7 @@ player_main(void *p_as_void)
 	    int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
 	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
 		track_play_asynchronously(hit_track[p], NULL);
-		scores[p]++;
+		scores[p] += SCORE_INC;
 		io->score[p]->set(scores[p]);
 		need_new_target = true;
 	    }
@@ -111,11 +109,11 @@ start_pushed(void)
 {
     scores[0] = scores[1] = 0;
     io->score[0]->set(0);
-    io->score[1]->set(1);
-    motor_start();
+    io->score[1]->set(0);
 
     track_play(start_track);
 
+    motor_start();
     io->laser->on();
     game_active = true;
 
