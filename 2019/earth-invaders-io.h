@@ -58,9 +58,9 @@ public:
 	score[0] = new digital_counter_t(pca->get_output(5), NULL, pca->get_output(4));
 
 	score[1] = new digital_counter_t(pca->get_output(1), NULL, pca->get_output(0));
-	score[0]->set_pause(100, 1000, 1000);
-	high_score->set_pause(100, 1000, 1000);
-	score[1]->set_pause(100, 1000, 1000);
+	score[0]->set_pause(20, 500, 750);
+	high_score->set_pause(20, 500, 750);
+	score[1]->set_pause(20, 1000, 1000);
 
 	triggers[0]->set_pullup_up();
 	triggers[1]->set_pullup_up();
