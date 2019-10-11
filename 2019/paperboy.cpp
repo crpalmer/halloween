@@ -18,6 +18,7 @@ main(int argc, char **argv)
 {
     track_t *track;
     input_t *input;
+    output_t *output;
 
     gpioInitialise();
     wb_init();
@@ -26,21 +27,29 @@ main(int argc, char **argv)
     input->set_pullup_down();
     input->set_debounce(100);
 
+    output = wb_get_output(1);
+    output->on();
+
     if ((track = track_new("extra-extra-read-all-about-it.wav")) == NULL) {
 	perror("extra-extra-read-all-about-it.wav");
 	exit(1);
     }
 
     while (true) {
+	unsigned delay = 0;
+
     	if (ween_time_is_valid(&halloween_night, 1)) {
-	    track_play(track);
-	    ms_sleep(NIGHT_DELAY*1000);
+	    delay = NIGHT_DELAY;
 	} else if (ween_time_is_valid(&halloween_day, 1)) {
-	    track_play(track);
-	    ms_sleep(DAY_DELAY*1000);
+	    delay = DAY_DELAY;
 	} else if (input->get()) {
+	    delay = 5;
+	}
+	if (delay > 0) {
+	    output->off();
 	    track_play(track);
-	    ms_sleep(5*1000);
+	    ms_sleep(delay*1000);
+	    output->on();
 	}
     }
 }
