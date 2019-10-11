@@ -20,6 +20,7 @@ public:
      virtual bool is_triggered() { return false; }
      virtual char *handle_remote_cmd(const char *cmd) { return NULL; }
      virtual void act(Lights *lights) {};
+     virtual bool needs_exclusivity() { return true; }
 };
 
 class AnimationStation {
@@ -31,7 +32,7 @@ public:
 
 protected:
     void check_inputs();
-    char *handle_remote_cmd(const char *cmd);
+    char *handle_remote_cmd(const char *cmd, bool &busy);
     void start();
 
 private:

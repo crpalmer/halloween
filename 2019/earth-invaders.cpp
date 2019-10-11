@@ -156,12 +156,18 @@ class ResetHighScore : public AnimationStationAction {
 
 class MeanMode : public AnimationStationAction {
     char *handle_remote_cmd(const char *cmd) override {
-	if (strcmp(cmd, "mean-mode 0") == 0 || strcmp(cmd, "mean-mode 1") == 0) {
-	     mean_mode[atoi(&cmd[10])] = true;
+	printf("cmd: [%s]\n", cmd);
+	if (strcmp(cmd, "mean-mode 1") == 0 || strcmp(cmd, "mean-mode red") == 0) {
+	     //mean_mode[PLAYER_1] = true;
+	     return strdup("mean mode active");
+	} else if (strcmp(cmd, "mean-mode 2") == 0 || strcmp(cmd, "mean-mode green") == 0) {
+	     //mean_mode[PLAYER_2] = true;
 	     return strdup("mean mode active");
 	}
+	printf("cmd not recognized\n");
 	return NULL;
     }
+    bool needs_exclusivity() override { printf("needs excl\n"); return false; }
 };
 
 int main(int argc, char **argv)

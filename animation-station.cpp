@@ -102,23 +102,25 @@ AnimationStation::check_inputs()
 }
 
 char *
-AnimationStation::handle_remote_cmd(const char *cmd)
+AnimationStation::handle_remote_cmd(const char *cmd, bool &busy)
 {
-    if (pthread_mutex_trylock(&lock) != 0) return strdup("prop is busy");
-    if (active_action) {
-	pthread_mutex_unlock(&lock);
-	return strdup("prop is busy");
-    }
-
-    for (std::list<AnimationStationAction *>::iterator it = actions.begin(); ! active_action && it != actions.end(); it++) {
+    for (std::list<AnimationStationAction *>::iterator it = actions.begin(); it != actions.end(); it++) {
+	bool needs_exclusivity = (*it)->needs_exclusivity();
+	if (needs_exclusivity) {
+	    if (pthread_mutex_trylock(&lock) != 0) goto was_busy;
+	    if (active_action) {
+		pthread_mutex_unlock(&lock);
+was_busy:
+		busy = true;
+		return NULL;
+	    }
+	}
 	char *this_response = (*it)->handle_remote_cmd(cmd);
+	if (needs_exclusivity) pthread_mutex_unlock(&lock);
 	if (this_response != NULL) {
-	    pthread_mutex_unlock(&lock);
 	    return this_response;
 	}
     }
-
-    pthread_mutex_unlock(&lock);
     return NULL;
 }
 
@@ -136,12 +138,14 @@ char *
 AnimationStationController::remote_event(void *this_as_vp, const char *cmd, struct sockaddr_in *addr, size_t size)
 {
     AnimationStationController *c = (AnimationStationController *) this_as_vp;
+    bool busy = false;
 
     for (std::list<AnimationStation *>::iterator it = c->stations.begin(); it != c->stations.end(); it++) {
-	char *response = (*it)->handle_remote_cmd(cmd);
+	char *response = (*it)->handle_remote_cmd(cmd, busy);
 	if (response != NULL) return response;
     }
-    return strdup("Invalid command");
+    if (busy) return strdup("prop is currently busy");
+    else return strdup("Invalid command");
 }
     
 void
