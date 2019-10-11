@@ -2,6 +2,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	earth-invaders earth-invaders-test \
+	paperboy \
 
 
 all: $(PROPS)
@@ -17,6 +18,9 @@ earth-invaders: earth-invaders.o $(DEP_LIBS)
 
 earth-invaders-test: earth-invaders-test.o $(DEP_LIBS)
 	$(CXX) -o $@ earth-invaders-test.o $(LIBS)
+
+paperboy: paperboy.o $(DEP_LIBS)
+	$(CXX) -o $@ paperboy.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c %.d
