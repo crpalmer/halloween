@@ -16,6 +16,18 @@ static input_t *low_es, *high_es;
 #define DOWN true
 
 static void
+up()
+{
+   motor->change_motor(UP);
+}
+
+static void
+down()
+{
+   motor->change_motor(DOWN);
+}
+
+static void
 test_es(const char *name, input_t *es)
 {
     if (es->get_with_debounce() == ES_HIT) printf("  *** %s ENDSTOP ALREADY TRIGGERED!\n", name);
@@ -32,11 +44,10 @@ test_motor()
     printf("center the motor: "); fflush(stdout);
     fgets(buf, sizeof(buf), stdin);
     printf("motor up\n");
-    motor->direction(UP);
-    motor->speed(1);
+    up();
     ms_sleep(2*1000);
     printf("motor down\n");
-    motor->direction(DOWN);
+    down();
     ms_sleep(2*1000);
     motor->stop();
 }
@@ -53,10 +64,9 @@ static void
 test_motor_es()
 {
      printf("going up\n");
-     motor->change_motor(UP, 1);
-     ms_sleep(50);
+     up();
      while (high_es->get_with_debounce() != ES_HIT) {}
-     motor->change_motor(DOWN, 1);
+     down();
      printf("going down\n");
      while (low_es->get_with_debounce() != ES_HIT) {}
      motor->stop();
@@ -73,6 +83,22 @@ get_es(int i)
     return es;
 }
 
+static void
+scow()
+{
+    struct timespec start;
+
+    nano_gettime(&start);
+    up();
+    while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
+    down();
+printf("%d up\n", nano_elapsed_ms_now(&start));
+    nano_gettime(&start);
+    while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
+    motor->stop();
+printf("%d down\n", nano_elapsed_ms_now(&start));
+}
+
 int
 main(int argc, char **argv)
 {
@@ -87,12 +113,6 @@ main(int argc, char **argv)
     motor = new L298N(mcp->get_output(0), mcp->get_output(1), mcp->get_output(2));
     motor->stop();
 
-    motor->change_motor(UP, 1);
-char foo[100];
-    fgets(foo, sizeof(foo), stdin);
-    motor->stop();
-    exit(1);
-
     if (argc == 2 && strcmp(argv[1], "--test") == 0) {
 	test();
 	exit(0);
@@ -102,6 +122,8 @@ char foo[100];
     } else if (argc == 2 && strcmp(argv[1], "--motor-es") == 0) {
 	test_motor_es();
 	exit(0);
+    } else if (argc ==2 && strcmp(argv[1], "--scow") == 0) {
+	scow();
     } else if (argc > 1) {
 	printf("stopping the motor\n");
 	exit(0);
