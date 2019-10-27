@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "externals/PIGPIO/pigpio.h"
+#include "animation-station.h"
 #include "l298n.h"
 #include "mcp23017.h"
 #include "util.h"
@@ -83,26 +84,40 @@ get_es(int i)
     return es;
 }
 
-static void
-scow()
-{
-    struct timespec start;
+class Button : public AnimationStationAction {
+public:
+    Button() {
+	light = wb_get_output(1);
+	button = wb_get_input(4);
+	button->set_pullup_down();
+    }
 
-    nano_gettime(&start);
-    up();
-    while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
-    down();
+    output_t *get_light() override { return light; }
+    bool is_triggered() override { return button->get(); }
+    void act(Lights *lights) override {
+	struct timespec start;
+
+	nano_gettime(&start);
+	up();
+	while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
+	down();
 printf("%d up\n", nano_elapsed_ms_now(&start));
-    nano_gettime(&start);
-    while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
-    motor->stop();
+	nano_gettime(&start);
+	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
+	motor->stop();
 printf("%d down\n", nano_elapsed_ms_now(&start));
-}
+    }
+
+private:
+    output_t *light;
+    input_t *button;
+};
 
 int
 main(int argc, char **argv)
 {
     gpioInitialise();
+    seed_random();
     wb_init_v2();
 
     low_es = get_es(1);
@@ -122,11 +137,15 @@ main(int argc, char **argv)
     } else if (argc == 2 && strcmp(argv[1], "--motor-es") == 0) {
 	test_motor_es();
 	exit(0);
-    } else if (argc ==2 && strcmp(argv[1], "--scow") == 0) {
-	scow();
     } else if (argc > 1) {
 	printf("stopping the motor\n");
 	exit(0);
+    } else {
+	AnimationStation *as = new AnimationStation();
+	as->add_action(new Button());
+	AnimationStationController *asc = new AnimationStationController();
+	asc->add_station(as);
+	asc->main();
     }
 }
 
