@@ -5,6 +5,7 @@
 #include "animation-station.h"
 #include "l298n.h"
 #include "mcp23017.h"
+#include "track.h"
 #include "util.h"
 #include "wb.h"
 
@@ -87,9 +88,11 @@ get_es(int i)
 class Button : public AnimationStationAction {
 public:
     Button() {
-	light = wb_get_output(1);
-	button = wb_get_input(4);
+	light = wb_get_output(2, 8);
+	button = wb_get_input(5);
 	button->set_pullup_down();
+	button->set_debounce(10);
+	if ((scow_track = track_new("scow.wav")) == NULL) exit(1);
     }
 
     output_t *get_light() override { return light; }
@@ -98,6 +101,7 @@ public:
 	struct timespec start;
 
 	nano_gettime(&start);
+	track_play_asynchronously(scow_track, NULL);
 	up();
 	while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
 	down();
@@ -111,6 +115,7 @@ printf("%d down\n", nano_elapsed_ms_now(&start));
 private:
     output_t *light;
     input_t *button;
+    track_t *scow_track;
 };
 
 int
