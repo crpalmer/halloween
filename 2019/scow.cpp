@@ -88,11 +88,22 @@ get_es(int i)
 class Button : public AnimationStationAction {
 public:
     Button() {
+	stop = stop_new();
+	stop_stopped(stop);
+
 	light = wb_get_output(2, 8);
 	button = wb_get_input(5);
 	button->set_pullup_down();
 	button->set_debounce(10);
-	if ((scow_track = track_new("scow.wav")) == NULL) exit(1);
+
+	if ((track = track_new("scow.wav")) == NULL) exit(1);
+
+	pthread_mutex_init(&mutex, NULL);
+	pthread_cond_init(&cond, NULL);
+
+	stop_audio();
+
+	pthread_create(&thread, NULL, audio_thread, (void *) this);
     }
 
     output_t *get_light() override { return light; }
@@ -101,10 +112,11 @@ public:
 	struct timespec start;
 
 	nano_gettime(&start);
-	track_play_asynchronously(scow_track, NULL);
+	start_audio();
 	up();
 	while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
 	down();
+	stop_audio();
 printf("%d up\n", nano_elapsed_ms_now(&start));
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
@@ -113,9 +125,39 @@ printf("%d down\n", nano_elapsed_ms_now(&start));
     }
 
 private:
+    void start_audio(void) {
+	pthread_mutex_lock(&mutex);
+	play_audio = true;
+	pthread_cond_signal(&cond);
+	pthread_mutex_unlock(&mutex);
+    }
+
+    void stop_audio(void) {
+	play_audio = false;
+	stop_stop(stop);
+    }
+
+    static void *audio_thread(void *this_as_vp) {
+	Button *b = (Button *) this_as_vp;
+	while (true) {
+	    pthread_mutex_lock(&b->mutex);
+	    if (! b->play_audio) pthread_cond_wait(&b->cond, &b->mutex);
+	    stop_reset(b->stop);
+	    pthread_mutex_unlock(&b->mutex);
+	    track_play_asynchronously(b->track, b->stop);
+	    stop_await_stop(b->stop);
+	}
+    }
+
+private:
     output_t *light;
     input_t *button;
-    track_t *scow_track;
+    track_t *track;
+    stop_t *stop;
+    pthread_t thread;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    bool play_audio;
 };
 
 int
