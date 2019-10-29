@@ -86,7 +86,7 @@ player_main(void *p_as_void)
 	nano_gettime(&active_at);
         while (game_active) {
 	    int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
-	    if (io->triggers[p]->get() == BUTTON_PUSHED && io->targets[p][active_target]->get() == TARGET_HIT) {
+	    if (io->targets[p][active_target]->get() == TARGET_HIT) {
 		track_play_asynchronously(hit_track[p], NULL);
 		scores[p] += SCORE_INC;
 		io->score[p]->set(scores[p]);
