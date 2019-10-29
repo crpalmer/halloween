@@ -77,7 +77,9 @@ static void *
 player_main(void *p_as_void)
 {
     int p = (int) p_as_void;
+    struct timespec last_hit;
 
+    nano_gettime(&last_hit);
     for (;;) {
 	while (! game_active) yield();
 	int active_target = random_number_in_range(0, 2);
@@ -86,11 +88,12 @@ player_main(void *p_as_void)
 	nano_gettime(&active_at);
         while (game_active) {
 	    int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
-	    if (io->targets[p][active_target]->get() == TARGET_HIT) {
+	    if (nano_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
 		track_play_asynchronously(hit_track[p], NULL);
 		scores[p] += SCORE_INC;
 		io->score[p]->set(scores[p]);
 		need_new_target = true;
+		nano_gettime(&last_hit);
 	    }
 	    if (need_new_target) {
 		int last_target = active_target;
