@@ -101,6 +101,10 @@ public:
     output_t *get_light() override { return light; }
     bool is_triggered() override { return button->get(); }
     void act(Lights *lights) override {
+	scow();
+    }
+
+    void scow() {
 	struct timespec start;
 
 	nano_gettime(&start);
@@ -114,12 +118,9 @@ public:
 	down();
 
 	stop_request_stop(stop);
-fprintf(stderr, "%d up\n", nano_elapsed_ms_now(&start));
-
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
 	motor->stop();
-fprintf(stderr, "%d down\n", nano_elapsed_ms_now(&start));
     }
 
 private:
@@ -127,6 +128,24 @@ private:
     input_t *button;
     track_t *track;
     stop_t *stop;
+};
+
+class ScowAction : public AnimationStationAction {
+public:
+    ScowAction(Button *scow) { this->scow = scow; }
+
+    char *handle_remote_cmd(const char *cmd) override {
+        printf("cmd: [%s]\n", cmd);
+        if (strcmp(cmd, "scow") == 0) {
+	    scow->scow();
+	    return strdup("ok scow done\n");
+        }
+        printf("cmd not recognized\n");
+        return NULL;
+    }
+
+private:
+    Button *scow;
 };
 
 int
@@ -158,7 +177,9 @@ main(int argc, char **argv)
 	exit(0);
     } else {
 	AnimationStation *as = new AnimationStation();
-	as->add_action(new Button());
+	Button *scow = new Button();
+	as->add_action(scow);
+        as->add_action(new ScowAction(scow));
 	AnimationStationController *asc = new AnimationStationController();
 	asc->add_station(as);
 	asc->main();
