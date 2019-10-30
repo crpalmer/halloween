@@ -27,11 +27,11 @@ scow: scow.o $(DEP_LIBS)
 	$(CXX) -o $@ scow.o $(LIBS)
 
 # compile and generate dependency info
-%.o: %.c %.d
+%.o: %.c
 	@echo "Building: $*.c"
 	@gcc -c $(CFLAGS) $*.c -o $*.o
 
-%.o: %.cpp %.d
+%.o: %.cpp
 	@echo "Building: $*.c"
 	@$(CXX) -c $(CFLAGS) $*.cpp -o $*.o
 
