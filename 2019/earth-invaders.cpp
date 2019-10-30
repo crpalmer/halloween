@@ -151,7 +151,7 @@ class ResetHighScore : public AnimationStationAction {
 	if (strcmp(cmd, "reset-high-score") == 0) {
 	     io->high_score->set(0);
 	     high_score = 0;
-	     return strdup("high score reset");
+	     return strdup("ok high score reset");
 	}
 	return NULL;
     }
@@ -162,10 +162,10 @@ class MeanMode : public AnimationStationAction {
 	printf("cmd: [%s]\n", cmd);
 	if (strcmp(cmd, "mean-mode 1") == 0 || strcmp(cmd, "mean-mode red") == 0) {
 	     //mean_mode[PLAYER_1] = true;
-	     return strdup("mean mode active");
+	     return strdup("ok mean mode active");
 	} else if (strcmp(cmd, "mean-mode 2") == 0 || strcmp(cmd, "mean-mode green") == 0) {
 	     //mean_mode[PLAYER_2] = true;
-	     return strdup("mean mode active");
+	     return strdup("ok mean mode active");
 	}
 	printf("cmd not recognized\n");
 	return NULL;
