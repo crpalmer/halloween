@@ -11,50 +11,64 @@
 #include "animation-lights.h"
 #include "fogger.h"
 
-#define TOAD        "toad"
-#define HOP	    "hop"
+#define CHICKEN     "chicken"
+#define SQUID       "squid"
 #define QUESTION    "question"
-#define SNAKE       "snake"
-#define CAT         "cat"
+#define INTESTINES  "intestines"
+#define FROG	    "frog"
 
 #define FOGGER_PIN	1, 8
-#define SNAKE_PIN	2, 8
+#define SNAKE_PIN2	8
 
 #define DOG_MIN_MS	5000
 #define DOG_MAX_MS	6000
 
 static pthread_mutex_t station_lock, mermaid_lock;
-static track_t *laugh;
+static track_t *laugh, *chicken;
 static stop_t *stop;
 
 static void
-do_attack(unsigned pin, lights_t *l, double up, double down)
+do_attack2(unsigned pin, unsigned pin2, lights_t *l, double up, double down)
 {
     unsigned i;
 
     for (i = 0; i < 3; i++) {
 	wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+	if (pin2 != -1) wb_set(ANIMATION_OUTPUT_BANK, pin2, 1);
 	ms_sleep((500 + random_number_in_range(0, 250) - 125)*up);
 	wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
+	if (pin2 != -1) wb_set(ANIMATION_OUTPUT_BANK, pin2, 0);
 	ms_sleep((200 + random_number_in_range(0, 100) - 50)*down);
     }
 }
 
 static void
-do_hop(void *unused, lights_t *l, unsigned pin)
+do_attack(unsigned pin, lights_t *l, double up, double down)
 {
-    do_attack(pin, l, 1, 1.5);
+    do_attack2(pin, -1, l, up, down);
 }
 
 static void
-do_cat(void *unused, lights_t *l, unsigned pin)
+do_chicken(void *unused, lights_t *l, unsigned pin)
 {
-    do_attack(pin, l, 2, 3.0);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    track_set_volume(chicken, 100);
+    track_play(chicken);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
+}
+
+static void
+do_squid(void *unused, lights_t *l, unsigned pin)
+{
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
+    ms_sleep(5000);
+    wb_set(ANIMATION_OUTPUT_BANK, pin, 0);
 }
 
 static void
 do_question(void *unused, lights_t *l, unsigned pin)
 {
+    track_set_volume(laugh, 85);
     track_play_asynchronously(laugh, stop);
     lights_blink(l);
     wb_set(ANIMATION_OUTPUT_BANK, pin, 1);
@@ -63,25 +77,23 @@ do_question(void *unused, lights_t *l, unsigned pin)
 }
 
 static void
-do_toad(void *unused, lights_t *l, unsigned pin)
+do_intestines(void *unused, lights_t *l, unsigned pin)
 {
     do_attack(pin, l, 1, 1.5);
 }
 
 static void
-do_snake(void *unused, lights_t *l, unsigned pin)
+do_frog(void *unused, lights_t *l, unsigned pin)
 {
-    wb_set(SNAKE_PIN, 1);
-    do_attack(pin, l, 1, 3);
-    wb_set(SNAKE_PIN, 0);
+    do_attack(pin, l, 1, 1);
 }
 
 static action_t main_actions[] = {
-    { TOAD,     do_toad,	NULL },
-    { HOP,	do_hop,		NULL },
+    { CHICKEN,  do_chicken,	NULL },
+    { SQUID,	do_squid,	NULL },
     { QUESTION, do_question,	NULL },
-    { SNAKE,	do_snake,	NULL },
-    { CAT,	do_cat,		NULL },
+    { FROG,	do_frog,	NULL },
+    { INTESTINES, do_intestines, NULL },
     { NULL,	NULL,		NULL },
 };
 
@@ -98,6 +110,11 @@ main(int argc, char **argv)
 
     if ((laugh = track_new("laugh.wav")) == NULL) {
 	perror("laugh.wav");
+	exit(1);
+    }
+
+    if ((chicken = track_new("chicken.wav")) == NULL) {
+	perror("chicken.wav");
 	exit(1);
     }
 
