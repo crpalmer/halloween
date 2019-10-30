@@ -2,6 +2,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
 	earth-invaders earth-invaders-test \
+	fogger \
 	paperboy \
 	scow \
 
@@ -19,6 +20,9 @@ earth-invaders: earth-invaders.o $(DEP_LIBS)
 
 earth-invaders-test: earth-invaders-test.o $(DEP_LIBS)
 	$(CXX) -o $@ earth-invaders-test.o $(LIBS)
+
+fogger: fogger.o $(DEP_LIBS)
+	$(CXX) -o $@ fogger.o $(LIBS)
 
 paperboy: paperboy.o $(DEP_LIBS)
 	$(CXX) -o $@ paperboy.o $(LIBS)
