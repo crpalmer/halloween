@@ -188,8 +188,8 @@ if (argc > 1) return(0);
     game_over_track = track_new("game-over.wav");
     hit_track[0] = track_new("hit1.wav");
     hit_track[1] = track_new("hit2.wav");
-    start_track = track_new("elfie-ready-set-go.wav");
-    winner_track = track_new("elfie-winner.wav");
+    start_track = track_new("ready-set-go.wav");
+    winner_track = track_new("high-score.wav");
 
     pthread_t motor_thread, p1_thread, p2_thread;
     pthread_create(&motor_thread, NULL, motor_main, NULL);
