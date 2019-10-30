@@ -162,10 +162,10 @@ class MeanMode : public AnimationStationAction {
 	printf("cmd: [%s]\n", cmd);
 	if (strcmp(cmd, "mean-mode 1") == 0 || strcmp(cmd, "mean-mode red") == 0) {
 	     //mean_mode[PLAYER_1] = true;
-	     return strdup("ok mean mode active");
+	     return strdup("ok mean mode active for player 1");
 	} else if (strcmp(cmd, "mean-mode 2") == 0 || strcmp(cmd, "mean-mode green") == 0) {
 	     //mean_mode[PLAYER_2] = true;
-	     return strdup("ok mean mode active");
+	     return strdup("ok mean mode active for player 2");
 	}
 	printf("cmd not recognized\n");
 	return NULL;
