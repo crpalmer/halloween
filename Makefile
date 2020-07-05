@@ -5,6 +5,7 @@ ALL = \
 	baxter \
 	libhalloween.a \
 	lightning \
+	strobe \
 	talker
 
 all: $(ALL)
@@ -40,6 +41,9 @@ lightning: $(LIGHTNING_OBJS) $(LIB) libhalloween.a
 
 talker: $(TALKER_OBJS) $(LIB) libhalloween.a
 	$(CC) -o $@ $(TALKER_OBJS) libhalloween.a $(LIBS)
+
+strobe: strobe.o $(LIB) libhalloween.a
+	$(CC) -o $@ strobe.o libhalloween.a $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c

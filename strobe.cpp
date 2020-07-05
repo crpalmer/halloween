@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "externals/PIGPIO/pigpio.h"
+#include "util.h"
+#include "wb.h"
+
+int
+main(int argc, char **argv)
+{
+    int state = 0;
+
+    gpioInitialise();
+    seed_random();
+    wb_init();
+
+    while (1) {
+	ms_sleep(random_number_in_range(10, 50));
+	state = ~state;
+	wb_set_outputs(0xff, state);
+    }
+}
+
