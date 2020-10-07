@@ -3,6 +3,7 @@ CPPFLAGS=$(CFLAGS)
 
 PROPS = \
 	animation \
+	hypnopops \
 
 
 all: $(PROPS)
@@ -13,6 +14,9 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 animation: animation.o $(DEP_LIBS)
 	$(CXX) -o $@ animation.o $(LIBS)
+
+hypnopops: hypnopops.o $(DEP_LIBS)
+	$(CXX) -o $@ hypnopops.o $(LIBS)
 
 # compile and generate dependency info
 %.o: %.c %.d
