@@ -85,7 +85,7 @@ keyboard_update(void *state_as_vp, double new_pos)
 static void
 rest_servos(void)
 {
-    servo_update(&vocals_state, 100);
+    servo_update(&vocals_state, 0);
     servo_update(&drum_state[0], 100);
     servo_update(&drum_state[1], 100);
     servo_update(&guitar_state, 0);
