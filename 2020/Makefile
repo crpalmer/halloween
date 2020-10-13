@@ -7,6 +7,8 @@ PROPS = \
 	hypnopops \
 
 DATA = \
+	guitar.ops \
+	piano.ops \
 	vocals.ops \
 
 
@@ -24,6 +26,12 @@ band: band.o $(DEP_LIBS)
 
 hypnopops: hypnopops.o $(DEP_LIBS)
 	$(CXX) -o $@ hypnopops.o $(LIBS)
+
+guitar.ops: ~/halloween-media/guitar.wav
+	~/lib/utils/talking-skull-prepare `basename $<` > $@
+
+piano.ops: ~/halloween-media/piano.wav
+	~/lib/utils/talking-skull-prepare `basename $<` > $@
 
 vocals.ops: ~/halloween-media/vocals.wav
 	~/lib/utils/talking-skull-prepare `basename $<` > $@

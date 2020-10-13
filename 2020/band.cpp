@@ -25,8 +25,8 @@
 #define SONG_WAV	"i-want-candy.wav"
 #define VOCALS_OPS	"vocals.ops"
 #define DRUM_OPS	"vocals.ops"
-#define GUITAR_OPS	"vocals.ops"
-#define KEYBOARD_OPS	"vocals.ops"
+#define GUITAR_OPS	"guitar.ops"
+#define KEYBOARD_OPS	"piano.ops"
 
 static maestro_t *m;
 
@@ -88,7 +88,7 @@ rest_servos(void)
     servo_update(&vocals_state, 0);
     servo_update(&drum_state[0], 100);
     servo_update(&drum_state[1], 100);
-    servo_update(&guitar_state, 0);
+    servo_update(&guitar_state, 25);
     servo_update(&keyboard_state[0], 100);
     servo_update(&keyboard_state[1], 100);
 }
@@ -97,9 +97,9 @@ static void
 init_servos(void)
 {
     vocals = talking_skull_actor_new_ops(VOCALS_OPS, servo_update, &vocals_state);
-    drum = talking_skull_actor_new_vsa(DRUM_OPS, drum_update, &drum_state);
-    guitar = talking_skull_actor_new_vsa(GUITAR_OPS, servo_update, &guitar_state);
-    keyboard = talking_skull_actor_new_vsa(KEYBOARD_OPS, keyboard_update, &keyboard_state);
+    drum = talking_skull_actor_new_ops(DRUM_OPS, drum_update, &drum_state);
+    guitar = talking_skull_actor_new_ops(GUITAR_OPS, servo_update, &guitar_state);
+    keyboard = talking_skull_actor_new_ops(KEYBOARD_OPS, keyboard_update, &keyboard_state);
 
     if (! vocals || ! drum || ! guitar || ! keyboard) {
 	exit(1);
@@ -109,7 +109,7 @@ init_servos(void)
     maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
     maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
     maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
-    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1408, 2208);
+    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1700, 2100);
     maestro_set_servo_physical_range(m, KEYBOARD_SERVO0, 850, 1500);
     maestro_set_servo_physical_range(m, KEYBOARD_SERVO0+1, 1200, 1700);
 
@@ -144,8 +144,8 @@ main(int argc, char **argv)
 
     talking_skull_actor_play(vocals);
     //talking_skull_actor_play(drum);
-    //talking_skull_actor_play(guitar);
-    //talking_skull_actor_play(keyboard);
+    talking_skull_actor_play(guitar);
+    talking_skull_actor_play(keyboard);
     track_play(song);
 
     wb_set(LIGHTS, 0);
