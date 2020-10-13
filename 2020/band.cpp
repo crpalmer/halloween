@@ -108,6 +108,7 @@ init_servos(void)
     }
 
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1296);
+    maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
     maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
     maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
     maestro_set_servo_physical_range(m, GUITAR_SERVO, 1408, 2208);
@@ -120,6 +121,8 @@ init_servos(void)
 int
 main(int argc, char **argv)
 {
+    printf("\n\n\n**** STARTING ****\n\n\n");
+
     pi_usb_init();
     wb_init();
 
