@@ -71,3 +71,10 @@ ween_time_wait_until_valid(ween_time_constraint_t *c, size_t n)
 	fprintf(stderr, "Ween time constraint met\n");
     }
 }
+
+bool
+ween_time_is_halloween()
+{
+    ween_time_constraint_t c = { 30, 0, 0, 23, 59 };
+    return ween_time_is_valid(&c, 1);
+}
