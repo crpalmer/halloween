@@ -3,10 +3,14 @@ CPPFLAGS=$(CFLAGS)
 
 PROPS = \
 	animation \
+	band \
 	hypnopops \
 
+DATA = \
+	vocals.ops \
 
-all: $(PROPS)
+
+all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
@@ -15,8 +19,14 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 animation: animation.o $(DEP_LIBS)
 	$(CXX) -o $@ animation.o $(LIBS)
 
+band: band.o $(DEP_LIBS)
+	$(CXX) -o $@ band.o $(LIBS)
+
 hypnopops: hypnopops.o $(DEP_LIBS)
 	$(CXX) -o $@ hypnopops.o $(LIBS)
+
+vocals.ops: ~/halloween-media/vocals.wav
+	~/lib/utils/talking-skull-prepare `basename $<` > $@
 
 # compile and generate dependency info
 %.o: %.c %.d
