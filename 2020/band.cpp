@@ -8,7 +8,7 @@
 #include "track.h"
 #include "util.h"
 #include "wb.h"
-//#include "ween2019.h"
+#include "ween2020.h"
 
 #define EYE_BANK	1
 #define VOCALS_EYES	5
@@ -20,7 +20,7 @@
 #define GUITAR_SERVO	3
 #define KEYBOARD_SERVO0	4
 
-#define BETWEEN_SONG_MS	5000
+#define BETWEEN_SONG_MS	(ween2020_is_trick_or_treating() ? 5000 : 30000)
 
 #define SONG_WAV	"i-want-candy.wav"
 #define VOCALS_OPS	"vocals.ops"
@@ -32,8 +32,6 @@ static maestro_t *m;
 
 static track_t *song;
 static talking_skull_actor_t *vocals, *drum, *guitar, *keyboard;
-
-static struct timespec start;
 
 typedef struct {
     int		servo;
@@ -121,12 +119,8 @@ init_servos(void)
 int
 main(int argc, char **argv)
 {
-    printf("\n\n\n**** STARTING ****\n\n\n");
-
     pi_usb_init();
     wb_init();
-
-    wb_set(LIGHTS, 0);
 
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize servo controller\n");
@@ -141,22 +135,22 @@ main(int argc, char **argv)
 
     init_servos();
 
-    //while (1) {
-	wb_set(LIGHTS, 0);
-	rest_servos();
+    wb_set(LIGHTS, 0);
+    rest_servos();
 
-//        ween2019_wait_until_valid();
+    ween2020_wait_until_valid();
 
-	ms_sleep(BETWEEN_SONG_MS);
+    wb_set(LIGHTS, 1);
 
-	nano_gettime(&start);
-	wb_set(LIGHTS, 1);
-	talking_skull_actor_play(vocals);
-	//talking_skull_actor_play(drum);
-	//talking_skull_actor_play(guitar);
-	//talking_skull_actor_play(keyboard);
-	track_play(song);
-    //}
+    talking_skull_actor_play(vocals);
+    //talking_skull_actor_play(drum);
+    //talking_skull_actor_play(guitar);
+    //talking_skull_actor_play(keyboard);
+    track_play(song);
+
+    wb_set(LIGHTS, 0);
+
+    ms_sleep(BETWEEN_SONG_MS);
 
     return 0;
 }
