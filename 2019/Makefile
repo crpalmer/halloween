@@ -1,6 +1,7 @@
 CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 
 PROPS = \
+	band \
 	earth-invaders earth-invaders-test \
 	fogger \
 	paperboy \
@@ -14,6 +15,9 @@ all: $(PROPS)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+
+band: band.o $(DEP_LIBS)
+	$(CXX) -o $@ band.o $(LIBS)
 
 earth-invaders: earth-invaders.o $(DEP_LIBS)
 	$(CXX) -o $@ earth-invaders.o $(LIBS)
