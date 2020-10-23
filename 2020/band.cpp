@@ -40,10 +40,16 @@ typedef struct {
     int		eye_pin;
 } servo_state_t;
 
+typedef struct {
+    int		is_down;
+    int		n_in_down;
+    int         hold;
+} keyboard_state_t;
+
 static servo_state_t vocals_state = { VOCALS_SERVO, 0, 0, VOCALS_EYES };
 static servo_state_t drum_state[2] = { { DRUM_SERVO0, 0, 0, -1 }, { DRUM_SERVO0+1, 0, 0, -1 } };
 static servo_state_t guitar_state = { GUITAR_SERVO, 0, 0, -1 };
-static servo_state_t keyboard_state[2] = { { KEYBOARD_SERVO0, 0, 0, -1 }, { KEYBOARD_SERVO0+1, 0, 0, -1 } };
+static keyboard_state_t keyboard_state = { 0, };
 
 static void
 servo_update(void *state_as_vp, double new_pos)
@@ -77,9 +83,27 @@ drum_update(void *state_as_vp, double new_pos)
 static void
 keyboard_update(void *state_as_vp, double new_pos)
 {
-    servo_state_t *s = (servo_state_t *) state_as_vp;
-    servo_update(&s[0], new_pos);
-    servo_update(&s[1], 100-new_pos);
+    keyboard_state_t *s = (keyboard_state_t *) state_as_vp;
+    int new_down = new_pos > 5;
+    
+    if (s->hold > 1) {
+	s->hold--;
+	return;
+    }
+
+    if (s->is_down && s->n_in_down > 20) {
+	s->hold = 20;
+	new_down = 0;
+    }
+
+    if (new_down != s->is_down) {
+	s->is_down = new_down;
+	s->n_in_down = 0;
+	maestro_set_servo_pos(m, KEYBOARD_SERVO0, s->is_down ? 100 : 0);
+	maestro_set_servo_pos(m, KEYBOARD_SERVO0+1, s->is_down ? 0 : 100);
+    }
+
+    if (s->is_down) s->n_in_down++;
 }
 
 static void
@@ -89,8 +113,8 @@ rest_servos(void)
     servo_update(&drum_state[0], 100);
     servo_update(&drum_state[1], 100);
     servo_update(&guitar_state, 25);
-    servo_update(&keyboard_state[0], 100);
-    servo_update(&keyboard_state[1], 100);
+    maestro_set_servo_pos(m, KEYBOARD_SERVO0, 100);
+    maestro_set_servo_pos(m, KEYBOARD_SERVO0+1, 100);
 }
 
 static void
@@ -109,9 +133,9 @@ init_servos(void)
     maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
     maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
     maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
-    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1700, 2100);
-    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0, 850, 1500);
-    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0+1, 1200, 1700);
+    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1700, 2000);
+    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0, 1400, 1700);
+    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0+1, 1400, 1700);
 
     rest_servos();
 }
