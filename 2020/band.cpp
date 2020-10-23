@@ -37,6 +37,7 @@ typedef struct {
     int		servo;
     int		eyes;
     int		eyes_high;
+    int		eyes_on_pct;
     int		eye_pin;
 } servo_state_t;
 
@@ -46,9 +47,9 @@ typedef struct {
     int         hold;
 } keyboard_state_t;
 
-static servo_state_t vocals_state = { VOCALS_SERVO, 0, 0, VOCALS_EYES };
-static servo_state_t drum_state[2] = { { DRUM_SERVO0, 0, 0, -1 }, { DRUM_SERVO0+1, 0, 0, -1 } };
-static servo_state_t guitar_state = { GUITAR_SERVO, 0, 0, -1 };
+static servo_state_t vocals_state = { VOCALS_SERVO, 0, 1, 30, VOCALS_EYES };
+static servo_state_t drum_state[2] = { { DRUM_SERVO0, 0, 0, 50, -1 }, { DRUM_SERVO0+1, 0, 0, 50, -1 } };
+static servo_state_t guitar_state = { GUITAR_SERVO, 0, 0, 50, -1 };
 static keyboard_state_t keyboard_state = { 0, };
 
 static void
@@ -63,7 +64,7 @@ servo_update(void *state_as_vp, double new_pos)
     
     maestro_set_servo_pos(m, s->servo, pos);
 
-    new_eyes = pos >= 50;
+    new_eyes = pos >= s->eyes_on_pct;
     if (! s->eyes_high) new_eyes = !new_eyes;
 
     if (s->eyes != new_eyes) {
