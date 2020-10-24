@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "util.h"
 #include "wb.h"
-#include "ween-time.h"
+#include "ween2020.h"
 
 static ween_time_constraint_t wt[] = {
      { 0, 9, 0, 12+10, 30 },
@@ -17,9 +17,10 @@ int main(int argc, char **argv)
      wb_init();
 
      while (1) {
-	int new_valid = ween_time_is_valid(wt, WT_SIZE);
+	int new_valid = ween_time_is_valid(wt, WT_SIZE) || ween2020_is_ignored();
 
 	if (new_valid != is_valid) {
+	    printf("switching from %d to %d\n", is_valid, new_valid);
 	    is_valid = new_valid;
 	    wb_set(1, 1, is_valid);
 	    ms_sleep(100);
