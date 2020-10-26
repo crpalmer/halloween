@@ -11,13 +11,22 @@
 
 class Button : public AnimationStationAction {
 public:
-    Button(output_t *light, input_t *button, output_t *pin, const char *cmd = NULL) {
+    Button(output_t *light, input_t *button) {
 	this->light = light;
 	this->button = button;
-	this->pin = pin;
-	this->cmd = cmd;
+	this->pin = NULL;
+	this->cmd = NULL;
 	this->n_tracks = 0;
 	this->stop = stop_new();
+    }
+
+    void set_pin(output_t *pin) {
+	this->pin = pin;
+    }
+
+    void set_cmd(const char *cmd) {
+	if (this->cmd) free(this->cmd);
+	this->cmd = strdup(cmd);
     }
 
     void add_track(const char *wav) {
@@ -79,6 +88,11 @@ fprintf(stderr, "down\n");
     void attack(double up, double down) {
         struct timespec start;
 
+	if (! pin) {
+	    fprintf(stderr, "attack: pin not defined\n");
+	    exit(1);
+	}
+
         nano_gettime(&start);
 
 	if (n_tracks == 0) attack_without_audio(up, down);
@@ -100,7 +114,7 @@ private:
     output_t *light;
     input_t *button;
     output_t *pin;
-    const char *cmd;
+    char *cmd;
     track_t *tracks[MAX_TRACKS];
     int n_tracks;
     stop_t *stop;
@@ -108,7 +122,9 @@ private:
 
 class CandyCorn : public Button {
 public:
-    CandyCorn() : Button(wb_get_output(1, 1), wb_get_input(1), wb_get_output(2, 1), "candy corn") {
+    CandyCorn() : Button(wb_get_output(1, 1), wb_get_input(1)) {
+	set_pin(wb_get_output(2, 1));
+	set_cmd("candy corn");
 	add_track("candy corn 1.wav");
 	add_track("candy corn 2.wav");
 	add_track("candy corn 3.wav");
@@ -123,7 +139,9 @@ public:
 
 class PopTots : public Button {
 public:
-    PopTots() : Button(wb_get_output(1, 2), wb_get_input(2), wb_get_output(2, 2), "pop tots") {
+    PopTots() : Button(wb_get_output(1, 2), wb_get_input(2)) {
+	set_pin(wb_get_output(2, 2));
+	set_cmd("pop tots");
     }
 
     void act() {
@@ -134,7 +152,9 @@ public:
 
 class Twizzler : public Button {
 public:
-    Twizzler() : Button(wb_get_output(1, 3), wb_get_input(3), wb_get_output(2, 3), "twizzler") {
+    Twizzler() : Button(wb_get_output(1, 3), wb_get_input(3)) {
+	set_pin(wb_get_output(2, 3));
+	set_cmd("twizzler");
     }
 
     void act() {
@@ -145,7 +165,9 @@ public:
 
 class KitKat : public Button {
 public:
-    KitKat() : Button(wb_get_output(1, 4), wb_get_input(4), wb_get_output(2, 4), "kit kat") {
+    KitKat() : Button(wb_get_output(1, 4), wb_get_input(4)) {
+	set_pin(wb_get_output(2, 4));
+	set_cmd("kit kat");
     }
 
     void act() {
