@@ -72,8 +72,6 @@ private:
     output_t *last;
 };
 
-#define ANIMATION_SLEEP_MS	200
-
 void
 Lights::add(output_t *light)
 {
@@ -103,7 +101,7 @@ Lights::work(void *this_as_vp)
 	} else {
 	    l->action->step();
 	    pthread_mutex_unlock(&l->lock);
-	    ms_sleep(ANIMATION_SLEEP_MS);
+	    ms_sleep(l->blink_ms);
 	    pthread_mutex_lock(&l->lock);
 	}
     }
@@ -114,6 +112,7 @@ Lights::Lights()
 {
     action = NULL;
 
+    blink_ms = 200;
     pthread_mutex_init(&lock, NULL);
     pthread_cond_init(&cond, NULL);
 

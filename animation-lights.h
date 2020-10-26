@@ -31,6 +31,7 @@ public:
     void blink_one(output_t *light);
     void blink_all();
     void chase();
+    void set_blink_ms(int blink_ms) { this->blink_ms = blink_ms; }
 
     void off()
     {
@@ -46,6 +47,7 @@ public:
 
 protected:
     void set_all(unsigned value);
+    int blink_ms;
 
 private:
     static void *work(void *this_as_vp);

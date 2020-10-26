@@ -29,6 +29,7 @@ friend class AnimationStationController;
 public:
     AnimationStation(AnimationStationWaiting *waiting = NULL);
     void add_action(AnimationStationAction *action);
+    void set_blink_ms(int blink_ms) { lights->set_blink_ms(blink_ms); }
 
 protected:
     void check_inputs();
