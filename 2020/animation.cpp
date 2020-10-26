@@ -62,24 +62,19 @@ protected:
 	unsigned i;
 
 	for (i = 0; i < 3; i++) {
-fprintf(stderr, "up\n");
 	    pin->set(true);
 	    ms_sleep(up_ms(up));
-fprintf(stderr, "down\n");
 	    pin->set(false);
 	    ms_sleep(down_ms(down));
 	}
     }
 
     void attack_with_audio(track_t *t, double up, double down) {
-	track_set_volume(t, 0);
 	stop_reset(stop);
 	track_play_asynchronously(t, stop);
 	while (! stop_is_stopped(stop)) {
-fprintf(stderr, "up\n");
 	    pin->set(true);
 	    ms_sleep(up_ms(up));
-fprintf(stderr, "down\n");
 	    pin->set(false);
 	    if (! stop_is_stopped(stop)) ms_sleep(down_ms(down));
 	}
