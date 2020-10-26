@@ -15,7 +15,7 @@ main(int argc, char **argv)
     wb_init();
 
     while (1) {
-	ms_sleep(random_number_in_range(10, 50));
+	ms_sleep(random_number_in_range(50, 100));
 	state = ~state;
 	wb_set_outputs(0xff, state);
     }
