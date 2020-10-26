@@ -84,7 +84,7 @@ public:
 
 class KitKat : public Button {
 public:
-    KitKat() : Button(wb_get_output(1, 4), wb_get_input(4), wb_get_output(2, 4), "kit-kat") {
+    KitKat() : Button(wb_get_output(1, 4), wb_get_input(4), wb_get_output(2, 4), "kit kat") {
     }
 
     void act() {
