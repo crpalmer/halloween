@@ -6,6 +6,7 @@ PROPS = \
 	band \
 	fogger \
 	hypnopops \
+	witch \
 
 DATA = \
 	guitar.ops \
@@ -30,6 +31,9 @@ fogger: fogger.o $(DEP_LIBS)
 
 hypnopops: hypnopops.o $(DEP_LIBS)
 	$(CXX) -o $@ hypnopops.o $(LIBS)
+
+witch: witch.o $(DEP_LIBS)
+	$(CXX) -o $@ witch.o $(LIBS)
 
 guitar.ops: ~/halloween-media/guitar.wav
 	~/lib/utils/talking-skull-prepare `basename $<` > $@
