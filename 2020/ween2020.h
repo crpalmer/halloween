@@ -16,8 +16,8 @@ static bool ween2020_is_valid() {
     static ween_time_constraint_t ween_time_constraints[] = {
         { 0,        15, 00,         22, 00 },
         { 3,        15, 00,         20, 00 },
-        { -1,       15, 00,         17, 00 },
-        { -1,       19, 00,         20, 00 },
+        { -1,       15, 00,         17, 30 },
+        { -1,       18, 30,         20, 00 },
     };
     const int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
 
