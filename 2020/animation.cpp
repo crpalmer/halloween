@@ -17,6 +17,7 @@ public:
 	pin = NULL;
 	cmd = NULL;
 	n_tracks = 0;
+	last_track = -1;
 	stop = stop_new();
 	audio_dev.card = 1;
 	audio_dev.device = 0;
@@ -94,12 +95,21 @@ protected:
         nano_gettime(&start);
 
 	if (n_tracks == 0) attack_without_audio(up, down);
-	else attack_with_audio(tracks[random_number_in_range(0, n_tracks-1)], up, down);
+	else attack_with_audio(random_track(), up, down);
 
 	fprintf(stderr, "total time: %d ms\n", nano_elapsed_ms_now(&start));
     }
 
 private:
+    track_t *random_track() {
+	int track;
+	do {
+	    track = random_number_in_range(0, n_tracks-1);
+	} while (n_tracks > 1 && track == last_track);
+	last_track = track;
+	return tracks[track];
+    }
+
     unsigned up_ms(double up) {
         return (500 + random_number_in_range(0, 250) - 125)*up;
     }
@@ -116,6 +126,7 @@ private:
     audio_device_t audio_dev;
     track_t *tracks[MAX_TRACKS];
     int n_tracks;
+    int last_track;
     stop_t *stop;
 };
 
