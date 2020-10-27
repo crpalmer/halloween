@@ -142,9 +142,11 @@ fogger_main(void *args_as_vp)
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
 
     while(true) {
-	fprintf(stderr, "sleeping for OFF\n");
-	ms_sleep(5000 * (1 - duty));
-	do_fog(5000 * duty);
+	if (args->is_active && args->is_active()) {
+	    fprintf(stderr, "sleeping for OFF\n");
+	    ms_sleep(5000 * (1 - duty));
+	    do_fog(5000 * duty);
+	}
     }
 
     return NULL;

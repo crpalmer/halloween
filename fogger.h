@@ -5,9 +5,13 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
+
 typedef struct {
     double default_duty;
     double delta_duty;
+    bool (*is_active)();
 } fogger_args_t;
 
 void
