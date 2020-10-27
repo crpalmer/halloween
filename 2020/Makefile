@@ -4,6 +4,7 @@ CPPFLAGS=$(CFLAGS)
 PROPS = \
 	animation \
 	band \
+	fogger \
 	hypnopops \
 
 DATA = \
@@ -23,6 +24,9 @@ animation: animation.o $(DEP_LIBS)
 
 band: band.o $(DEP_LIBS)
 	$(CXX) -o $@ band.o $(LIBS)
+
+fogger: fogger.o $(DEP_LIBS)
+	$(CXX) -o $@ fogger.o $(LIBS)
 
 hypnopops: hypnopops.o $(DEP_LIBS)
 	$(CXX) -o $@ hypnopops.o $(LIBS)
