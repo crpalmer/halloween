@@ -14,10 +14,13 @@ public:
     Button(output_t *light, input_t *button) {
 	this->light = light;
 	this->button = button;
-	this->pin = NULL;
-	this->cmd = NULL;
-	this->n_tracks = 0;
-	this->stop = stop_new();
+	pin = NULL;
+	cmd = NULL;
+	n_tracks = 0;
+	stop = stop_new();
+	audio_dev.card = 1;
+	audio_dev.device = 0;
+	audio_dev.playback = true;
     }
 
     void set_pin(output_t *pin) {
@@ -35,7 +38,7 @@ public:
 	    exit(1);
 	}
 
-	track_t *t = track_new(wav);
+	track_t *t = track_new_audio_dev(wav, &audio_dev);
 
 	if (! t) {
 	    perror(wav);
@@ -110,6 +113,7 @@ private:
     input_t *button;
     output_t *pin;
     char *cmd;
+    audio_device_t audio_dev;
     track_t *tracks[MAX_TRACKS];
     int n_tracks;
     stop_t *stop;
@@ -137,11 +141,14 @@ public:
     PopTots() : Button(wb_get_output(1, 2), wb_get_input(2)) {
 	set_pin(wb_get_output(2, 2));
 	set_cmd("pop tots");
+	add_track("pop tot 1.wav");
+	add_track("pop tot 2.wav");
+	add_track("pop tot 3.wav");
     }
 
     void act() {
 	fprintf(stderr, "pop tots\n");
-	attack(1, 1);
+	attack(0.75, 2.5);
     }
 };
 
@@ -150,11 +157,14 @@ public:
     Twizzler() : Button(wb_get_output(1, 3), wb_get_input(3)) {
 	set_pin(wb_get_output(2, 3));
 	set_cmd("twizzler");
+	add_track("twizzler 1.wav");
+	add_track("twizzler 2.wav");
+	add_track("twizzler 3.wav");
     }
 
     void act() {
 	fprintf(stderr, "twizzler\n");
-	attack(1, 1);
+	attack(1, .75);
     }
 };
 
@@ -163,11 +173,15 @@ public:
     KitKat() : Button(wb_get_output(1, 4), wb_get_input(4)) {
 	set_pin(wb_get_output(2, 4));
 	set_cmd("kit kat");
+	add_track("kit kat 1.wav");
+	add_track("kit kat 2.wav");
+	add_track("kit kat 3.wav");
+	add_track("kit kat 4.wav");
     }
 
     void act() {
 	fprintf(stderr, "kit-kat\n");
-	attack(1, 1);
+	attack(0.75, 1.25);
     }
 };
 
