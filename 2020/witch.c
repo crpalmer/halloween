@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     while (1) {
 	ween2020_wait_until_valid();
 	track_play(track);
-	ms_sleep(random_number_in_range(1000, 30000));
+	ms_sleep(random_number_in_range(10000, 45000));
     }
 
     return 0;
