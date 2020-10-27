@@ -12,8 +12,7 @@ static inline int ween2020_is_ignored()
     return (stat("/tmp/ween-ignore", &s) >= 0);
 }
 
-static inline void ween2020_wait_until_valid()
-{
+static bool ween2020_is_valid() {
     static ween_time_constraint_t ween_time_constraints[] = {
         { 0,        15, 00,         22, 00 },
         { 3,        15, 00,         20, 00 },
@@ -22,7 +21,12 @@ static inline void ween2020_wait_until_valid()
     };
     const int n_ween_time_constraints = sizeof(ween_time_constraints) / sizeof(ween_time_constraints[0]);
 
-    while (! (ween2020_is_ignored() || ween_time_is_valid(ween_time_constraints, n_ween_time_constraints))) {
+    return ween2020_is_ignored() || ween_time_is_valid(ween_time_constraints, n_ween_time_constraints);
+}
+
+static inline void ween2020_wait_until_valid()
+{
+    while (! ween2020_is_valid()) {
 	ms_sleep(1000);
     }
 }
