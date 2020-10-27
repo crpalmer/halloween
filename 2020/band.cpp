@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include "maestro.h"
 #include "pi-usb.h"
+#include "server.h"
 #include "talking-skull.h"
 #include "time-utils.h"
 #include "track.h"
@@ -32,6 +34,7 @@ static maestro_t *m;
 
 static track_t *song;
 static talking_skull_actor_t *vocals, *drum, *guitar, *keyboard;
+static bool force = false;
 
 typedef struct {
     int		servo;
@@ -141,6 +144,31 @@ init_servos(void)
     rest_servos();
 }
 
+static char *
+remote_event(void *unused, const char *cmd, struct sockaddr_in *addr, size_t size)
+{
+    if (strcmp(cmd, "play") == 0) {
+	force = true;
+	return strdup("ok");
+    }
+    return NULL;
+}
+
+static void
+start_server()
+{
+    static server_args_t server_args;
+    pthread_t thread;
+
+    server_args.port = 5555;
+    server_args.command = remote_event;
+    server_args.state = NULL;
+
+    fprintf(stderr, "starting server on port %d\n", server_args.port);
+
+    pthread_create(&thread, NULL, server_thread_main, &server_args);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -163,7 +191,11 @@ main(int argc, char **argv)
     wb_set(LIGHTS, 0);
     rest_servos();
 
-    ween2020_wait_until_valid();
+    start_server();
+
+    while (! ween2020_is_valid() && ! force) {
+	ms_sleep(1000);
+    }
 
     wb_set(LIGHTS, 1);
 
