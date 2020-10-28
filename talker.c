@@ -25,7 +25,7 @@ static maestro_t *maestro;
 #define MICROPHONE_GAIN_TARGET     65
 #define MICROPHONE_MAX_GAIN	   5
 #define OTHER_MAX_GAIN		   100
-#define OTHER_GAIN_TARGET          40
+#define OTHER_GAIN_TARGET          65
 #define OTHER_HISTORY_EPSILON      0
 
 #define MAX_ANY_AUDIO 10
@@ -329,12 +329,12 @@ main(int argc, char **argv)
     audio_set_volume(out, 100);
 
     audio_meta_init_from_config(&meta, &cfg);
-    skull = talking_skull_new(&meta, false, servo_update, NULL);
+    skull = talking_skull_new(&meta, servo_update, NULL);
 
     last_audio = time(NULL);
 
     for (i = 0; i < MAX_STATS; i++) {
-	stats[i].gain = 1;
+	stats[i].gain = 5;
 	stats[i].gain_target = OTHER_GAIN_TARGET;
 	stats[i].max_gain = OTHER_MAX_GAIN;
 	stats[i].epsilon = OTHER_HISTORY_EPSILON;
