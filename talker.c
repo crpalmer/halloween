@@ -299,7 +299,7 @@ main(int argc, char **argv)
     cfg.channels = 2;
     cfg.rate = 48000;
 
-    audio_device_init_playback(&out_dev);
+    audio_device_init(&out_dev, 1, 0, true);
     audio_device_init_capture(&in_dev);
 
     out = audio_new(&cfg, &out_dev);
