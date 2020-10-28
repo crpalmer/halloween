@@ -124,7 +124,7 @@ actor_init(actor_t *a, const char *fname, talking_skull_servo_update_t update, v
 
     a->meta_servo = wav_get_meta(a->servo);
     a->servo_data = wav_get_raw_data(a->servo, &a->n_servo_data);
-    a->talking_skull = talking_skull_new(&a->meta_servo, true, update, data);
+    a->talking_skull = talking_skull_new_is_track(&a->meta_servo, true, update, data);
     a->ops = talking_skull_prepare(a->talking_skull, a->servo_data, a->n_servo_data);
 }
 

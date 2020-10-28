@@ -255,7 +255,7 @@ main(int argc, char **argv)
     buffer = fatal_malloc(size);
 
     audio_meta_init_from_config(&meta, &cfg);
-    skull = talking_skull_new(&meta, false, servo_update, NULL);
+    skull = talking_skull_new_is_track(&meta, false, servo_update, NULL);
 
     fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
 

@@ -307,7 +307,7 @@ main(int argc, char **argv)
     audio_set_volume(out, 100);
 
     audio_meta_init_from_config(&meta, &cfg);
-    skull = talking_skull_new(&meta, false, servo_update, NULL);
+    skull = talking_skull_new_is_track(&meta, false, servo_update, NULL);
 
     last_audio = time(NULL);
 
