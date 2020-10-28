@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	if (new_valid != is_valid) {
 	    printf("switching from %d to %d\n", is_valid, new_valid);
 	    is_valid = new_valid;
-	    wb_set(1, 1, is_valid);
+	    wb_set(2, 4, is_valid);
 	    ms_sleep(100);
 	    wb_set(2, 1, is_valid);
 	}
