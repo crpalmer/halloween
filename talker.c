@@ -16,7 +16,7 @@
 
 static maestro_t *maestro;
 
-#define SERVO_ID 0
+#define SERVO_ID 1
 #define RIGHT_EYE_PIN 2, 1
 #define LEFT_EYE_PIN 2, 2
 
@@ -271,7 +271,13 @@ main(int argc, char **argv)
     if ((maestro = maestro_new()) == NULL) {
         fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
     } else {
-	maestro_set_servo_range(maestro, SERVO_ID, TALKING_SKULL);
+	if (SERVO_ID == 0) {
+	    maestro_set_servo_physical_range(maestro, SERVO_ID, 1600, 1900);
+	} else {
+	    maestro_set_servo_range(maestro, SERVO_ID, EXTENDED_SERVO);
+	    maestro_set_servo_range_pct(maestro, SERVO_ID, 35, 53);
+	}
+	maestro_set_servo_is_inverted(maestro, SERVO_ID, 1);
     }
 
     for (n_idle_tracks = 0; n_idle_tracks < MAX_IDLE_TRACKS; n_idle_tracks++) {
