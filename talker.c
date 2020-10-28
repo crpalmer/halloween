@@ -76,16 +76,16 @@ static void
 update_history_and_gain(stats_t *s, double pos)
 {
     if (pos > s->epsilon) {
+	int n_avg;
+
         s->sum_history = s->sum_history - s->history[s->history_i] + pos;
         s->history[s->history_i] = pos;
         s->history_i = (s->history_i + 1) % N_HISTORY;
 	if (s->history_i == 0) {
 	    s->history_full = true;
 	}
-	if (s->history_full) {
-	    s->gain = s->gain_target / (s->sum_history / N_HISTORY);
-	    if (s->gain > s->max_gain) s->gain = s->max_gain;
-	}
+	n_avg = s->history_full ? N_HISTORY : s->history_i;
+        s->gain = s->gain_target / (s->sum_history / n_avg);
     }
 }
 
