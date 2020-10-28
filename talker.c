@@ -171,8 +171,6 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
     size_t i, j;
     int ip = addr->sin_addr.s_addr>>24 % 256;
 
-fprintf(stderr, "remote: %d %.5s %d bytes\n", ip, command, strlen(command));
-
     if (strncmp(command, "play ", 5) != 0) {
 	return strdup("Invalid command");
     }
