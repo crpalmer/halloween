@@ -15,7 +15,7 @@ static inline int ween2020_is_ignored()
 static bool ween2020_is_valid() {
     static ween_time_constraint_t ween_time_constraints[] = {
         { 0,        15, 00,         22, 00 },
-        { 3,        15, 00,         20, 00 },
+        { 3,        15, 00,         21, 00 },
         { -1,       15, 00,         17, 30 },
         { -1,       18, 30,         20, 00 },
     };
