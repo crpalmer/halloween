@@ -8,7 +8,7 @@
 
 #include "animation-station.h"
 
-#define DEBOUNCE_MS	2
+#define DEBOUNCE_MS	100
 
 class DummyWaiting : public AnimationStationWaiting {
 public:
@@ -39,7 +39,7 @@ AnimationStation::main(void *as_as_vp)
 
 	    if (as->active_action == NULL && nano_later_than(&now, &wait_until)) {
 		as->waiting->fn(nano_elapsed_ms(&now, &as->start_waiting));
-		last_notify = now;
+		nano_gettime(&last_notify);
 	    }
 	}
 
@@ -88,15 +88,9 @@ AnimationStation::check_inputs()
 {
     for (std::list<AnimationStationAction *>::iterator it = actions.begin(); ! active_action && it != actions.end(); it++) {
 	if ((*it)->is_triggered()) {
-	    struct timespec start;
-
-	    nano_gettime(&start);
-	    while (nano_elapsed_ms_now(&start) < DEBOUNCE_MS && (*it)->is_triggered()) {}
-	    if ((*it)->is_triggered() && pthread_mutex_lock(&lock) == 0) {
-		active_action = *it;
-		pthread_cond_signal(&cond);
-		pthread_mutex_unlock(&lock);
-	    }
+	    active_action = *it;
+	    pthread_cond_signal(&cond);
+	    pthread_mutex_unlock(&lock);
 	}
     }
 }

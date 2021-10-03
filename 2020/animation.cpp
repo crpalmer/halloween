@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "externals/PIGPIO/pigpio.h"
 #include "animation-station.h"
 #include "track.h"
@@ -9,11 +10,21 @@
 
 #define MAX_TRACKS	10
 
+static bool
+file_exists(const char *fname)
+{
+    struct stat s;
+
+    return stat(fname, &s) >= 0;
+}
+
 class Button : public AnimationStationAction {
 public:
     Button(output_t *light, input_t *button) {
 	this->light = light;
 	this->button = button;
+	button->set_pullup_down();
+	button->set_debounce(100);
 	pin = NULL;
 	cmd = NULL;
 	n_tracks = 0;
@@ -143,7 +154,7 @@ public:
 
     void act(void) {
 	fprintf(stderr, "candy corn\n");
-	attack(1, 1);
+	if (! file_exists("disable-candy-corn")) attack(1, 1);
     }
 };
 
@@ -159,7 +170,7 @@ public:
 
     void act() {
 	fprintf(stderr, "pop tots\n");
-	attack(0.75, 2.5);
+	if (! file_exists("disable-pop-tots")) attack(0.75, 2.5);
     }
 };
 
@@ -175,7 +186,7 @@ public:
 
     void act() {
 	fprintf(stderr, "twizzler\n");
-	attack(1, .75);
+	if (! file_exists("disable-twizzler")) attack(1, .75);
     }
 };
 
@@ -192,7 +203,7 @@ public:
 
     void act() {
 	fprintf(stderr, "kit-kat\n");
-	attack(0.75, 1.25);
+	if (! file_exists("disable-kit-kat")) attack(0.75, 1.25);
     }
 };
 
