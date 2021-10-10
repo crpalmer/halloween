@@ -1,17 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <pthread.h>
 #include <string.h>
 #include "audio.h"
 #include "mcp23017.h"
+#include "maestro.h"
+#include "pi-usb.h"
 #include "time-utils.h"
 #include "track.h"
 #include "util.h"
+
+#define GAUGE 0
+#define GAUGE_LOW   40
+#define GAUGE_HIGH 100
+
+static void *gauge(void *unused)
+{
+    maestro_t *m = maestro_new();
+    double pos = (GAUGE_HIGH - GAUGE_LOW) / 2.0;
+
+    maestro_set_servo_range(m, GAUGE, HITEC_HS425);
+    while (1) {
+	unsigned ms = random_number_in_range(100, 400);
+	double new_pos = random_number_in_range(GAUGE_LOW, GAUGE_HIGH) / 1.0;
+	double speed = fabs(new_pos - pos) / 100 * ms;
+	maestro_set_servo_speed(m, GAUGE, speed);
+	maestro_set_servo_pos(m, GAUGE, new_pos);
+	pos = new_pos;
+	ms_sleep(ms);
+    }
+}
 
 int main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
+    pi_usb_init();
+
+    gauge(NULL);
 
     track_t *t = track_new_usb_out("jacob.wav");
     track_play_loop(t, NULL);
