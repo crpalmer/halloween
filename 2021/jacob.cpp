@@ -12,8 +12,8 @@
 #include "util.h"
 
 #define GAUGE 0
-#define GAUGE_LOW   40
-#define GAUGE_HIGH 100
+#define GAUGE_LOW   10
+#define GAUGE_HIGH  70
 
 static void *gauge(void *unused)
 {
