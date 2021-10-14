@@ -15,6 +15,8 @@
 #define GAUGE_LOW   10
 #define GAUGE_HIGH  70
 
+#define VOLUME 85
+
 static void *gauge(void *unused)
 {
     maestro_t *m = maestro_new();
@@ -34,13 +36,16 @@ static void *gauge(void *unused)
 
 int main(int argc, char **argv)
 {
+    pthread_t thread;
+
     gpioInitialise();
     seed_random();
     pi_usb_init();
 
-    gauge(NULL);
+    pthread_create(&thread, NULL, gauge, NULL);
 
     track_t *t = track_new_usb_out("jacob.wav");
+    track_set_volume(t, VOLUME);
     track_play_loop(t, NULL);
 
     MCP23017 *mcp = new MCP23017();
