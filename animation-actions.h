@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdbool.h>
 
-#include "animation-lights.h"
+#include "lights.h"
 
 typedef void (*action_fn_t)(void *action_data, lights_t *l, unsigned pin);
 typedef void (*waiting_fn_t)(unsigned total_wait_ms);

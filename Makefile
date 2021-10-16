@@ -13,7 +13,7 @@ all: $(ALL)
 
 LIBS = $(LIB) -lusb -lrt -lpthread
 
-ANIMATION_OBJS= animation-station.o animation-main.o animation-lights.o
+ANIMATION_OBJS= animation-station.o animation-main.o
 FOGGER_OBJS = fogger.o
 TIME_OBJS = ween-time.o
 

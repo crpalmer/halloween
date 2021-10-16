@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "lights.h"
 #include "server.h"
 #include "time-utils.h"
 #include "util.h"
@@ -9,7 +10,6 @@
 
 #include "animation-actions.h"
 #include "animation-common.h"
-#include "animation-lights.h"
 
 #define BUTTON_LOCKOUT_MS 1000
 #define MAX_STATIONS 8

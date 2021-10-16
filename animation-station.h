@@ -6,7 +6,7 @@
 #include "io.h"
 #include "server.h"
 
-#include "animation-lights.h"
+#include "lights.h"
 
 class AnimationStationWaiting {
 public:
