@@ -2,6 +2,7 @@ CFLAGS=-Wall -Werror -g -I/home/crpalmer/lib -I. -I..
 CPPFLAGS=$(CFLAGS)
 
 PROPS = \
+	alien \
 	jacob \
 
 all: $(PROPS)
@@ -9,6 +10,9 @@ all: $(PROPS)
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
 LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+
+alien: alien.o $(DEP_LIBS)
+	$(CXX) -o $@ alien.o $(LIBS)
 
 jacob: jacob.o $(DEP_LIBS)
 	$(CXX) -o $@ jacob.o $(LIBS)
