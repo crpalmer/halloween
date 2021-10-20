@@ -62,4 +62,4 @@ strobe: strobe.o $(LIB) libhalloween.a
 	@g++ -MM $(CFLAGS) $*.cpp > $*.d
 
 clean:
-	-rm *.o *.d */*.o */*.d $(PROPS)
+	-rm *.o *.d */*.o */*.d $(ALL)
