@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <math.h>
 #include <pthread.h>
+#include <string.h>
+#include "maestro.h"
+#include "pi-usb.h"
 #include "track.h"
 #include "time-utils.h"
 #include "util.h"
@@ -22,6 +25,12 @@
 #define LIGHT_HIGH	200
 
 #define ACTION_START	(1*10)
+
+#define HEAD		0
+#define HEAD_FORWARD	50
+#define HEAD_FORWARD_SPEED 4000
+#define HEAD_SIDE	70
+#define HEAD_SIDE_SPEED	1000
 
 static void blink_lights_for(bool *is_lit, int ms)
 {
@@ -44,11 +53,18 @@ main(int argc, char **argv)
 {
     stop_t *stop;
     track_t *track;
+    maestro_t *servo;
 
     seed_random();
+    pi_usb_init();
 
     if (wb_init() < 0) {
 	perror("wb_init");
+	exit(1);
+    }
+
+    if ((servo = maestro_new()) == NULL) {
+	fprintf(stderr, "Could not initialize maestro\n");
 	exit(1);
     }
 
@@ -77,6 +93,9 @@ main(int argc, char **argv)
 	    int open_time = random_number_in_range(LID_OPEN_LOW, LID_OPEN_HIGH);
 	    int closed_time = random_number_in_range(LID_CLOSED_LOW, LID_CLOSED_HIGH);
 
+	    if (it == 1) {
+		maestro_set_servo_speed(servo, HEAD, HEAD_SIDE_SPEED); maestro_set_servo_pos(servo, HEAD, HEAD_SIDE);
+	    }
 	    wb_set(LID_PIN, 1);
 	    blink_lights_for(&is_lit, open_time);
 	    wb_set(LID_PIN, 0);
@@ -86,6 +105,11 @@ main(int argc, char **argv)
 	
 	wb_set(LIGHT_PIN, 1);
 	wb_set(LID_PIN, 0);
+
+	maestro_set_servo_speed(servo, HEAD, HEAD_FORWARD_SPEED);
+	maestro_set_servo_pos(servo, HEAD, HEAD_FORWARD);
+	double servo_ms = fabs(HEAD_FORWARD - HEAD_SIDE) / 100.0 * HEAD_FORWARD_SPEED;
+	ms_sleep(servo_ms);
 
 	ms_sleep(random_number_in_range(INTERDELAY_LOW, INTERDELAY_HIGH));
     }
