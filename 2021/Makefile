@@ -3,6 +3,7 @@ CPPFLAGS=$(CFLAGS)
 
 PROPS = \
 	alien \
+	coffin \
 	jacob \
 
 all: $(PROPS)
@@ -13,6 +14,9 @@ LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
 
 alien: alien.o $(DEP_LIBS)
 	$(CXX) -o $@ alien.o $(LIBS)
+
+coffin: coffin.o $(DEP_LIBS)
+	$(CXX) -o $@ coffin.o $(LIBS)
 
 jacob: jacob.o $(DEP_LIBS)
 	$(CXX) -o $@ jacob.o $(LIBS)
