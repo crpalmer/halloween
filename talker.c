@@ -304,7 +304,7 @@ main(int argc, char **argv)
     cfg.rate = 48000;
 
     audio_device_init(&out_dev, 1, 0, true);
-    audio_device_init_capture(&in_dev);
+    audio_device_init(&in_dev, 2, 0, false);
 
     out = audio_new(&cfg, &out_dev);
     in = audio_new(&cfg, &in_dev);
