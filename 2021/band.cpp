@@ -24,9 +24,9 @@
 
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
-#define SONG_WAV	"i-want-candy.wav"
+#define SONG_WAV	"pour-some-sugar.wav"
 #define VOCALS_OPS	"vocals.ops"
-#define DRUM_OPS	"vocals.ops"
+#define DRUM_OPS	"drums.ops"
 #define GUITAR_OPS	"guitar.ops"
 #define KEYBOARD_OPS	"piano.ops"
 
