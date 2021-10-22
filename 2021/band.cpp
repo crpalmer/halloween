@@ -170,6 +170,7 @@ init_servos(void)
     }
 
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1296);
+    maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1400);
     maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
     maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
     maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
