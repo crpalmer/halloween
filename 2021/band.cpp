@@ -30,6 +30,10 @@
 #define GUITAR_OPS	"guitar.ops"
 #define KEYBOARD_OPS	"vocals.ops"
 
+#define GUITAR_UP_STATE_MS	300
+#define GUITAR_DOWN_STATE_MS	40
+#define GUITAR_MULT		1
+
 static maestro_t *m;
 
 static track_t *song;
@@ -45,6 +49,12 @@ typedef struct {
 } servo_state_t;
 
 typedef struct {
+    struct timespec at;
+    int		is_up;
+    int		wants_up;
+} guitar_state_t;
+
+typedef struct {
     int		is_down;
     int		n_in_down;
     int         hold;
@@ -52,7 +62,7 @@ typedef struct {
 
 static servo_state_t vocals_state = { VOCALS_SERVO, 0, 1, 30, VOCALS_EYES };
 static servo_state_t drum_state[2] = { { DRUM_SERVO0, 0, 0, 50, -1 }, { DRUM_SERVO0+1, 0, 0, 50, -1 } };
-static servo_state_t guitar_state = { GUITAR_SERVO, 0, 0, 50, -1 };
+static guitar_state_t guitar_state = { 0 };
 static keyboard_state_t keyboard_state = { 0, };
 
 static void
@@ -82,6 +92,32 @@ drum_update(void *state_as_vp, double new_pos)
     servo_state_t *s = (servo_state_t *) state_as_vp;
     servo_update(&s[0], new_pos);
     servo_update(&s[1], new_pos);
+}
+
+static void
+guitar_update(void *state_as_vp, double new_pos)
+{
+    guitar_state_t *g = (guitar_state_t *) state_as_vp;
+    int new_up = new_pos > 10;
+    struct timespec now;
+    int ms;
+
+    nano_gettime(&now);
+    ms = nano_elapsed_ms(&now, &g->at);
+
+#if 0
+    fprintf(stderr, "%03d %d %d %d\n", ms, new_up, g->wants_up, g->is_up);
+#endif
+
+    if (new_up != g->wants_up) {
+	g->wants_up = new_up;
+	g->at = now;
+	g->is_up = new_up;
+    } else if (g->wants_up && ms > (g->is_up ? GUITAR_UP_STATE_MS : GUITAR_DOWN_STATE_MS)) {
+	g->is_up = ! g->is_up;
+	g->at = now;
+    }
+    maestro_set_servo_pos(m, GUITAR_SERVO, g->wants_up && ! g->is_up ? 0 : new_pos * GUITAR_MULT);
 }
 
 static void
@@ -116,7 +152,7 @@ rest_servos(void)
     servo_update(&vocals_state, 0);
     servo_update(&drum_state[0], 100);
     servo_update(&drum_state[1], 100);
-    servo_update(&guitar_state, 25);
+    servo_update(&guitar_state, 0);
     maestro_set_servo_pos(m, KEYBOARD_SERVO0, 100);
     maestro_set_servo_pos(m, KEYBOARD_SERVO0+1, 100);
 }
@@ -126,7 +162,7 @@ init_servos(void)
 {
     vocals = talking_skull_actor_new_ops(VOCALS_OPS, servo_update, &vocals_state);
     drum = talking_skull_actor_new_ops(DRUM_OPS, drum_update, &drum_state);
-    guitar = talking_skull_actor_new_ops(GUITAR_OPS, servo_update, &guitar_state);
+    guitar = talking_skull_actor_new_ops(GUITAR_OPS, guitar_update, &guitar_state);
     keyboard = talking_skull_actor_new_ops(KEYBOARD_OPS, keyboard_update, &keyboard_state);
 
     if (! vocals || ! drum || ! guitar || ! keyboard) {
@@ -137,7 +173,7 @@ init_servos(void)
     maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
     maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
     maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
-    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1700, 2000);
+    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1200, 1800);
     maestro_set_servo_physical_range(m, KEYBOARD_SERVO0, 1400, 1700);
     maestro_set_servo_physical_range(m, KEYBOARD_SERVO0+1, 1400, 1700);
 
