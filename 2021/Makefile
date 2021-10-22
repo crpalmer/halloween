@@ -6,7 +6,16 @@ PROPS = \
 	coffin \
 	jacob \
 
-all: $(PROPS)
+DATA = \
+	pour-some-sugar.wav \
+	pour-some-sugar-drums.wav \
+	pour-some-sugar-guitar.wav \
+	pour-some-sugar-vocals.wav \
+	drums.ops \
+	guitar.ops \
+	vocals.ops \
+
+all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
@@ -20,6 +29,27 @@ coffin: coffin.o $(DEP_LIBS)
 
 jacob: jacob.o $(DEP_LIBS)
 	$(CXX) -o $@ jacob.o $(LIBS)
+
+pour-some-sugar.wav: ~/halloween-media/pour-some-sugar.mp3
+	ffmpeg -y -i $< $@
+
+pour-some-sugar-drums.wav: ~/halloween-media/pour-some-sugar-drums.mp3
+	ffmpeg -y -i $< $@
+
+pour-some-sugar-guitar.wav: ~/halloween-media/pour-some-sugar-guitar.mp3
+	ffmpeg -y -i $< $@
+
+pour-some-sugar-vocals.wav: ~/halloween-media/pour-some-sugar-vocals.mp3
+	ffmpeg -y -i $< $@
+
+drums.ops: pour-some-sugar-drums.wav
+	~/lib/utils/talking-skull-prepare $< > $@
+
+guitar.ops: pour-some-sugar-guitar.wav
+	~/lib/utils/talking-skull-prepare $< > $@
+
+vocals.ops: pour-some-sugar-vocals.wav
+	~/lib/utils/talking-skull-prepare $< > $@
 
 # compile and generate dependency info
 %.o: %.c %.d
@@ -35,6 +65,6 @@ jacob: jacob.o $(DEP_LIBS)
 	@gcc -MM $(CFLAGS) $*.c > $*.d
 
 clean:
-	-rm *.o *.d */*.o */*.d $(PROPS)
+	-rm *.o *.d */*.o */*.d $(PROPS) $(DATA) 
 
 include ${glob *.d}
