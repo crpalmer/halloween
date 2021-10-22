@@ -28,7 +28,7 @@
 #define VOCALS_OPS	"vocals.ops"
 #define DRUM_OPS	"drums.ops"
 #define GUITAR_OPS	"guitar.ops"
-#define KEYBOARD_OPS	"piano.ops"
+#define KEYBOARD_OPS	"vocals.ops"
 
 static maestro_t *m;
 
@@ -200,9 +200,9 @@ main(int argc, char **argv)
     wb_set(LIGHTS, 1);
 
     talking_skull_actor_play(vocals);
-    //talking_skull_actor_play(drum);
+    talking_skull_actor_play(drum);
     talking_skull_actor_play(guitar);
-    talking_skull_actor_play(keyboard);
+    //talking_skull_actor_play(keyboard);
     track_play(song);
 
     wb_set(LIGHTS, 0);
