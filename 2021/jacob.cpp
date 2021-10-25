@@ -10,6 +10,7 @@
 #include "time-utils.h"
 #include "track.h"
 #include "util.h"
+#include "ween-hours.h"
 
 #define GAUGE 0
 #define GAUGE_LOW   10
@@ -31,6 +32,8 @@ static void *gauge(void *unused)
 	maestro_set_servo_pos(m, GAUGE, new_pos);
 	pos = new_pos;
 	ms_sleep(ms);
+
+	while (! ween_hours_is_primetime()) sleep(1);
     }
 }
 
