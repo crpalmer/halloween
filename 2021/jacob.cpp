@@ -33,7 +33,7 @@ static void *gauge(void *unused)
 	pos = new_pos;
 	ms_sleep(ms);
 
-	while (! ween_hours_is_primetime()) sleep(1);
+	while (! ween_hours_is_valid()) sleep(1);
     }
 }
 
@@ -62,6 +62,9 @@ int main(int argc, char **argv)
     while (1) {
 	int h = random_number_in_range(0, 15);
 	h = h == 0 ? 5 : h < 3 ? 6 : h < 7 ? 7 : 8;
+
+        while (! ween_hours_is_valid()) sleep(1);
+
 	for (int i = 0; i < h; i++) {
 	    int flashes = random_number_in_range(2, 5);
 	    int mean = 120 / flashes;
