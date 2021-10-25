@@ -19,7 +19,8 @@ TIME_OBJS = ween-time.o
 HALLOWEEN_OBJS = \
 	$(ANIMATION_OBJS) \
 	$(FOGGER_OBJS) \
-	$(TIME_OBJS)
+	$(TIME_OBJS) \
+	tentacle.o \
 
 BAXTER_OBJS = baxter.o
 LIGHTNING_OBJS = lightning.o

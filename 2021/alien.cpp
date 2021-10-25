@@ -1,10 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "lights.h"
+#include "maestro.h"
+#include "pi-usb.h"
+#include "tentacle.h"
 #include "util.h"
 #include "wb.h"
 
-static void
+maestro_t *m;
+
+static tentacle_t tentacles[2] = {
+    {
+	"upper", { 0, 33}, {1, 43}, 15,  180
+    },
+    {
+	"lower", { 2, 54}, {3, 47}, 15, -30
+    }
+};
+
+static void *
+do_stirring(void *unused)
+{
+    while (1) {
+	for (int deg = 0; deg < 360; deg += 2) {
+	    int delta = 0;
+	    for (tentacle_t &t : tentacles) {
+		tentacle_goto(&t, m, deg + delta, 1);
+		delta += 90;
+	    }
+	    ms_sleep(20);
+	}
+    }
+
+    return NULL;
+}
+
+static void *
 do_lights(void *unused)
 {
     class Lights *l[2];
@@ -34,10 +66,24 @@ do_lights(void *unused)
 	    last = action;
 	}
     }
+
+    return NULL;
 }
 
 int main(int argc, char **argv)
 {
+    pthread_t lights, stirring;
+
     wb_init();
-    do_lights(NULL);
+    pi_usb_init();
+    if ((m = maestro_new()) == NULL) {
+	perror("maestro");
+	exit(1);
+
+    }
+
+    pthread_create(&lights, NULL, do_lights, NULL);
+    pthread_create(&stirring, NULL, do_stirring, NULL);
+
+    while (1) { sleep(60); }
 }

@@ -6,7 +6,6 @@ PROPS = \
 	band \
 	coffin \
 	jacob \
-	tentacle \
 
 DATA = \
 	pour-some-sugar.wav \
@@ -34,9 +33,6 @@ coffin: coffin.o $(DEP_LIBS)
 
 jacob: jacob.o $(DEP_LIBS)
 	$(CXX) -o $@ jacob.o $(LIBS)
-
-tentacle: tentacle.o $(DEP_LIBS)
-	$(CXX) -o $@ tentacle.o $(LIBS)
 
 pour-some-sugar.wav: ~/halloween-media/pour-some-sugar.mp3
 	ffmpeg -y -i $< $@
