@@ -12,8 +12,8 @@
 #include "wb.h"
 #include "ween-hours.h"
 
-#define EYE_BANK	1
-#define VOCALS_EYES	5
+#define EYE_BANK	2
+#define VOCALS_EYES	8
 
 #define LIGHTS		1,1
 
