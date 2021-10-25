@@ -19,6 +19,6 @@ void
 tentacle_goto(tentacle_t *t, maestro_t *m, int deg, double magnitude);
 
 void
-tentacle_servo_init(tentacle_servo_t *s, maestro_t *m, int delta);
+tentacle_init(tentacle_t *t, maestro_t *m);
 
 #endif

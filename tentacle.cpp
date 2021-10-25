@@ -32,10 +32,17 @@ tentacle_goto(tentacle_t *t, maestro_t *m, int deg, double magnitude)
     maestro_set_servo_pos(m, t->right.servo, p1);
 }
 
-void
+static void
 tentacle_servo_init(tentacle_servo_t *s, maestro_t *m, int delta)
 {
     maestro_set_servo_range(m, s->servo, SERVO_DS3218);
     maestro_set_servo_range_pct(m, s->servo, s->mid - delta, s->mid + delta);
     maestro_set_servo_pos(m, s->servo, 50);
+}
+
+void
+tentacle_init(tentacle_t *t, maestro_t *m)
+{
+    tentacle_servo_init(&t->left, m, t->delta);
+    tentacle_servo_init(&t->right, m, t->delta);
 }

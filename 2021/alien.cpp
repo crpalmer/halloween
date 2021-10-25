@@ -82,11 +82,14 @@ int main(int argc, char **argv)
 
     wb_init();
     pi_usb_init();
+
     if ((m = maestro_new()) == NULL) {
 	perror("maestro");
 	exit(1);
 
     }
+
+    for (tentacle_t &t : tentacles) tentacle_init(&t, m);
 
     pthread_create(&lights, NULL, do_lights, NULL);
     pthread_create(&stirring, NULL, do_stirring, NULL);
