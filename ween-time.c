@@ -78,3 +78,11 @@ ween_time_is_halloween()
     ween_time_constraint_t c = { 30, 0, 0, 23, 59 };
     return ween_time_is_valid(&c, 1);
 }
+
+bool
+ween_time_is_trick_or_treating()
+{
+    ween_time_constraint_t c = { 0, 16, 0, 21, 00 };
+    return ween_time_is_valid(&c, 1);
+}
+

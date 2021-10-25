@@ -97,12 +97,19 @@ main(int argc, char **argv)
 	    int closed_time = random_number_in_range(LID_CLOSED_LOW, LID_CLOSED_HIGH);
 
 	    if (it == 1) {
-		maestro_set_servo_speed(servo, HEAD, HEAD_SIDE_SPEED); maestro_set_servo_pos(servo, HEAD, HEAD_SIDE);
+		maestro_set_servo_speed(servo, HEAD, HEAD_SIDE_SPEED);
+		maestro_set_servo_pos(servo, HEAD, HEAD_SIDE);
 	    }
-	    wb_set(LID_PIN, 1);
-	    blink_lights_for(&is_lit, open_time);
-	    wb_set(LID_PIN, 0);
-	    blink_lights_for(&is_lit, closed_time);
+
+	    if (ween_time_is_trick_or_treating()) {
+		wb_set(LID_PIN, 1);
+		blink_lights_for(&is_lit, open_time);
+		wb_set(LID_PIN, 0);
+		blink_lights_for(&is_lit, closed_time);
+	    } else {
+		ms_sleep(open_time + closed_time);
+	    }
+
 	    it++;
 	}
 	

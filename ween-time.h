@@ -17,6 +17,8 @@ void ween_time_wait_until_valid(ween_time_constraint_t *constraints, size_t n);
 
 bool ween_time_is_halloween();
 
+bool ween_time_is_trick_or_treating();
+
 #ifdef __cplusplus
 };
 #endif
