@@ -9,6 +9,7 @@
 #include "time-utils.h"
 #include "util.h"
 #include "wb.h"
+#include "ween-hours.h"
 
 #define LIGHT_PIN	2, 1
 #define LID_PIN		2, 8
@@ -82,6 +83,8 @@ main(int argc, char **argv)
     while (true) {
 	bool is_lit = true;
 	int it = 0;
+
+	while (! ween_hours_is_primetime()) sleep(1);
 
 	stop_reset(stop);
 
