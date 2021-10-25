@@ -7,6 +7,7 @@
 #include "tentacle.h"
 #include "util.h"
 #include "wb.h"
+#include "ween-hours.h"
 
 maestro_t *m;
 
@@ -23,6 +24,8 @@ static void *
 do_stirring(void *unused)
 {
     while (1) {
+	while (! ween_hours_is_primetime()) sleep(1);
+
 	for (int deg = 0; deg < 360; deg += 2) {
 	    int delta = 0;
 	    for (tentacle_t &t : tentacles) {
@@ -52,6 +55,8 @@ do_lights(void *unused)
     while (1) {
 	int low = 2000, high = 8000;
 	int action = random_number_in_range(0, 2);
+
+	while (! ween_hours_is_primetime()) sleep(1);
 
 	if (action != last) {
 	    for (int bank = 0; bank < 2; bank++) {
