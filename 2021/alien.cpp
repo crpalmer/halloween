@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include "lights.h"
 #include "maestro.h"
@@ -29,7 +30,7 @@ do_stirring(void *unused)
 	for (int deg = 0; deg < 360; deg += 2) {
 	    int delta = 0;
 	    for (tentacle_t &t : tentacles) {
-		tentacle_goto(&t, m, deg + delta, 1);
+		tentacle_goto(&t, m, deg + delta, strcmp(t.name, "lower") == 0 ? 0.5 : 1);
 		delta += 90;
 	    }
 	    ms_sleep(20);
