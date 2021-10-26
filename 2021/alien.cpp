@@ -12,12 +12,18 @@
 
 maestro_t *m;
 
+#define UPPER "upper"
+#define LOWER "lower"
+
+#define LOWER_MAGNITUDE 1
+#define UPPER_MAGNITUDE 1
+
 static tentacle_t tentacles[2] = {
     {
-	"upper", { 0, 33}, {1, 43}, 15,  180
+	UPPER, { 0, 33}, {1, 43}, 15,  180
     },
     {
-	"lower", { 2, 54}, {3, 47}, 15, -30
+	LOWER, { 2, 54}, {3, 47}, 15, -30
     }
 };
 
@@ -30,7 +36,7 @@ do_stirring(void *unused)
 	for (int deg = 0; deg < 360; deg += 2) {
 	    int delta = 0;
 	    for (tentacle_t &t : tentacles) {
-		tentacle_goto(&t, m, deg + delta, strcmp(t.name, "lower") == 0 ? 0.5 : 1);
+		tentacle_goto(&t, m, deg + delta, strcmp(t.name, LOWER) == 0 ? LOWER_MAGNITUDE : UPPER_MAGNITUDE);
 		delta += 90;
 	    }
 	    ms_sleep(20);
