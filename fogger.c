@@ -70,10 +70,10 @@ do_fog(unsigned ms)
 
     pthread_mutex_lock(&lock);
     wb_set(fogger_bank, fogger_pin, 1);
-    fprintf(stderr, "sleeping for ON\n");
+    fprintf(stderr, "sleeping for ON %d\n", ms);
     ms_sleep(ms);
     wb_set(fogger_bank, fogger_pin, 0);
-    fprintf(stderr, "sleeping for OFF_DELAY\n");
+    fprintf(stderr, "sleeping for OFF_DELAY %d\n", OFF_DELAY);
     ms_sleep(OFF_DELAY);
     pthread_mutex_unlock(&lock);
 }
@@ -143,8 +143,9 @@ fogger_main(void *args_as_vp)
 
     while(true) {
 	if (args->is_active && args->is_active()) {
-	    fprintf(stderr, "sleeping for OFF\n");
-	    ms_sleep(5000 * (1 - duty));
+	    unsigned ms = 5000 * (1 - duty);
+	    fprintf(stderr, "sleeping for OFF %d\n", ms);
+	    ms_sleep(ms);
 	    do_fog(5000 * duty);
 	}
     }
