@@ -1,0 +1,29 @@
+#ifndef __TALKER_H__
+#define __TALKER_H__
+
+#include "audio.h"
+#include "io.h"
+#include "wb.h"
+
+typedef struct {
+    maestro_t *m;
+    int servo_id;
+    output_t *eyes;
+    const char *idle_track_prefix;
+    unsigned idle_ms;
+    audio_device_t out_dev;
+    audio_device_t in_dev;
+    unsigned port;
+    int no_input;
+} talker_args_t;
+
+void
+talker_args_init(talker_args_t *args);
+
+void *
+talker_main(void *talker_args);
+
+void
+talker_run_in_background(talker_args_t *args);
+
+#endif

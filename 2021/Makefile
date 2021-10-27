@@ -6,6 +6,7 @@ PROPS = \
 	band \
 	coffin \
 	jacob \
+	talker-and-fogger \
 
 DATA = \
 	pour-some-sugar.wav \
@@ -30,6 +31,9 @@ band: band.o $(DEP_LIBS)
 
 coffin: coffin.o $(DEP_LIBS)
 	$(CXX) -o $@ coffin.o $(LIBS)
+
+talker-and-fogger: talker-and-fogger.o $(DEP_LIBS)
+	$(CXX) -o $@ talker-and-fogger.o $(LIBS)
 
 jacob: jacob.o $(DEP_LIBS)
 	$(CXX) -o $@ jacob.o $(LIBS)

@@ -6,7 +6,6 @@ ALL = \
 	libhalloween.a \
 	lightning \
 	strobe \
-	talker \
 
 all: $(ALL)
 
@@ -20,11 +19,11 @@ HALLOWEEN_OBJS = \
 	$(ANIMATION_OBJS) \
 	$(FOGGER_OBJS) \
 	$(TIME_OBJS) \
+	talker.o \
 	tentacle.o \
 
 BAXTER_OBJS = baxter.o
 LIGHTNING_OBJS = lightning.o
-TALKER_OBJS = talker.o
 
 OBJS = $(HALLOWEEN_OBJS) $(BAXTER_OBJS) $(LIGHTNING_OBJS) $(TALKER_OBJS)
 
@@ -39,9 +38,6 @@ baxter: $(BAXTER_OBJS) $(LIB)
 
 lightning: $(LIGHTNING_OBJS) $(LIB) libhalloween.a
 	$(CC) -o $@ $(LIGHTNING_OBJS) libhalloween.a $(LIBS)
-
-talker: $(TALKER_OBJS) $(LIB) libhalloween.a
-	$(CC) -o $@ $(TALKER_OBJS) libhalloween.a $(LIBS)
 
 strobe: strobe.o $(LIB) libhalloween.a
 	$(CC) -o $@ strobe.o libhalloween.a $(LIBS)

@@ -14,11 +14,7 @@
 #include "wav.h"
 #include "wb.h"
 
-static maestro_t *maestro;
-
-#define SERVO_ID 1
-#define RIGHT_EYE_PIN 2, 1
-#define LEFT_EYE_PIN 2, 2
+#include "talker.h"
 
 #define N_HISTORY 50
 #define MICROPHONE_HISTORY_EPSILON 5
@@ -30,7 +26,7 @@ static maestro_t *maestro;
 
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
-#define IDLE_AUDIO_SECS (5*60)
+#define IDLE_AUDIO_SECS (5) //*60)
 
 #define STATS_MICROPHONE 0
 #define STATS_AUTO	 256
@@ -55,7 +51,6 @@ typedef struct {
 stats_t stats[MAX_STATS];
 
 static pthread_mutex_t speak_lock;
-static audio_t *out;
 static talking_skull_t *skull;
 
 static unsigned any_audio;
@@ -65,7 +60,7 @@ static producer_consumer_t *pc;
 size_t size;
 
 #define MAX_IDLE_TRACKS		20
-#define IDLE_TRACK_PREFIX	"toothfairy-talker"
+#define IDLE_TRACK_PREFIX	"talker"
 static wav_t *idle_tracks[MAX_IDLE_TRACKS];
 static int n_idle_tracks;
 
@@ -103,7 +98,7 @@ update_any_audio_check(double pos)
 }
 
 static void
-update_servo_and_eyes(double pos)
+update_servo_and_eyes(talker_args_t *args, double pos)
 {
     static int eyes = -1;
     int new_eyes;
@@ -115,8 +110,8 @@ update_servo_and_eyes(double pos)
 
     pos *= s->gain;
     if (pos > 100) pos = 100;
-    if (maestro) {
-	maestro_set_servo_pos(maestro, SERVO_ID, pos);
+    if (args->m) {
+	maestro_set_servo_pos(args->m, args->servo_id, pos);
     } else {
 	static double last_pos = -1;
 	if (pos != last_pos) {
@@ -128,26 +123,25 @@ update_servo_and_eyes(double pos)
     new_eyes = (pos >= 50);
     if (new_eyes != eyes) {
 	eyes = new_eyes;
-	wb_set(RIGHT_EYE_PIN, eyes);
-	wb_set(LEFT_EYE_PIN, eyes);
+	if (args->eyes) args->eyes->set(eyes);
      }
 }
 
 static void
-servo_update(void *unused, double pos)
+servo_update(void *args, double pos)
 {
     if (current_stats_who != STATS_AUTO) {
 	update_history_and_gain(&stats[current_stats_who], pos);
     }
     update_any_audio_check(pos);
-    update_servo_and_eyes(pos);
+    update_servo_and_eyes((talker_args_t *) args, pos);
 }
 
 static void
-play_one_buffer(void *buffer, size_t size)
+play_one_buffer(audio_t *out, void *buffer, size_t size)
 {
-    talking_skull_play(skull, buffer, size);
-    if (! audio_play_buffer(out, buffer, size)) {
+    talking_skull_play(skull, (unsigned char *) buffer, size);
+    if (! audio_play_buffer(out, (unsigned char *) buffer, size)) {
 	fprintf(stderr, "Failed to play buffer!\n");
 	exit(1);
     }
@@ -156,7 +150,7 @@ play_one_buffer(void *buffer, size_t size)
 static void
 produce(producer_consumer_t *pc, int stats_who, unsigned char *buffer)
 {
-    event_t *e = fatal_malloc(sizeof(*e));
+    event_t *e = (event_t *) fatal_malloc(sizeof(*e));
 
     e->stats_who = stats_who;
     e->buffer = buffer;
@@ -176,7 +170,7 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
     }
 
     /* Expect sample rate 16000 mono and playing 48000 stereo */
-    data = fatal_malloc(size + 100);
+    data = (unsigned char *) fatal_malloc(size + 100);
 
     pthread_mutex_lock(&speak_lock);
 
@@ -205,7 +199,7 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 	}
 	if (j >= size) {
 	    produce(pc, ip, data);
-	    data = fatal_malloc(size + 100);
+	    data = (unsigned char *) fatal_malloc(size + 100);
 	    j = 0;
 	}
     }
@@ -223,14 +217,15 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 }
 
 static void *
-play_thread_main(void *unused)
+play_thread_main(void *out_as_vp)
 {
+    audio_t *out = (audio_t *) out_as_vp;
     unsigned seq_unused;
     event_t *e;
 
     while ((e = (event_t *) producer_consumer_consume(pc, &seq_unused)) != NULL) {
 	current_stats_who = e->stats_who;
-	play_one_buffer(e->buffer, size);
+	play_one_buffer(out, e->buffer, size);
 	free(e->buffer);
 	free(e);
     }
@@ -238,47 +233,21 @@ play_thread_main(void *unused)
     return NULL;
 }
 
-int
-main(int argc, char **argv)
+void *
+talker_main(void *args_as_vp)
 {
+    talker_args_t *args = (talker_args_t *) args_as_vp;
     unsigned char *buffer;
     audio_t *in;
     audio_config_t cfg;
     audio_meta_t meta;
-    audio_device_t in_dev, out_dev;
     server_args_t server_args;
     pthread_t server_thread;
     pthread_t play_thread;
     unsigned char *auto_play_buffer = NULL;
     size_t auto_play_bytes_left = 0;
-    int no_input;
-    struct stat stat_unused;
+    audio_t *out;
     size_t i;
-
-    no_input = (stat("/tmp/talker-no-input", &stat_unused) >= 0);
-    if (argc > 1) {
-	if (strcmp(argv[1], "--no-input") == 0) {
-	    no_input = 1;
-	} else {
-	    fprintf(stderr, "usage: [--no-input]\n");
-	    exit(1);
-	}
-    }
-
-    pi_usb_init();
-    wb_init();
-
-    if ((maestro = maestro_new()) == NULL) {
-        fprintf(stderr, "couldn't find a recognized device, disabling skull.\n");
-    } else {
-	if (SERVO_ID == 0) {
-	    maestro_set_servo_physical_range(maestro, SERVO_ID, 1600, 1900);
-	} else {
-	    maestro_set_servo_range(maestro, SERVO_ID, EXTENDED_SERVO);
-	    maestro_set_servo_range_pct(maestro, SERVO_ID, 35, 53);
-	}
-	maestro_set_servo_is_inverted(maestro, SERVO_ID, 1);
-    }
 
     for (n_idle_tracks = 0; n_idle_tracks < MAX_IDLE_TRACKS; n_idle_tracks++) {
 	char fname[128];
@@ -297,20 +266,24 @@ main(int argc, char **argv)
     pc = producer_consumer_new(1);
 
     pthread_create(&server_thread, NULL, server_thread_main, &server_args);
-    pthread_create(&play_thread, NULL, play_thread_main, NULL);
 
     audio_config_init_default(&cfg);
     cfg.channels = 2;
     cfg.rate = 48000;
 
-    audio_device_init(&out_dev, 1, 0, true);
-    audio_device_init(&in_dev, 2, 0, false);
+    out = audio_new(&cfg, &args->out_dev);
+    pthread_create(&play_thread, NULL, play_thread_main, out);
 
-    out = audio_new(&cfg, &out_dev);
-    in = audio_new(&cfg, &in_dev);
+    if (args->no_input) in = NULL;
+    else {
+	if ((in = audio_new(&cfg, &args->in_dev)) == NULL) {
+	    perror("audio in");
+	    exit(1);
+	}
+    }
 
     size = audio_get_buffer_size(out);
-    buffer = fatal_malloc(size);
+    buffer = (unsigned char *) fatal_malloc(size);
 
     if (! out) {
 	perror("out");
@@ -318,11 +291,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    if (! in && ! no_input) {
-	perror("in");
-	fprintf(stderr, "Failed to initialize capture\n");
-	exit(1);
-    } else if (in) {
+    if (in) {
 	audio_set_volume(in, 50);
 	assert(audio_get_buffer_size(in) == size);
         fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
@@ -333,7 +302,7 @@ main(int argc, char **argv)
     audio_set_volume(out, 100);
 
     audio_meta_init_from_config(&meta, &cfg);
-    skull = talking_skull_new(&meta, servo_update, NULL);
+    skull = talking_skull_new(&meta, servo_update, args);
 
     last_audio = time(NULL);
 
@@ -348,7 +317,7 @@ main(int argc, char **argv)
     stats[STATS_MICROPHONE].epsilon = MICROPHONE_HISTORY_EPSILON;
     stats[STATS_AUTO].gain = 3;
 
-    while (no_input || audio_capture_buffer(in, buffer)) {
+    while (! in || audio_capture_buffer(in, buffer)) {
 	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS && n_idle_tracks > 0) {
 	    auto_play_buffer = wav_get_raw_data(idle_tracks[random_number_in_range(0, n_idle_tracks-1)], &auto_play_bytes_left);
 	}
@@ -363,14 +332,14 @@ main(int argc, char **argv)
 	    produce(pc, STATS_AUTO, buffer);
 	    pthread_mutex_unlock(&speak_lock);
 
-	    buffer = fatal_malloc(size);
-	} else if (no_input) {
+	    buffer = (unsigned char *) fatal_malloc(size);
+	} else if (! in) {
 	    sleep(1);
 	} else {
 	    pthread_mutex_lock(&speak_lock);
 	    produce(pc, STATS_MICROPHONE, buffer);
 	    pthread_mutex_unlock(&speak_lock);
-	    buffer = fatal_malloc(size);
+	    buffer = (unsigned char *) fatal_malloc(size);
 	}
     }
 
@@ -383,3 +352,21 @@ main(int argc, char **argv)
     return 0;
 }
 
+void
+talker_run_in_background(talker_args_t *args)
+{
+    pthread_t thread;
+
+    pthread_create(&thread, NULL, talker_main, args);
+}
+
+void
+talker_args_init(talker_args_t *args)
+{
+    memset(args, 0, sizeof(*args));
+    args->idle_track_prefix = "talker";
+    args->idle_ms = 5*60*1000;
+    args->port = 5555;
+    audio_device_init(&args->out_dev, 1, 0, true);
+    audio_device_init(&args->in_dev, 2, 0, false);
+}
