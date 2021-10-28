@@ -30,7 +30,7 @@ public:
 	n_tracks = 0;
 	last_track = -1;
 	stop = stop_new();
-	audio_dev.card = 1;
+	audio_dev.card = 0;
 	audio_dev.device = 0;
 	audio_dev.playback = true;
     }
@@ -143,67 +143,53 @@ private:
 
 class MandM : public Button {
 public:
-    MandM() : Button(wb_get_output(1, 1), wb_get_input(1)) {
-	set_pin(wb_get_output(2, 1));
-	set_cmd("candy corn");
-	add_track("candy corn 1.wav");
-	add_track("candy corn 2.wav");
-	add_track("candy corn 3.wav");
-	add_track("candy corn 4.wav");
+    MandM() : Button(wb_get_output(2, 1), wb_get_input(1)) {
+	set_pin(wb_get_output(1, 4));
+	set_cmd("MandM");
     }
 
     void act(void) {
-	fprintf(stderr, "candy corn\n");
-	if (! file_exists("disable-candy-corn")) attack(1, 1);
+	fprintf(stderr, "M&M\n");
+	if (! file_exists("disable-m-and-m")) attack(1, 0.75);
     }
 };
 
 class Bunny : public Button {
 public:
-    Bunny() : Button(wb_get_output(1, 2), wb_get_input(2)) {
-	set_pin(wb_get_output(2, 2));
-	set_cmd("pop tots");
-	add_track("pop tot 1.wav");
-	add_track("pop tot 2.wav");
-	add_track("pop tot 3.wav");
+    Bunny() : Button(wb_get_output(2, 2), wb_get_input(2)) {
+	set_pin(wb_get_output(1, 3));
+	set_cmd("bunny");
     }
 
     void act() {
-	fprintf(stderr, "pop tots\n");
-	if (! file_exists("disable-pop-tots")) attack(0.75, 2.5);
+	fprintf(stderr, "bunny\n");
+	if (! file_exists("disable-bunny")) attack(1, 1);
     }
 };
 
 class Demono : public Button {
 public:
-    Demono() : Button(wb_get_output(1, 3), wb_get_input(3)) {
-	set_pin(wb_get_output(2, 3));
-	set_cmd("twizzler");
-	add_track("twizzler 1.wav");
-	add_track("twizzler 2.wav");
-	add_track("twizzler 3.wav");
+    Demono() : Button(wb_get_output(2, 3), wb_get_input(3)) {
+	set_pin(wb_get_output(1, 2));
+	set_cmd("demono");
     }
 
     void act() {
-	fprintf(stderr, "twizzler\n");
-	if (! file_exists("disable-twizzler")) attack(1, .75);
+	fprintf(stderr, "demono\n");
+	if (! file_exists("disable-demono")) attack(0.75, 2.5);
     }
 };
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(1, 4), wb_get_input(4)) {
-	set_pin(wb_get_output(2, 4));
-	set_cmd("kit kat");
-	add_track("kit kat 1.wav");
-	add_track("kit kat 2.wav");
-	add_track("kit kat 3.wav");
-	add_track("kit kat 4.wav");
+    Snake() : Button(wb_get_output(2, 4), wb_get_input(4)) {
+	set_pin(wb_get_output(1, 1));
+	set_cmd("snake");
     }
 
     void act() {
-	fprintf(stderr, "kit-kat\n");
-	if (! file_exists("disable-kit-kat")) attack(0.75, 1.25);
+	fprintf(stderr, "snake\n");
+	if (! file_exists("disable-snake")) attack(1, 3);
     }
 };
 
