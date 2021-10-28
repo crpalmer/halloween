@@ -101,7 +101,7 @@ main(int argc, char **argv)
 		maestro_set_servo_pos(servo, HEAD, HEAD_SIDE);
 	    }
 
-	    if (ween_time_is_trick_or_treating()) {
+	    if (ween_time_is_trick_or_treating() || ween_hours_is_ignored()) {
 		wb_set(LID_PIN, 1);
 		blink_lights_for(&is_lit, open_time);
 		wb_set(LID_PIN, 0);
