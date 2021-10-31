@@ -15,6 +15,7 @@ typedef struct {
     audio_device_t in_dev;
     unsigned port;
     int no_input;
+    int	     mic_vol, remote_vol, track_vol;
 } talker_args_t;
 
 void

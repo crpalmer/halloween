@@ -45,6 +45,7 @@ typedef struct {
 typedef struct {
     int stats_who;
     unsigned char *buffer;
+    int vol;
 } event_t;
 
 stats_t stats[MAX_STATS];
@@ -137,9 +138,10 @@ servo_update(void *args, double pos)
 }
 
 static void
-play_one_buffer(audio_t *out, void *buffer, size_t size)
+play_one_buffer(audio_t *out, void *buffer, int vol, size_t size)
 {
     talking_skull_play(skull, (unsigned char *) buffer, size);
+    audio_set_volume(out, vol);
     if (! audio_play_buffer(out, (unsigned char *) buffer, size)) {
 	fprintf(stderr, "Failed to play buffer!\n");
 	exit(1);
@@ -147,19 +149,21 @@ play_one_buffer(audio_t *out, void *buffer, size_t size)
 }
 
 static void
-produce(producer_consumer_t *pc, int stats_who, unsigned char *buffer)
+produce(producer_consumer_t *pc, int stats_who, int vol, unsigned char *buffer)
 {
     event_t *e = (event_t *) fatal_malloc(sizeof(*e));
 
     e->stats_who = stats_who;
     e->buffer = buffer;
+    e->vol = vol;
 
     producer_consumer_produce(pc, e);
 }
 
 static char *
-remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t addr_size)
+remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, size_t addr_size)
 {
+    talker_args_t *args = (talker_args_t *) args_as_vp;
     unsigned char *data;
     size_t i, j;
     int ip = addr->sin_addr.s_addr>>24 % 256;
@@ -197,7 +201,7 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 	    }
 	}
 	if (j >= size) {
-	    produce(pc, ip, data);
+	    produce(pc, ip, args->remote_vol, data);
 	    data = (unsigned char *) fatal_malloc(size + 100);
 	    j = 0;
 	}
@@ -205,7 +209,7 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 
     if (j > 0) {
 	while (j < size) data[j++] = 0;
-	produce(pc, ip, data);
+	produce(pc, ip, args->remote_vol, data);
     } else {
 	free(data);
     }
@@ -224,7 +228,7 @@ play_thread_main(void *out_as_vp)
 
     while ((e = (event_t *) producer_consumer_consume(pc, &seq_unused)) != NULL) {
 	current_stats_who = e->stats_who;
-	play_one_buffer(out, e->buffer, size);
+	play_one_buffer(out, e->buffer, e->vol, size);
 	free(e->buffer);
 	free(e);
     }
@@ -260,7 +264,7 @@ talker_main(void *args_as_vp)
     pthread_mutex_init(&speak_lock, NULL);
     server_args.port = 5555;
     server_args.command = remote_event;
-    server_args.state = NULL;
+    server_args.state = args;
 
     pc = producer_consumer_new(1);
 
@@ -328,15 +332,15 @@ talker_main(void *args_as_vp)
 	    auto_play_bytes_left -= n;
 
 	    pthread_mutex_lock(&speak_lock);
-	    produce(pc, STATS_AUTO, buffer);
+	    produce(pc, STATS_AUTO, args->track_vol, buffer);
 	    pthread_mutex_unlock(&speak_lock);
 
 	    buffer = (unsigned char *) fatal_malloc(size);
 	} else if (! in) {
-	    sleep(1);
+	    ms_sleep(100);
 	} else {
 	    pthread_mutex_lock(&speak_lock);
-	    produce(pc, STATS_MICROPHONE, buffer);
+	    produce(pc, STATS_MICROPHONE, args->mic_vol, buffer);
 	    pthread_mutex_unlock(&speak_lock);
 	    buffer = (unsigned char *) fatal_malloc(size);
 	}
@@ -368,4 +372,5 @@ talker_args_init(talker_args_t *args)
     args->port = 5555;
     audio_device_init(&args->out_dev, 1, 0, true);
     audio_device_init(&args->in_dev, 2, 0, false);
+    args->mic_vol = args->remote_vol = args->track_vol = 100;
 }
