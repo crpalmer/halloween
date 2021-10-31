@@ -26,7 +26,6 @@
 
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
-#define IDLE_AUDIO_SECS (5) //*60)
 
 #define STATS_MICROPHONE 0
 #define STATS_AUTO	 256
@@ -54,7 +53,7 @@ static pthread_mutex_t speak_lock;
 static talking_skull_t *skull;
 
 static unsigned any_audio;
-static time_t last_audio;
+static struct timespec last_audio;
 
 static producer_consumer_t *pc;
 size_t size;
@@ -94,7 +93,7 @@ update_any_audio_check(double pos)
     } else {
 	if (any_audio > 0) any_audio--;
     }
-    if (any_audio > ANY_AUDIO_THRESHOLD) last_audio = time(NULL);
+    if (any_audio > ANY_AUDIO_THRESHOLD) nano_gettime(&last_audio);
 }
 
 static void
@@ -304,7 +303,7 @@ talker_main(void *args_as_vp)
     audio_meta_init_from_config(&meta, &cfg);
     skull = talking_skull_new(&meta, servo_update, args);
 
-    last_audio = time(NULL);
+    nano_gettime(&last_audio);
 
     for (i = 0; i < MAX_STATS; i++) {
 	stats[i].gain = 5;
@@ -318,7 +317,7 @@ talker_main(void *args_as_vp)
     stats[STATS_AUTO].gain = 3;
 
     while (! in || audio_capture_buffer(in, buffer)) {
-	if (auto_play_bytes_left == 0 && time(NULL) - last_audio >= IDLE_AUDIO_SECS && n_idle_tracks > 0) {
+	if (auto_play_bytes_left == 0 && nano_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0) {
 	    auto_play_buffer = wav_get_raw_data(idle_tracks[random_number_in_range(0, n_idle_tracks-1)], &auto_play_bytes_left);
 	}
 
