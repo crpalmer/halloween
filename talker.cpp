@@ -321,7 +321,7 @@ talker_main(void *args_as_vp)
     stats[STATS_AUTO].gain = 3;
 
     while (! in || audio_capture_buffer(in, buffer)) {
-	if (auto_play_bytes_left == 0 && nano_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0) {
+	if (auto_play_bytes_left == 0 && nano_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0 && args->is_valid()) {
 	    auto_play_buffer = wav_get_raw_data(idle_tracks[random_number_in_range(0, n_idle_tracks-1)], &auto_play_bytes_left);
 	}
 
@@ -363,6 +363,12 @@ talker_run_in_background(talker_args_t *args)
     pthread_create(&thread, NULL, talker_main, args);
 }
 
+static bool
+always_valid(void)
+{
+    return true;
+}
+
 void
 talker_args_init(talker_args_t *args)
 {
@@ -373,4 +379,5 @@ talker_args_init(talker_args_t *args)
     audio_device_init(&args->out_dev, 1, 0, true);
     audio_device_init(&args->in_dev, 2, 0, false);
     args->mic_vol = args->remote_vol = args->track_vol = 100;
+    args->is_valid = always_valid;
 }

@@ -48,8 +48,9 @@ main(int argc, char **argv)
     talker_args.m = m;
     talker_args.no_input = 1;
     talker_args.eyes = wb_get_output(EYES_PIN);
-    talker_args.idle_ms = 60 * 1000;
+    talker_args.idle_ms = 30 * 1000;
     talker_args.track_vol = 90;
+    talker_args.is_valid = ween_hours_is_valid;
     
     audio_device_init_playback(&talker_args.out_dev);
 

@@ -16,6 +16,7 @@ typedef struct {
     unsigned port;
     int no_input;
     int	     mic_vol, remote_vol, track_vol;
+    bool (*is_valid)(void);
 } talker_args_t;
 
 void
