@@ -16,6 +16,7 @@
 static int duet;
 static char duet_reply[100000];
 
+static int last_x = -1, last_y = -1, last_z = -1;
 static int duet_x = 100, duet_y = 100, duet_z = 100;
 input_t *up, *down, *left, *right;
 
@@ -100,8 +101,13 @@ duet_update_position(int feed = 600)
     if (duet_y > MAX_Y) duet_y = MAX_Y;
     if (duet_y < 0) duet_y = 0;
 
-    sprintf(cmd, "G1 X%d Y%d Z%d F%d", duet_x, duet_y, duet_z, feed);
-    duet_cmd(cmd, false);
+    if (last_x != duet_x || last_y != duet_y || last_z != duet_z) {
+	sprintf(cmd, "G1 X%d Y%d Z%d F%d", duet_x, duet_y, duet_z, feed);
+	duet_cmd(cmd, false);
+	last_x = duet_x;
+	last_y = duet_y;
+	last_z = duet_z;
+    }
 }
 
 static void
