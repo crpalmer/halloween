@@ -11,10 +11,17 @@
 #include "ween-hours.h"
 
 #define DUET	"/dev/ttyACM0"
-#define BAUD	B230400
+#define BAUD	B57600
 
 static int duet;
 static char duet_reply[100000];
+
+int duet_x = 100, duet_y = 100, duet_z = 100;
+
+#define STEP 1
+#define MOVE_FEED (STEP*10*60)
+#define MAX_X 230
+#define MAX_Y 230
 
 static void
 open_duet()
@@ -31,7 +38,7 @@ open_duet()
 	exit(2);
     }
 
-#if 0
+#if 1
     cfmakeraw(&tty);
 #else
     tty.c_cflag     &=  ~PARENB;            // No Parity
@@ -58,10 +65,11 @@ open_duet()
 }
 
 const char *
-duet_cmd(const char *cmd)
+duet_cmd(const char *cmd, bool echo = true)
 {
     int len = 0, got;
 
+    if (echo) printf("%s\n", cmd);
     write(duet, cmd, strlen(cmd));
     write(duet, "\n", 1);
     while ((got = read(duet, &duet_reply[len], sizeof(duet_reply) - len)) > 0) {
@@ -69,13 +77,28 @@ duet_cmd(const char *cmd)
  	duet_reply[len] = '\0';
 	if ((len == 3 && strcmp(&duet_reply[len-3], "ok\n") == 0) ||
 	    (len  > 3 && strcmp(&duet_reply[len-4], "\nok\n") == 0)) {
+	    if (echo) printf("%s", duet_reply);
+	    duet_reply[len-1] = '\0';
 	    return duet_reply;
 	}
     }
 
-duet_reply[len] = 0;
-fprintf(stderr, "partial reply: %s\n", duet_reply);
+    if (echo) printf("duet_cmd didn't return a complete response.\n");
     return NULL;
+}
+
+void
+duet_update_position(int feed = 600)
+{
+    char cmd[100];
+
+    if (duet_x > MAX_X) duet_x = MAX_X;
+    if (duet_x < 0) duet_x = 0;
+    if (duet_y > MAX_Y) duet_y = MAX_Y;
+    if (duet_y < 0) duet_y = 0;
+
+    sprintf(cmd, "G1 X%d Y%d Z%d F%d", duet_x, duet_y, duet_z, feed);
+    duet_cmd(cmd, false);
 }
 
 int main(int argc, char **argv)
@@ -83,14 +106,37 @@ int main(int argc, char **argv)
     gpioInitialise();
     seed_random();
 
-//    MCP23017 *mcp = new MCP23017();
-
     open_duet();
 
     //printf("INIT: %s\n-----\n", duet_cmd(""));
-//    printf("%s\n", duet_cmd("M122"));
-    printf("%s\n", duet_cmd("G92 X0 Y0 Z0"));
-    printf("%s\n", duet_cmd("G1 X100 F600"));
+//    printf("%s\n", duet_cmd("M552"));
+    printf("%s\n", duet_cmd("M122"));
+    printf("%s\n", duet_cmd("G92 X100 Y100 Z100"));
 
-    return 0;
+    MCP23017 *mcp = new MCP23017();
+    input_t *up = mcp->get_input(0, 0);
+    input_t *down = mcp->get_input(0, 1);
+    input_t *left = mcp->get_input(0, 2);
+    input_t *right = mcp->get_input(0, 3);
+
+    up->set_pullup_up();
+    down->set_pullup_up();
+    left->set_pullup_up();
+    right->set_pullup_up();
+
+    while (1) {
+	struct timespec sleep_until;
+
+	nano_gettime(&sleep_until);
+	nano_add_ms(&sleep_until, 100);
+
+	if (up->get()) duet_y -= STEP;
+	if (down->get()) duet_y += STEP;
+	if (left->get()) duet_x -= STEP;
+	if (right->get()) duet_x += STEP;
+
+	duet_update_position(MOVE_FEED);
+
+ 	nano_sleep_until(&sleep_until);
+    }
 }
