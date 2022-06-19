@@ -143,9 +143,9 @@ private:
 
 class MandM : public Button {
 public:
-    MandM() : Button(wb_get_output(2, 1), wb_get_input(1)) {
-	set_pin(wb_get_output(1, 4));
-	set_cmd("MandM");
+    MandM() : Button(wb_get_output(2, 1), wb_get_input(4)) {
+	set_pin(wb_get_output(1, 1));
+	set_cmd("M&M");
     }
 
     void act(void) {
@@ -156,8 +156,8 @@ public:
 
 class Bunny : public Button {
 public:
-    Bunny() : Button(wb_get_output(2, 2), wb_get_input(2)) {
-	set_pin(wb_get_output(1, 3));
+    Bunny() : Button(wb_get_output(2, 2), wb_get_input(3)) {
+	set_pin(wb_get_output(1, 2));
 	set_cmd("bunny");
     }
 
@@ -169,8 +169,8 @@ public:
 
 class Demono : public Button {
 public:
-    Demono() : Button(wb_get_output(2, 3), wb_get_input(3)) {
-	set_pin(wb_get_output(1, 2));
+    Demono() : Button(wb_get_output(2, 3), wb_get_input(2)) {
+	set_pin(wb_get_output(1, 3));
 	set_cmd("demono");
     }
 
@@ -182,8 +182,8 @@ public:
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(2, 4), wb_get_input(4)) {
-	set_pin(wb_get_output(1, 1));
+    Snake() : Button(wb_get_output(2, 4), wb_get_input(1)) {
+	set_pin(wb_get_output(1, 4));
 	set_cmd("snake");
     }
 
