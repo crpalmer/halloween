@@ -13,6 +13,8 @@
 #define DUET	"/dev/ttyACM0"
 #define BAUD	B57600
 
+static struct timespec start;
+
 static int duet;
 static char duet_reply[100000];
 
@@ -73,7 +75,7 @@ duet_cmd(const char *cmd, bool echo = true)
 {
     int len = 0, got;
 
-    if (echo) printf("%s\n", cmd);
+    if (echo) printf("%5d %s\n", nano_elapsed_ms_now(&start), cmd);
     write(duet, cmd, strlen(cmd));
     write(duet, "\n", 1);
     while ((got = read(duet, &duet_reply[len], sizeof(duet_reply) - len)) > 0) {
@@ -81,7 +83,7 @@ duet_cmd(const char *cmd, bool echo = true)
  	duet_reply[len] = '\0';
 	if ((len == 3 && strcmp(&duet_reply[len-3], "ok\n") == 0) ||
 	    (len  > 3 && strcmp(&duet_reply[len-4], "\nok\n") == 0)) {
-	    if (echo) printf("%s", duet_reply);
+	    if (echo) printf("%5d %s", nano_elapsed_ms_now(&start), duet_reply);
 	    duet_reply[len-1] = '\0';
 	    return duet_reply;
 	}
@@ -113,8 +115,6 @@ duet_update_position(int feed = 600)
 static void
 play_one_round()
 {
-    struct timespec start;
-
     nano_gettime(&start);
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
@@ -138,6 +138,8 @@ int main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
+
+    nano_gettime(&start);
 
     open_duet();
 
