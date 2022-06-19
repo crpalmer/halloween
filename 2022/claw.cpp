@@ -16,12 +16,15 @@
 static int duet;
 static char duet_reply[100000];
 
-int duet_x = 100, duet_y = 100, duet_z = 100;
+static int duet_x = 100, duet_y = 100, duet_z = 100;
+input_t *up, *down, *left, *right;
 
-#define STEP 1
+#define STEP 10
 #define MOVE_FEED (STEP*10*60)
 #define MAX_X 230
 #define MAX_Y 230
+
+#define ROUND_MS	(30*1000)
 
 static void
 open_duet()
@@ -101,30 +104,14 @@ duet_update_position(int feed = 600)
     duet_cmd(cmd, false);
 }
 
-int main(int argc, char **argv)
+static void
+play_one_round()
 {
-    gpioInitialise();
-    seed_random();
+    struct timespec start;
 
-    open_duet();
+    nano_gettime(&start);
 
-    //printf("INIT: %s\n-----\n", duet_cmd(""));
-//    printf("%s\n", duet_cmd("M552"));
-    printf("%s\n", duet_cmd("M122"));
-    printf("%s\n", duet_cmd("G92 X100 Y100 Z100"));
-
-    MCP23017 *mcp = new MCP23017();
-    input_t *up = mcp->get_input(0, 0);
-    input_t *down = mcp->get_input(0, 1);
-    input_t *left = mcp->get_input(0, 2);
-    input_t *right = mcp->get_input(0, 3);
-
-    up->set_pullup_up();
-    down->set_pullup_up();
-    left->set_pullup_up();
-    right->set_pullup_up();
-
-    while (1) {
+    while (nano_elapsed_ms_now(&start) < ROUND_MS) {
 	struct timespec sleep_until;
 
 	nano_gettime(&sleep_until);
@@ -138,5 +125,39 @@ int main(int argc, char **argv)
 	duet_update_position(MOVE_FEED);
 
  	nano_sleep_until(&sleep_until);
+    }
+}
+
+int main(int argc, char **argv)
+{
+    gpioInitialise();
+    seed_random();
+
+    open_duet();
+
+    //printf("INIT: %s\n-----\n", duet_cmd(""));
+//    printf("%s\n", duet_cmd("M552"));
+    printf("%s\n", duet_cmd("M122"));
+    printf("%s\n", duet_cmd("G92 X100 Y100 Z100"));
+
+    MCP23017 *mcp = new MCP23017();
+    up = mcp->get_input(0, 0);
+    down = mcp->get_input(0, 1);
+    left = mcp->get_input(0, 2);
+    right = mcp->get_input(0, 3);
+
+    up->set_pullup_up();
+    down->set_pullup_up();
+    left->set_pullup_up();
+    right->set_pullup_up();
+
+    while (1) {
+	duet_x = duet_y = duet_z = 100;
+	duet_update_position(12000);
+	play_one_round();
+	duet_x = duet_y = 230;
+	duet_z = 100;
+	duet_update_position(6000);
+	ms_sleep(1000);
     }
 }
