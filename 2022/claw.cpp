@@ -30,6 +30,7 @@ input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
 #define MOVE_FEED (STEP*1000*60 / UPDATE_PERIOD)
 #define MAX_X 400
 #define MAX_Y 360
+#define MAX_Z 400
 
 #define ROUND_MS	(30*1000)
 
@@ -114,6 +115,8 @@ duet_update_position(int feed = 6000)
     if (duet_x < 0) duet_x = 0;
     if (duet_y > MAX_Y) duet_y = MAX_Y;
     if (duet_y < 0) duet_y = 0;
+    if (duet_z > MAX_Z) duet_z = MAX_Z;
+    if (duet_z < 0) duet_z = 0;
 
     if (last_x != duet_x || last_y != duet_y || last_z != duet_z) {
 	sprintf(cmd, "G1 X%d Y%d Z%d F%d", duet_x, duet_y, duet_z, feed);
@@ -193,10 +196,10 @@ int main(int argc, char **argv)
     backward = mcp->get_input(0, 1);
     left = mcp->get_input(0, 2);
     right = mcp->get_input(0, 3);
-    up = mcp->get_input(1, 4);
-    down = mcp->get_input(1, 5);
-    opening = mcp->get_input(1, 6);
-    closing = mcp->get_input(1, 7);
+    up = mcp->get_input(1, 7);
+    down = mcp->get_input(1, 6);
+    opening = mcp->get_input(1, 4);
+    closing = mcp->get_input(1, 5);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
@@ -210,7 +213,7 @@ int main(int argc, char **argv)
     while (1) {
 	duet_x = MAX_X / 2;
 	duet_y = MAX_Y / 2;
-	duet_z = 100;
+	duet_z = 0;
 	duet_update_position(12000);
 	play_one_round();
 	duet_x = duet_y = 0;
