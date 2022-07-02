@@ -117,7 +117,7 @@ duet_update_position(int feed = 6000)
 
     if (last_x != duet_x || last_y != duet_y || last_z != duet_z) {
 	sprintf(cmd, "G1 X%d Y%d Z%d F%d", duet_x, duet_y, duet_z, feed);
-	duet_cmd(cmd, true);
+	duet_cmd(cmd, false);
 	last_x = duet_x;
 	last_y = duet_y;
 	last_z = duet_z;
