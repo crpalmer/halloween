@@ -220,6 +220,7 @@ int main(int argc, char **argv)
 	duet_x = duet_y = 0;
 	duet_z = 100;
 	duet_update_position(6000);
+	printf("%s\n", duet_cmd("G4 P0"));
 	ms_sleep(5000);
     }
 }
