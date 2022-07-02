@@ -185,12 +185,8 @@ int main(int argc, char **argv)
 
     open_duet();
 
-    //printf("INIT: %s\n-----\n", duet_cmd(""));
-//    printf("%s\n", duet_cmd("M552"));
-    printf("%s\n", duet_cmd("M122"));
-    printf("%s\n", duet_cmd("G92 X200 Z0"));
-    printf("%s\n", duet_cmd("M201 X20000.00 Y20000.00 Z20000.00"));
-    printf("%s\n", duet_cmd("G28 Y"));
+    duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
+    duet_cmd("G28");
 
     MCP23017 *mcp = new MCP23017();
     forward = mcp->get_input(0, 0);
@@ -220,7 +216,7 @@ int main(int argc, char **argv)
 	duet_x = duet_y = 0;
 	duet_z = 100;
 	duet_update_position(6000);
-	printf("%s\n", duet_cmd("G4 P0"));
-	ms_sleep(5000);
+	duet_cmd("G4 P0");
+	ms_sleep(1000);
     }
 }
