@@ -8,9 +8,13 @@
 #include <unistd.h>
 #include "canvas_png.h"
 #include "mcp23017.h"
+#include "pi-usb.h"
 #include "st7735s.h"
 #include "util.h"
 #include "ween-hours.h"
+
+#define VENDOR_ID 0x1d50
+#define DUET_PRODUCT_ID 0x60ec
 
 #define BAUD	B57600
 
@@ -108,19 +112,11 @@ init_buttons()
 static void
 open_duet()
 {
-    char *path = strdup("/dev/ttyACM0");
-
     struct termios tty;
 
-    for (int i = 0; i < 10; i++) {
-	path[strlen(path) - 1] = i + '0';
-        if ((duet = open(path, O_RDWR))  < 0) {
-	    perror(path);
-	    if (i == 9) exit(1);
-	} else {
-	    free(path);
-	    break;
-	}
+    if ((duet = pi_usb_open_tty(VENDOR_ID, DUET_PRODUCT_ID)) < 0) {
+	fprintf(stderr, "Failed to find the duet tty\n");
+	exit(1);
     }
 
     if (tcgetattr(duet, &tty) != 0) {
