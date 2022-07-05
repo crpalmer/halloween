@@ -25,12 +25,12 @@ static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 
 static MCP23017 *mcp;
 static input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
-static input_t *start_button;
+static input_t *start_button, *coin_acceptor, *coin_override;
 static output_t *start_light;
 
 static ST7735S *display;
 static ST7735S_Canvas *canvas;
-static CanvasPNG *booting_png, *start_png;
+static CanvasPNG *booting_png, *coin_png, *start_png;
 
 #define SQRT_2 1.41421356237
 #define STEP 4
@@ -60,8 +60,9 @@ init_display()
 
     booting_png = new CanvasPNG("booting.png");
     start_png = new CanvasPNG("hit-start.png");
+    coin_png = new CanvasPNG("insert-token.png");
 
-    if (! booting_png->is_valid() || ! start_png->is_valid()) {
+    if (! booting_png->is_valid() || ! coin_png->is_valid() || ! start_png->is_valid()) {
 	fprintf(stderr, "Failed to load pngs\n");
 	exit(1);
     }
@@ -96,8 +97,12 @@ init_buttons()
 {
     start_button = mcp->get_input(1, 0);
     start_light = mcp->get_output(1, 1);
+    coin_acceptor = mcp->get_input(1, 2);
+    coin_override = mcp->get_input(1, 3);
 
     start_button->set_pullup_up();
+    coin_acceptor->set_pullup_up();
+    coin_override->set_pullup_up();
 }
 
 static void
@@ -276,6 +281,11 @@ int main(int argc, char **argv)
 	duet_y = MAX_Y / 2;
 	duet_z = 0;
 	duet_update_position(12000);
+
+	if (coin_override->get() != 0) {
+	    display_image(coin_png);
+	    while (coin_acceptor->get() != 0) {}
+        }
 
 	display_image(start_png);
 	start_light->on();
