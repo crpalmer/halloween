@@ -6,7 +6,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include "canvas_png.h"
 #include "mcp23017.h"
+#include "st7735s.h"
 #include "util.h"
 #include "ween-hours.h"
 
@@ -20,7 +22,15 @@ static char duet_reply[100000];
 static int last_x = -1, last_y = -1, last_z = -1;
 static int duet_x = 100, duet_y = 100, duet_z = 100;
 static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
-input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
+
+static MCP23017 *mcp;
+static input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
+static input_t *start_button;
+static output_t *start_light;
+
+static ST7735S *display;
+static ST7735S_Canvas *canvas;
+static CanvasPNG *booting_png, *start_png;
 
 #define SQRT_2 1.41421356237
 #define STEP 4
@@ -33,6 +43,62 @@ input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
 #define MAX_Z 400
 
 #define ROUND_MS	(30*1000)
+
+static void
+display_image(Canvas *img)
+{
+    canvas->blank();
+    canvas->import(img);
+    display->paint(canvas);
+}
+
+static void
+init_display()
+{
+    display = new ST7735S();
+    canvas = display->create_canvas();
+
+    booting_png = new CanvasPNG("booting.png");
+    start_png = new CanvasPNG("hit-start.png");
+
+    if (! booting_png->is_valid() || ! start_png->is_valid()) {
+	fprintf(stderr, "Failed to load pngs\n");
+	exit(1);
+    }
+
+    display_image(booting_png);
+}
+
+static void
+init_joysticks()
+{
+    forward = mcp->get_input(0, 0);
+    backward = mcp->get_input(0, 1);
+    left = mcp->get_input(0, 2);
+    right = mcp->get_input(0, 3);
+    up = mcp->get_input(1, 7);
+    down = mcp->get_input(1, 6);
+    opening = mcp->get_input(1, 4);
+    closing = mcp->get_input(1, 5);
+
+    forward->set_pullup_up();
+    backward->set_pullup_up();
+    left->set_pullup_up();
+    right->set_pullup_up();
+    up->set_pullup_up();
+    down->set_pullup_up();
+    opening->set_pullup_up();
+    closing->set_pullup_up();
+}
+
+static void
+init_buttons()
+{
+    start_button = mcp->get_input(1, 0);
+    start_light = mcp->get_output(1, 1);
+
+    start_button->set_pullup_up();
+}
 
 static void
 open_duet()
@@ -148,6 +214,7 @@ calculate_position(int *pos, int *last_move, int this_move)
 static void
 play_one_round()
 {
+    int last_time_shown = -1;
     struct timespec sleep_until;
 
     nano_gettime(&start);
@@ -165,6 +232,13 @@ play_one_round()
 	    if (! right->get())    move_x = +1;
 	    if (! up->get())       move_z = +1;
 	    if (! down->get())     move_z = -1;
+
+	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
+	    if (time_left != last_time_shown) {
+		canvas->blank();
+		canvas->nine_segment_2(time_left);
+		display->paint(canvas);
+	    }
 	}
 
 //printf("move %d %d || %d %d\n", move_x, move_y, duet_x_state, duet_y_state);
@@ -183,39 +257,33 @@ int main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
-
     nano_gettime(&start);
+
+    mcp = new MCP23017();
+
+    init_display();
 
     open_duet();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28");
 
-    MCP23017 *mcp = new MCP23017();
-    forward = mcp->get_input(0, 0);
-    backward = mcp->get_input(0, 1);
-    left = mcp->get_input(0, 2);
-    right = mcp->get_input(0, 3);
-    up = mcp->get_input(1, 7);
-    down = mcp->get_input(1, 6);
-    opening = mcp->get_input(1, 4);
-    closing = mcp->get_input(1, 5);
-
-    forward->set_pullup_up();
-    backward->set_pullup_up();
-    left->set_pullup_up();
-    right->set_pullup_up();
-    up->set_pullup_up();
-    down->set_pullup_up();
-    opening->set_pullup_up();
-    closing->set_pullup_up();
+    init_joysticks();
+    init_buttons();
 
     while (1) {
 	duet_x = MAX_X / 2;
 	duet_y = MAX_Y / 2;
 	duet_z = 0;
 	duet_update_position(12000);
+
+	display_image(start_png);
+	start_light->on();
+	while (start_button->get_with_debounce() != 0) {}
+	start_light->off();
+
 	play_one_round();
+
 	duet_x = duet_y = 0;
 	duet_z = 100;
 	duet_update_position(6000);
