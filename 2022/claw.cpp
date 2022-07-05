@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include "canvas_png.h"
+#include "maestro.h"
 #include "mcp23017.h"
 #include "pi-usb.h"
 #include "st7735s.h"
@@ -36,13 +37,17 @@ static ST7735S *display;
 static ST7735S_Canvas *canvas;
 static CanvasPNG *booting_png, *coin_png, *start_png;
 
+#define CLAW_SERVO 0
+#define CLAW_START_POS 25
+static maestro_t *m;
+
 #define SQRT_2 1.41421356237
 #define STEP 4
 #define EXTRA_STEP (STEP)
 
 #define UPDATE_PERIOD 50
 #define MOVE_FEED (STEP*1000*60 / UPDATE_PERIOD)
-#define MAX_X 400
+#define MAX_X 390
 #define MAX_Y 360
 #define MAX_Z 400
 
@@ -75,6 +80,20 @@ init_display()
 }
 
 static void
+init_servo()
+{
+    pi_usb_init();
+
+    if ((m = maestro_new()) == NULL) {
+	fprintf(stderr, "Failed to initialize the maestro servo controller\n");
+	exit(1);
+    }
+
+    maestro_set_servo_range_pct(m, CLAW_SERVO, 8, 100);
+    maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
+}
+
+static void
 init_joysticks()
 {
     forward = mcp->get_input(0, 0);
@@ -83,8 +102,8 @@ init_joysticks()
     right = mcp->get_input(0, 3);
     up = mcp->get_input(1, 7);
     down = mcp->get_input(1, 6);
-    opening = mcp->get_input(1, 4);
-    closing = mcp->get_input(1, 5);
+    opening = mcp->get_input(1, 5);
+    closing = mcp->get_input(1, 4);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
@@ -217,12 +236,13 @@ play_one_round()
 {
     int last_time_shown = -1;
     struct timespec sleep_until;
+    double servo_pos = 50;
 
     nano_gettime(&start);
     nano_gettime(&sleep_until);
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
-	int move_x = 0, move_y = 0, move_z = 0;
+	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
 
 	nano_add_ms(&sleep_until, UPDATE_PERIOD);
 
@@ -233,6 +253,8 @@ play_one_round()
 	    if (! right->get())    move_x = +1;
 	    if (! up->get())       move_z = +1;
 	    if (! down->get())     move_z = -1;
+	    if (! opening->get())  move_servo = 1;
+	    if (! closing->get())  move_servo = -1;
 
 	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
 	    if (time_left != last_time_shown) {
@@ -243,6 +265,11 @@ play_one_round()
 	}
 
 //printf("move %d %d || %d %d\n", move_x, move_y, duet_x_state, duet_y_state);
+
+	servo_pos += move_servo * 1.0;
+	if (servo_pos < 0) servo_pos = 0;
+	if (servo_pos > 100) servo_pos = 100;
+	maestro_set_servo_pos(m, CLAW_SERVO, servo_pos);
 
 	calculate_position(&duet_x, &duet_x_state, move_x);
 	calculate_position(&duet_y, &duet_y_state, move_y);
@@ -263,6 +290,7 @@ int main(int argc, char **argv)
     mcp = new MCP23017();
 
     init_display();
+    init_servo();
 
     open_duet();
 
@@ -290,10 +318,13 @@ int main(int argc, char **argv)
 
 	play_one_round();
 
+	duet_z = 0;
+	duet_update_position(6000);
 	duet_x = duet_y = 0;
-	duet_z = 100;
 	duet_update_position(6000);
 	duet_cmd("G4 P0");
+	maestro_set_servo_pos(m, CLAW_SERVO, 100);
 	ms_sleep(1000);
+	maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
     }
 }
