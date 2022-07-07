@@ -41,6 +41,26 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 #define CLAW_START_POS 25
 static maestro_t *m;
 
+static struct {
+    const char *name;
+    input_t **input;
+    int value;
+} inputs[] = {
+    { "forward", &forward, 0 },
+    { "backward", &backward, 0 },
+    { "left", &left, 0 },
+    { "right", &right, 0 },
+    { "up", &up, 0 },
+    { "down", &down, 0 },
+    { "opening", &opening, 0 },
+    { "closing", &closing, 0 },
+    { "start", &start_button, 0 },
+    { "coin acceptor", &coin_acceptor, 0 },
+    { "coin override", &coin_override, 0 },
+};
+
+const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
+
 #define SQRT_2 1.41421356237
 #define STEP 4
 #define EXTRA_STEP (STEP)
@@ -118,14 +138,39 @@ init_joysticks()
 static void
 init_buttons()
 {
-    start_button = mcp->get_input(1, 0);
-    start_light = mcp->get_output(1, 1);
-    coin_acceptor = mcp->get_input(1, 2);
-    coin_override = mcp->get_input(1, 3);
+    coin_override = mcp->get_input(1, 0);
+    coin_acceptor = mcp->get_input(1, 1);
+    start_button = mcp->get_input(1, 2);
+    start_light = mcp->get_output(0, 7);
 
     start_button->set_pullup_up();
     coin_acceptor->set_pullup_up();
     coin_override->set_pullup_up();
+
+    start_light->off();
+}
+
+static void
+init_debounce()
+{
+    for (int i = 0; i < n_inputs; i++) {
+	inputs[i].input[0]->set_debounce(1);
+    }
+}
+
+static void
+test_inputs()
+{
+
+    while (1) {
+	for (int i = 0; i < n_inputs; i++) {
+	    int value = inputs[i].input[0]->get();
+	    if (inputs[i].value != value) {
+		inputs[i].value = value;
+		printf("%s %d\n", inputs[i].name, value);
+	    }
+	}
+    }
 }
 
 static void
@@ -290,16 +335,22 @@ int main(int argc, char **argv)
     mcp = new MCP23017();
 
     init_display();
+    init_joysticks();
+    init_buttons();
     init_servo();
+
+    init_debounce();
+
+    if (argc > 1 && strcmp(argv[1], "--test-inputs") == 0) {
+	test_inputs();
+	exit(0);
+    }
 
     open_duet();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28 Z");		// get the claw out of the prizes first!
     duet_cmd("G28");
-
-    init_joysticks();
-    init_buttons();
 
     while (1) {
 	duet_x = MAX_X / 2;
