@@ -295,6 +295,7 @@ int main(int argc, char **argv)
     open_duet();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
+    duet_cmd("G28 Z");		// get the claw out of the prizes first!
     duet_cmd("G28");
 
     init_joysticks();
