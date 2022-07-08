@@ -121,10 +121,10 @@ init_joysticks()
     backward = mcp->get_input(0, 1);
     left = mcp->get_input(0, 2);
     right = mcp->get_input(0, 3);
-    up = mcp->get_input(1, 7);
-    down = mcp->get_input(1, 6);
-    opening = mcp->get_input(1, 5);
-    closing = mcp->get_input(1, 4);
+    up = mcp->get_input(1, 6);
+    down = mcp->get_input(1, 7);
+    opening = mcp->get_input(1, 4);
+    closing = mcp->get_input(1, 5);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
