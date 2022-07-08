@@ -134,12 +134,21 @@ init_joysticks()
     down->set_pullup_up();
     opening->set_pullup_up();
     closing->set_pullup_up();
+
+    forward->set_inverted();
+    backward->set_inverted();
+    left->set_inverted();
+    right->set_inverted();
+    up->set_inverted();
+    down->set_inverted();
+    opening->set_inverted();
+    closing->set_inverted();
 }
 
 static void
 init_buttons()
 {
-    coin_override = mcp->get_input(1, 0);
+    coin_override = mcp->get_input(0, 4);
     coin_acceptor = mcp->get_input(1, 1);
     start_button = mcp->get_input(1, 2);
     start_light = mcp->get_output(0, 7);
@@ -150,6 +159,11 @@ init_buttons()
     release_button->set_pullup_up();
     coin_acceptor->set_pullup_up();
     coin_override->set_pullup_up();
+
+    start_button->set_inverted();
+    release_button->set_inverted();
+    coin_acceptor->set_inverted();
+    coin_override->set_inverted();
 
     start_light->off();
     release_light->off();
@@ -297,16 +311,16 @@ play_one_round()
 	nano_add_ms(&sleep_until, UPDATE_PERIOD);
 
 	while (! nano_now_is_later_than(&sleep_until)) {
-	    if (! release_button->get()) return;
+	    if (release_button->get()) return;
 
-	    if (! forward->get())  move_y = +1;
-	    if (! backward->get()) move_y = -1;
-	    if (! left->get())     move_x = -1;
-	    if (! right->get())    move_x = +1;
-	    if (! up->get())       move_z = +1;
-	    if (! down->get())     move_z = -1;
-	    if (! opening->get())  move_servo = 1;
-	    if (! closing->get())  move_servo = -1;
+	    if (forward->get())  move_y = +1;
+	    if (backward->get()) move_y = -1;
+	    if (left->get())     move_x = -1;
+	    if (right->get())    move_x = +1;
+	    if (up->get())       move_z = +1;
+	    if (down->get())     move_z = -1;
+	    if (opening->get())  move_servo = 1;
+	    if (closing->get())  move_servo = -1;
 
 	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
 	    if (time_left != last_time_shown) {
@@ -365,14 +379,14 @@ int main(int argc, char **argv)
 	duet_z = 0;
 	duet_update_position(12000);
 
-	if (coin_override->get() != 0) {
+	if (! coin_override->get()) {
 	    display_image(coin_png);
-	    while (coin_acceptor->get() != 0) {}
+	    while (! coin_acceptor->get()) {}
         }
 
 	display_image(start_png);
 	start_light->on();
-	while (start_button->get_with_debounce() != 0) {}
+	while (! start_button->get()) {}
 	start_light->off();
 
 	release_light->on();
