@@ -30,8 +30,8 @@ static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 
 static MCP23017 *mcp;
 static input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
-static input_t *start_button, *coin_acceptor, *coin_override;
-static output_t *start_light;
+static input_t *start_button, *release_button, *coin_acceptor, *coin_override;
+static output_t *start_light, *release_light;
 
 static ST7735S *display;
 static ST7735S_Canvas *canvas;
@@ -55,6 +55,7 @@ static struct {
     { "opening", &opening, 0 },
     { "closing", &closing, 0 },
     { "start", &start_button, 0 },
+    { "release", &release_button, 0 },
     { "coin acceptor", &coin_acceptor, 0 },
     { "coin override", &coin_override, 0 },
 };
@@ -292,6 +293,8 @@ play_one_round()
 	nano_add_ms(&sleep_until, UPDATE_PERIOD);
 
 	while (! nano_now_is_later_than(&sleep_until)) {
+	    if (! release_button->get()) return;
+
 	    if (! forward->get())  move_y = +1;
 	    if (! backward->get()) move_y = -1;
 	    if (! left->get())     move_x = -1;
@@ -368,7 +371,9 @@ int main(int argc, char **argv)
 	while (start_button->get_with_debounce() != 0) {}
 	start_light->off();
 
+	release_light->on();
 	play_one_round();
+	release_light->off();
 
 	duet_z = 0;
 	duet_update_position(6000);
