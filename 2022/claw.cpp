@@ -110,7 +110,7 @@ init_servo()
 	exit(1);
     }
 
-    maestro_set_servo_range_pct(m, CLAW_SERVO, 8, 100);
+    maestro_set_servo_range_pct(m, CLAW_SERVO, 12, 100);
     maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
 }
 
