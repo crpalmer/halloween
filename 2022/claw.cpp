@@ -143,19 +143,23 @@ init_buttons()
     coin_acceptor = mcp->get_input(1, 1);
     start_button = mcp->get_input(1, 2);
     start_light = mcp->get_output(0, 7);
+    release_button = mcp->get_input(1, 3);
+    release_light = mcp->get_output(0, 6);
 
     start_button->set_pullup_up();
+    release_button->set_pullup_up();
     coin_acceptor->set_pullup_up();
     coin_override->set_pullup_up();
 
     start_light->off();
+    release_light->off();
 }
 
 static void
 init_debounce()
 {
     for (int i = 0; i < n_inputs; i++) {
-	inputs[i].input[0]->set_debounce(1);
+	inputs[i].input[0]->set_debounce(0);
     }
 }
 
