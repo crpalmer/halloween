@@ -378,6 +378,7 @@ int main(int argc, char **argv)
 	duet_y = MAX_Y / 2;
 	duet_z = 0;
 	duet_update_position(12000);
+	duet_cmd("G4 P0");
 
 	if (! coin_override->get()) {
 	    display_image(coin_png);
@@ -392,6 +393,8 @@ int main(int argc, char **argv)
 	release_light->on();
 	play_one_round();
 	release_light->off();
+
+	display_image(booting_png);
 
 	duet_z = 0;
 	duet_update_position(6000);
