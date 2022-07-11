@@ -272,6 +272,12 @@ duet_update_position(int feed = 6000)
 }
 
 static void
+duet_wait_for_moves()
+{
+    duet_cmd("G4 P0");
+}
+
+static void
 calculate_position(int *pos, int *last_move, int this_move)
 {
     if (*last_move == 0 && this_move != 0) {
@@ -370,7 +376,7 @@ int main(int argc, char **argv)
 	duet_y = MAX_Y / 2;
 	duet_z = 0;
 	duet_update_position(12000);
-	duet_cmd("G4 P0");
+	duet_wait_for_moves();
 
 	if (! coin_override->get()) {
 	    display_image(coin_png);
@@ -392,7 +398,7 @@ int main(int argc, char **argv)
 	duet_update_position(6000);
 	duet_x = duet_y = 0;
 	duet_update_position(6000);
-	duet_cmd("G4 P0");
+	duet_wait_for_moves();
 	maestro_set_servo_pos(m, CLAW_SERVO, 100);
 	ms_sleep(1000);
 	maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
