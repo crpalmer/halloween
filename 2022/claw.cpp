@@ -165,16 +165,10 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
+    coin_acceptor->set_debounce(1);
+
     start_light->off();
     release_light->off();
-}
-
-static void
-init_debounce()
-{
-    for (int i = 0; i < n_inputs; i++) {
-	inputs[i].input[0]->set_debounce(0);
-    }
 }
 
 static void
@@ -359,8 +353,6 @@ int main(int argc, char **argv)
     init_joysticks();
     init_buttons();
     init_servo();
-
-    init_debounce();
 
     if (argc > 1 && strcmp(argv[1], "--test-inputs") == 0) {
 	test_inputs();
