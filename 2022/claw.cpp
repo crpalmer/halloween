@@ -41,9 +41,6 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 #define CLAW_START_POS 25
 static maestro_t *m;
 
-static pthread_mutex_t coin_acceptor_lock;
-static int n_credits = 0;
-
 static struct {
     const char *name;
     input_t **input;
@@ -170,7 +167,7 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
-    coin_acceptor->set_debounce(10);
+    coin_acceptor->set_debounce(1);
 
     start_light->off();
     release_light->off();
@@ -189,39 +186,6 @@ test_inputs()
 	    }
 	}
     }
-}
-
-static void *
-coin_acceptor_main(void *unused)
-{
-    while (1) {
-	if (coin_acceptor->get()) {
-	    pthread_mutex_lock(&coin_acceptor_lock);
-	    n_credits++;
-	    pthread_mutex_unlock(&coin_acceptor_lock);
-	    ms_sleep(150);
-	}
-    }
-}
-
-static int
-get_n_credits()
-{
-    int n;
-
-    pthread_mutex_lock(&coin_acceptor_lock);
-    n = n_credits;
-    pthread_mutex_unlock(&coin_acceptor_lock);
-
-    return n;
-}
-
-static void
-use_a_credit()
-{
-    pthread_mutex_lock(&coin_acceptor_lock);
-    if (n_credits > 0) n_credits--;
-    pthread_mutex_unlock(&coin_acceptor_lock);
 }
 
 static void
@@ -340,33 +304,6 @@ calculate_position(int *pos, int *last_move, int this_move)
 }
 
 static void
-wait_for_start()
-{
-    int n0 = get_n_credits();
-
-    if (coin_override->get()) return;
-
-    if (! n0) {
-	display_image(coin_png);
-	while (get_n_credits() == 0) {}
-    }
-
-    display_image(start_png);
-    start_light->on();
-    while (! start_button->get()) {
-	int n = get_n_credits();
-	if (n > 1 && n != n0) {
-	    canvas->blank(0, 0, 20, 20);
-	    canvas->nine_segment(n > 9 ? 9 : n, 2, 2, 16, 16, RED);
-	    display->paint(canvas);
-	}
-    }
-    start_light->off();
-
-    use_a_credit();
-}
-
-static void
 play_one_round()
 {
     int last_time_shown = -1;
@@ -447,8 +384,6 @@ end_of_round:
 
 int main(int argc, char **argv)
 {
-    pthread_t coin_acceptor_thread;
-
     gpioInitialise();
     seed_random();
     nano_gettime(&start);
@@ -465,9 +400,6 @@ int main(int argc, char **argv)
 	exit(0);
     }
 
-    pthread_mutex_init(&coin_acceptor_lock, NULL);
-    pthread_create(&coin_acceptor_thread, NULL, coin_acceptor_main, NULL);
-
     open_duet();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
@@ -481,7 +413,16 @@ int main(int argc, char **argv)
 	duet_update_position(12000);
 	duet_wait_for_moves();
 
-	wait_for_start();
+	if (! coin_override->get()) {
+	    display_image(coin_png);
+	    while (! coin_acceptor->get()) {}
+        }
+
+	display_image(start_png);
+	start_light->on();
+	while (! start_button->get()) {}
+	start_light->off();
+
 	play_one_round();
     }
 }
