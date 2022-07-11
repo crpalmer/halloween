@@ -357,6 +357,7 @@ play_one_round()
 
 end_of_round:
     release_light->off();
+    display_image(booting_png);
 
     if (! z_has_moved) {
 	/* Maybe they think it's the old style claw game? */
@@ -369,6 +370,16 @@ end_of_round:
 	move_claw_to(CLAW_GRAB);
 	ms_sleep(500);
     }
+
+    duet_z = 0;
+    duet_update_position();
+    duet_x = duet_y = 0;
+    duet_update_position();
+    duet_wait_for_moves();
+
+    move_claw_to(100);
+    ms_sleep(500);
+    move_claw_to(CLAW_START_POS);
 }
 
 int main(int argc, char **argv)
@@ -413,16 +424,5 @@ int main(int argc, char **argv)
 	start_light->off();
 
 	play_one_round();
-
-	display_image(booting_png);
-
-	duet_z = 0;
-	duet_update_position(6000);
-	duet_x = duet_y = 0;
-	duet_update_position(6000);
-	duet_wait_for_moves();
-	move_claw_to(100);
-	ms_sleep(1000);
-	move_claw_to(CLAW_START_POS);
     }
 }
