@@ -253,6 +253,12 @@ duet_cmd(const char *cmd, bool echo = true)
 }
 
 void
+move_claw_to(double pos)
+{
+    maestro_set_servo_pos(m, CLAW_SERVO, pos);
+}
+
+void
 duet_update_position(int feed = 6000)
 {
     char cmd[100];
@@ -338,7 +344,7 @@ play_one_round()
 	servo_pos += move_servo * 2.0;
 	if (servo_pos < 0) servo_pos = 0;
 	if (servo_pos > 100) servo_pos = 100;
-	maestro_set_servo_pos(m, CLAW_SERVO, servo_pos);
+	move_claw_to(servo_pos);
 
 	calculate_position(&duet_x, &duet_x_state, move_x);
 	calculate_position(&duet_y, &duet_y_state, move_y);
@@ -354,13 +360,13 @@ end_of_round:
 
     if (! z_has_moved) {
 	/* Maybe they think it's the old style claw game? */
-	maestro_set_servo_pos(m, CLAW_SERVO, 100);
+	move_claw_to(100);
 
 	duet_z = MAX_Z;
 	duet_update_position();
 	duet_wait_for_moves();
 
-	maestro_set_servo_pos(m, CLAW_SERVO, CLAW_GRAB);
+	move_claw_to(CLAW_GRAB);
 	ms_sleep(500);
     }
 }
@@ -415,8 +421,8 @@ int main(int argc, char **argv)
 	duet_x = duet_y = 0;
 	duet_update_position(6000);
 	duet_wait_for_moves();
-	maestro_set_servo_pos(m, CLAW_SERVO, 100);
+	move_claw_to(100);
 	ms_sleep(1000);
-	maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
+	move_claw_to(CLAW_START_POS);
     }
 }
