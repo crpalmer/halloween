@@ -72,6 +72,8 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_Y 360
 #define MAX_Z 400
 
+#define CLAW_GRAB	10
+
 #define ROUND_MS	(30*1000)
 
 static void
@@ -301,9 +303,12 @@ play_one_round()
     int last_time_shown = -1;
     struct timespec sleep_until;
     double servo_pos = 50;
+    bool z_has_moved = false;
 
     nano_gettime(&start);
     nano_gettime(&sleep_until);
+
+    release_light->on();
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
 	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
@@ -311,7 +316,7 @@ play_one_round()
 	nano_add_ms(&sleep_until, UPDATE_PERIOD);
 
 	while (! nano_now_is_later_than(&sleep_until)) {
-	    if (release_button->get()) return;
+	    if (release_button->get()) goto end_of_round;
 
 	    if (forward->get())  move_y = +1;
 	    if (backward->get()) move_y = -1;
@@ -341,7 +346,22 @@ play_one_round()
 
 	duet_update_position((move_x && move_y ? SQRT_2 : 1) * MOVE_FEED);
 
- 	nano_sleep_until(&sleep_until);
+	if (move_z) z_has_moved = true;
+    }
+
+end_of_round:
+    release_light->off();
+
+    if (! z_has_moved) {
+	/* Maybe they think it's the old style claw game? */
+	maestro_set_servo_pos(m, CLAW_SERVO, 100);
+
+	duet_z = MAX_Z;
+	duet_update_position();
+	duet_wait_for_moves();
+
+	maestro_set_servo_pos(m, CLAW_SERVO, CLAW_GRAB);
+	ms_sleep(500);
     }
 }
 
@@ -386,9 +406,7 @@ int main(int argc, char **argv)
 	while (! start_button->get()) {}
 	start_light->off();
 
-	release_light->on();
 	play_one_round();
-	release_light->off();
 
 	display_image(booting_png);
 
