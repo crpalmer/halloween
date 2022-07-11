@@ -330,9 +330,7 @@ play_one_round()
 	    }
 	}
 
-//printf("move %d %d || %d %d\n", move_x, move_y, duet_x_state, duet_y_state);
-
-	servo_pos += move_servo * 1.0;
+	servo_pos += move_servo * 2.0;
 	if (servo_pos < 0) servo_pos = 0;
 	if (servo_pos > 100) servo_pos = 100;
 	maestro_set_servo_pos(m, CLAW_SERVO, servo_pos);
