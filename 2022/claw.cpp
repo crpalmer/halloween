@@ -31,7 +31,7 @@ static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 static MCP23017 *mcp;
 static input_t *forward, *backward, *left, *right, *up, *down, *opening, *closing;
 static input_t *start_button, *release_button, *coin_acceptor, *coin_override;
-static output_t *start_light, *release_light;
+static output_t *start_light, *release_light, *coin_acceptor_power;
 
 static ST7735S *display;
 static ST7735S_Canvas *canvas;
@@ -152,6 +152,7 @@ init_buttons()
 {
     coin_override = mcp->get_input(0, 4);
     coin_acceptor = mcp->get_input(1, 1);
+    coin_acceptor_power = mcp->get_output(0, 5);
     start_button = mcp->get_input(1, 2);
     start_light = mcp->get_output(0, 7);
     release_button = mcp->get_input(1, 3);
@@ -169,6 +170,7 @@ init_buttons()
 
     coin_acceptor->set_debounce(1);
 
+    coin_acceptor_power->off();
     start_light->off();
     release_light->off();
 }
@@ -414,8 +416,10 @@ int main(int argc, char **argv)
 	duet_wait_for_moves();
 
 	if (! coin_override->get()) {
+	    coin_acceptor_power->on();
 	    display_image(coin_png);
 	    while (! coin_acceptor->get()) {}
+	    coin_acceptor_power->off();
         }
 
 	display_image(start_png);
