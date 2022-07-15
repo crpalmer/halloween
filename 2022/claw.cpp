@@ -45,19 +45,20 @@ static struct {
     const char *name;
     input_t **input;
     int value;
+    output_t **output;
 } inputs[] = {
-    { "forward", &forward, 0 },
-    { "backward", &backward, 0 },
-    { "left", &left, 0 },
-    { "right", &right, 0 },
-    { "up", &up, 0 },
-    { "down", &down, 0 },
-    { "opening", &opening, 0 },
-    { "closing", &closing, 0 },
-    { "start", &start_button, 0 },
-    { "release", &release_button, 0 },
-    { "coin acceptor", &coin_acceptor, 0 },
-    { "coin override", &coin_override, 0 },
+    { "forward", &forward, 0, NULL },
+    { "backward", &backward, 0, NULL },
+    { "left", &left, 0, NULL },
+    { "right", &right, 0, NULL },
+    { "up", &up, 0, NULL },
+    { "down", &down, 0, NULL },
+    { "opening", &opening, 0, NULL },
+    { "closing", &closing, 0, NULL },
+    { "start", &start_button, 0, &start_light },
+    { "release", &release_button, 0, &release_light },
+    { "coin acceptor", &coin_acceptor, 0, NULL },
+    { "coin override", &coin_override, 0, NULL },
 };
 
 const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
@@ -119,14 +120,14 @@ init_servo()
 static void
 init_joysticks()
 {
-    forward = mcp->get_input(0, 0);
-    backward = mcp->get_input(0, 1);
-    left = mcp->get_input(0, 2);
-    right = mcp->get_input(0, 3);
-    up = mcp->get_input(1, 6);
-    down = mcp->get_input(1, 7);
-    opening = mcp->get_input(1, 4);
-    closing = mcp->get_input(1, 5);
+    right = mcp->get_input(0, 0);
+    left = mcp->get_input(0, 1);
+    backward = mcp->get_input(0, 2);
+    forward = mcp->get_input(0, 3);
+    opening = mcp->get_input(0, 4);
+    closing = mcp->get_input(0, 5);
+    up = mcp->get_input(0, 6);
+    down = mcp->get_input(0, 7);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
@@ -150,13 +151,13 @@ init_joysticks()
 static void
 init_buttons()
 {
-    coin_override = mcp->get_input(0, 4);
-    coin_acceptor = mcp->get_input(1, 1);
-    coin_acceptor_power = mcp->get_output(0, 5);
-    start_button = mcp->get_input(1, 2);
-    start_light = mcp->get_output(0, 7);
-    release_button = mcp->get_input(1, 3);
-    release_light = mcp->get_output(0, 6);
+    coin_override = mcp->get_input(1, 0);
+    coin_acceptor_power = mcp->get_output(1, 1);
+    coin_acceptor = mcp->get_input(1, 2);
+    start_button = mcp->get_input(1, 4);
+    start_light = mcp->get_output(1, 5);
+    release_button = mcp->get_input(1, 6);
+    release_light = mcp->get_output(1, 7);
 
     start_button->set_pullup_up();
     release_button->set_pullup_up();
@@ -168,7 +169,9 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
-    coin_acceptor->set_debounce(1);
+    for (int i = 0; i < n_inputs; i++) {
+	inputs[i].input[0]->set_debounce(1);
+    }
 
     coin_acceptor_power->off();
     start_light->off();
@@ -178,13 +181,18 @@ init_buttons()
 static void
 test_inputs()
 {
-
+    coin_acceptor_power->on();
     while (1) {
 	for (int i = 0; i < n_inputs; i++) {
 	    int value = inputs[i].input[0]->get();
 	    if (inputs[i].value != value) {
 		inputs[i].value = value;
 		printf("%s %d\n", inputs[i].name, value);
+		if (value && inputs[i].output) {
+		    inputs[i].output[0]->on();
+		    ms_sleep(1000);
+		    inputs[i].output[0]->off();
+		}
 	    }
 	}
     }
