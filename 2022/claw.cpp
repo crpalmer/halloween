@@ -72,6 +72,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_X 390
 #define MAX_Y 360
 #define MAX_Z 500
+#define END_OF_GAME_Z 200
 
 #define CLAW_GRAB	10
 
@@ -320,6 +321,7 @@ play_one_round()
     struct timespec sleep_until;
     double servo_pos = 50;
     bool z_has_moved = false;
+    bool claw_has_moved = false;
 
     nano_gettime(&start);
     nano_gettime(&sleep_until);
@@ -332,7 +334,9 @@ play_one_round()
 	nano_add_ms(&sleep_until, UPDATE_PERIOD);
 
 	while (! nano_now_is_later_than(&sleep_until)) {
-	    if (release_button->get()) goto end_of_round;
+	    if (release_button->get()) {
+		goto end_of_round;
+	    }
 
 	    if (forward->get())  move_y = +1;
 	    if (backward->get()) move_y = -1;
@@ -363,25 +367,34 @@ play_one_round()
 	duet_update_position((move_x && move_y ? SQRT_2 : 1) * MOVE_FEED);
 
 	if (move_z) z_has_moved = true;
+	if (move_servo) claw_has_moved = true;
     }
 
 end_of_round:
     release_light->off();
     display_image(booting_png);
 
-    if (! z_has_moved) {
-	/* Maybe they think it's the old style claw game? */
+#if 0
+    if (! z_has_moved || ! claw_has_moved || release_needed) {
+	/* Do an old style claw game drop */
+#endif
+    if (! z_has_moved || ! claw_has_moved) {
 	move_claw_to(100);
-
-	duet_z = MAX_Z;
-	duet_update_position();
-	duet_wait_for_moves();
-
-	move_claw_to(CLAW_GRAB);
-	ms_sleep(500);
     }
 
-    duet_z = 0;
+    duet_z = MAX_Z;
+    duet_update_position();
+    duet_wait_for_moves();
+
+    if (servo_pos > CLAW_GRAB) {
+	move_claw_to(CLAW_GRAB);
+        ms_sleep(500);
+    }
+#if 0
+    }
+#endif
+
+    duet_z = END_OF_GAME_Z;
     duet_update_position();
     duet_x = duet_y = 0;
     duet_update_position();
