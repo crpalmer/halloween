@@ -70,7 +70,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MOVE_FEED (STEP*1000*60 / UPDATE_PERIOD)
 #define MAX_X 390
 #define MAX_Y 360
-#define MAX_Z 400
+#define MAX_Z 500
 
 #define CLAW_GRAB	10
 
