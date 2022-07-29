@@ -15,7 +15,7 @@ static char line[100*1024];
 
 typedef enum {
    off_mode = 0, insert_coin_mode, hit_start_mode, game_mode, time_low_mode,
-   game_over_mode, drop_mode
+   time_a_bit_low_mode, time_really_low_mode, game_over_mode, drop_mode
 } pico_mode_t;
 
 static pico_mode_t requested_mode = off_mode;
@@ -69,7 +69,11 @@ static void hit_start_step(NeoPixelPico *neo)
 #define TIME_LOW_PCT_DROP	0.05
 #define TIME_LOW_PCT_MIN	0.1
 
+#define TIME_LOW_SLEEP		15
+#define TIME_REALLY_LOW_SLEEP	10
+
 static double time_low_pct = 1;
+static int time_low_sleep = TIME_LOW_SLEEP;
 
 static void time_low_step(NeoPixelPico *neo)
 {
@@ -77,7 +81,7 @@ static void time_low_step(NeoPixelPico *neo)
     if (time_low_pct <= TIME_LOW_PCT_MIN) time_low_pct = 1;
     neo->set_brightness(time_low_pct);
     neo->show();
-    ms_sleep(12);
+    ms_sleep(time_low_sleep);
 }
 
 #define GAME_COLOR	255, 255, 255
@@ -120,12 +124,16 @@ static void lights_main(void)
 		neo->set_all(GAME_COLOR);
 		neo->show();
 		break;
+	    case time_a_bit_low_mode:
+	    case time_really_low_mode:
 	    case time_low_mode:
 		for (int led = 0; led < neo->get_n_leds(); led++) {
 		    if (led % 2 == 0) neo->set_led(led, TIME_LOW_COLOR_1);
 		    else              neo->set_led(led, TIME_LOW_COLOR_2);
 		}
 		time_low_pct = 1;
+		time_low_sleep = (mode == time_low_mode) ? TIME_LOW_SLEEP : TIME_REALLY_LOW_SLEEP;
+		if (mode == time_a_bit_low_mode) neo->show();
 		break;
 	    case game_over_mode:
 		neo->set_all(GAME_OVER_COLOR);
@@ -142,6 +150,8 @@ static void lights_main(void)
 	case insert_coin_mode: insert_coin_step(neo); break;
 	case hit_start_mode: hit_start_step(neo); break;
 	case game_mode: break;
+	case time_a_bit_low_mode: break;
+	case time_really_low_mode: time_low_step(neo); break;
 	case time_low_mode: time_low_step(neo); break;
 	case game_over_mode: break;
 	}
@@ -188,6 +198,10 @@ main()
 	    set_new_mode(game_mode);
 	} else if (strcmp(line, "time-low") == 0) {
 	    set_new_mode(time_low_mode);
+	} else if (strcmp(line, "time-a-bit-low") == 0) {
+	    set_new_mode(time_a_bit_low_mode);
+	} else if (strcmp(line, "time-really-low") == 0) {
+	    set_new_mode(time_really_low_mode);
 	} else if (strcmp(line, "game-over") == 0) {
 	    set_new_mode(game_over_mode);
 	} else if (strcmp(line, "drop") == 0) {
