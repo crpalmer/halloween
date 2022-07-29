@@ -14,6 +14,8 @@
 #include "util.h"
 #include "ween-hours.h"
 
+const bool test_offline = false;
+
 #define VENDOR_ID 0x1d50
 #define DUET_PRODUCT_ID 0x60ec
 
@@ -21,7 +23,7 @@
 
 static struct timespec start;
 
-static int duet;
+static int duet = -1;
 static char duet_reply[100000];
 
 static int last_x = -1, last_y = -1, last_z = -1;
@@ -76,7 +78,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 
 #define CLAW_GRAB	10
 
-#define ROUND_MS	(30*1000)
+#define ROUND_MS	(test_offline ? 10*1000 : 30*1000)
 
 static void
 display_image(Canvas *img)
@@ -107,8 +109,6 @@ init_display()
 static void
 init_servo()
 {
-    pi_usb_init();
-
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize the maestro servo controller\n");
 	exit(1);
@@ -245,6 +245,8 @@ duet_cmd(const char *cmd, bool echo = true)
 {
     int len = 0, got;
 
+    if (duet < 0) return "no tty";
+
     if (echo) printf("%5d %s\n", nano_elapsed_ms_now(&start), cmd);
     write(duet, cmd, strlen(cmd));
     write(duet, "\n", 1);
@@ -266,7 +268,7 @@ duet_cmd(const char *cmd, bool echo = true)
 void
 move_claw_to(double pos)
 {
-    maestro_set_servo_pos(m, CLAW_SERVO, pos);
+    if (m) maestro_set_servo_pos(m, CLAW_SERVO, pos);
 }
 
 void
@@ -411,19 +413,21 @@ int main(int argc, char **argv)
     seed_random();
     nano_gettime(&start);
 
+    pi_usb_init();
+
     mcp = new MCP23017();
 
     init_display();
     init_joysticks();
     init_buttons();
-    init_servo();
+    if (! test_offline) init_servo();
 
     if (argc > 1 && strcmp(argv[1], "--test-inputs") == 0) {
 	test_inputs();
 	exit(0);
     }
 
-    open_duet();
+    if (! test_offline) open_duet();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28 Z");		// get the claw out of the prizes first!
