@@ -10,6 +10,7 @@
 #include "maestro.h"
 #include "mcp23017.h"
 #include "pi-usb.h"
+#include "pico-slave.h"
 #include "st7735s.h"
 #include "util.h"
 #include "ween-hours.h"
@@ -42,6 +43,8 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 #define CLAW_SERVO 0
 #define CLAW_START_POS 25
 static maestro_t *m;
+
+static PicoSlave *pico;
 
 static struct {
     const char *name;
@@ -86,6 +89,13 @@ display_image(Canvas *img)
     canvas->blank();
     canvas->import(img);
     display->paint(canvas);
+}
+
+static void
+init_lights()
+{
+    pico = new PicoSlave();
+    pico->writeline("off");
 }
 
 static void
@@ -324,10 +334,12 @@ play_one_round()
     double servo_pos = 50;
     bool z_has_moved = false;
     bool claw_has_moved = false;
+    enum { early, a_bit_low, low, really_low} time_state = early;
 
     nano_gettime(&start);
     nano_gettime(&sleep_until);
 
+    pico->writeline("game");
     release_light->on();
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
@@ -337,6 +349,7 @@ play_one_round()
 
 	while (! nano_now_is_later_than(&sleep_until)) {
 	    if (release_button->get()) {
+		pico->writeline("drop");
 		goto end_of_round;
 	    }
 
@@ -370,7 +383,22 @@ play_one_round()
 
 	if (move_z) z_has_moved = true;
 	if (move_servo) claw_has_moved = true;
+
+	if (time_state < a_bit_low && nano_elapsed_ms_now(&start) >= ROUND_MS-7500) {
+	    time_state = a_bit_low;
+	    pico->writeline("time-a-bit-low");
+	}
+	if (time_state < low && nano_elapsed_ms_now(&start) >= ROUND_MS-5000) {
+	    time_state = low;
+	    pico->writeline("time-low");
+	}
+	if (time_state < really_low && nano_elapsed_ms_now(&start) >= ROUND_MS-2500) {
+	    time_state = really_low;
+	    pico->writeline("time-really-low");
+	}
     }
+
+    pico->writeline("game-over");
 
 end_of_round:
     release_light->off();
@@ -405,6 +433,8 @@ end_of_round:
     move_claw_to(100);
     ms_sleep(500);
     move_claw_to(CLAW_START_POS);
+
+    pico->writeline("off");
 }
 
 int main(int argc, char **argv)
@@ -417,6 +447,7 @@ int main(int argc, char **argv)
 
     mcp = new MCP23017();
 
+    init_lights();
     init_display();
     init_joysticks();
     init_buttons();
@@ -443,10 +474,12 @@ int main(int argc, char **argv)
 	if (! coin_override->get()) {
 	    coin_acceptor_power->on();
 	    display_image(coin_png);
+	    pico->writeline("insert-coin");
 	    while (! coin_acceptor->get()) {}
 	    coin_acceptor_power->off();
         }
 
+	pico->writeline("hit-start");
 	display_image(start_png);
 	start_light->on();
 	while (! start_button->get()) {}
