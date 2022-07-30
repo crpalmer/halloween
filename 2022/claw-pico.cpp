@@ -11,6 +11,9 @@
 
 static char line[100*1024];
 
+#define N_LEDS_PER_SIDE	18
+#define N_LEDS (N_LEDS_PER_SIDE*4)
+
 #define STRNCMP(a, b) strncmp(a, b, strlen(b))
 
 typedef enum {
@@ -24,19 +27,25 @@ static critical_section_t cs;
 static void inc(NeoPixelPico *neo, int *at)
 {
     (*at)++;
-    if (*at > neo->get_n_leds()) *at = 0;
+    if (*at > N_LEDS_PER_SIDE) *at = 0;
 }
 
 #define INSERT_COIN_COLOR	0, 0, 255
 #define INSERT_COIN_FADE	0, 0,  32
 static int insert_coin_at;
 
+static void set_led_per_side(NeoPixelPico *neo, int at, unsigned char r, unsigned char g, unsigned char b)
+{
+    for (int side = 0; side < 4; side++) {
+	neo->set_led(at+side*N_LEDS_PER_SIDE, r, g, b);
+    }
+}
 static void insert_coin_step(NeoPixelPico *neo)
 {
-    neo->set_led(insert_coin_at, INSERT_COIN_FADE);
+    set_led_per_side(neo, insert_coin_at, INSERT_COIN_FADE);
     neo->show();
     ms_sleep(20);
-    neo->set_led(insert_coin_at, INSERT_COIN_COLOR);
+    set_led_per_side(neo, insert_coin_at, INSERT_COIN_COLOR);
     inc(neo, &insert_coin_at);
 }
 
@@ -93,7 +102,7 @@ static void lights_main(void)
     NeoPixelPico *neo = new NeoPixelPico(0);
     pico_mode_t mode = off_mode;
 
-    neo->set_n_leds(11);
+    neo->set_n_leds(N_LEDS);
     neo->set_all(0, 0, 0);
     neo->show();
 
@@ -127,7 +136,7 @@ static void lights_main(void)
 	    case time_a_bit_low_mode:
 	    case time_really_low_mode:
 	    case time_low_mode:
-		for (int led = 0; led < neo->get_n_leds(); led++) {
+		for (int led = 0; led < N_LEDS; led++) {
 		    if (led % 2 == 0) neo->set_led(led, TIME_LOW_COLOR_1);
 		    else              neo->set_led(led, TIME_LOW_COLOR_2);
 		}
