@@ -77,6 +77,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_X 390
 #define MAX_Y 360
 #define MAX_Z 525
+#define START_Z	      50
 #define END_OF_GAME_Z 200
 
 #define CLAW_GRAB	10
@@ -467,7 +468,7 @@ int main(int argc, char **argv)
     while (1) {
 	duet_x = MAX_X / 2;
 	duet_y = MAX_Y / 2;
-	duet_z = 0;
+	duet_z = START_Z;
 	duet_update_position(12000);
 	duet_wait_for_moves();
 
