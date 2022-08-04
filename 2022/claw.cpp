@@ -158,6 +158,15 @@ init_joysticks()
     down->set_inverted();
     opening->set_inverted();
     closing->set_inverted();
+
+    forward->set_debounce(1);
+    backward->set_debounce(1);
+    left->set_debounce(1);
+    right->set_debounce(1);
+    up->set_debounce(1);
+    down->set_debounce(1);
+    opening->set_debounce(1);
+    closing->set_debounce(1);
 }
 
 static void
@@ -181,9 +190,10 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
-    for (int i = 0; i < n_inputs; i++) {
-	inputs[i].input[0]->set_debounce(1);
-    }
+    coin_acceptor->set_debounce(5);
+    coin_override->set_debounce(5);
+    start_button->set_debounce(30);
+    release_button->set_debounce(5);
 
     coin_acceptor_power->off();
     start_light->off();
