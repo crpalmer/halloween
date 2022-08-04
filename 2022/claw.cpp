@@ -138,8 +138,8 @@ init_joysticks()
     forward = mcp->get_input(0, 3);
     opening = mcp->get_input(0, 4);
     closing = mcp->get_input(0, 5);
-    up = mcp->get_input(0, 6);
-    down = mcp->get_input(0, 7);
+    down = mcp->get_input(0, 6);
+    up = mcp->get_input(0, 7);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
@@ -358,8 +358,8 @@ play_one_round()
 	    if (backward->get()) move_y = -1;
 	    if (left->get())     move_x = -1;
 	    if (right->get())    move_x = +1;
-	    if (up->get())       move_z = +1;
-	    if (down->get())     move_z = -1;
+	    if (down->get())     move_z = +1;
+	    if (up->get())       move_z = -1;
 	    if (opening->get())  move_servo = 1;
 	    if (closing->get())  move_servo = -1;
 
