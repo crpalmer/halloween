@@ -397,7 +397,8 @@ play_one_round()
 
 	if (time_state < a_bit_low && nano_elapsed_ms_now(&start) >= ROUND_MS-7500) {
 	    time_state = a_bit_low;
-	    pico->writeline("time-a-bit-low");
+	    //pico->writeline("time-a-bit-low");
+	    pico->writeline("time-low");
 	}
 	if (time_state < low && nano_elapsed_ms_now(&start) >= ROUND_MS-5000) {
 	    time_state = low;
@@ -405,7 +406,7 @@ play_one_round()
 	}
 	if (time_state < really_low && nano_elapsed_ms_now(&start) >= ROUND_MS-2500) {
 	    time_state = really_low;
-	    pico->writeline("time-really-low");
+	    //pico->writeline("time-really-low");
 	}
     }
 
