@@ -132,10 +132,10 @@ init_servo()
 static void
 init_joysticks()
 {
-    right = mcp->get_input(0, 0);
-    left = mcp->get_input(0, 1);
-    backward = mcp->get_input(0, 2);
-    forward = mcp->get_input(0, 3);
+    left = mcp->get_input(0, 0);
+    right = mcp->get_input(0, 1);
+    forward = mcp->get_input(0, 2);
+    backward = mcp->get_input(0, 3);
     opening = mcp->get_input(0, 4);
     closing = mcp->get_input(0, 5);
     down = mcp->get_input(0, 6);
@@ -190,10 +190,10 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
-    coin_acceptor->set_debounce(5);
+    coin_acceptor->set_debounce(1);
     coin_override->set_debounce(5);
-    start_button->set_debounce(30);
-    release_button->set_debounce(5);
+    start_button->set_debounce(50);
+    release_button->set_debounce(10);
 
     coin_acceptor_power->off();
     start_light->off();
