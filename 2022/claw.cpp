@@ -76,11 +76,11 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MOVE_FEED (STEP*1000*60 / UPDATE_PERIOD)
 #define MAX_X 390
 #define MAX_Y 360
-#define MAX_Z 525
-#define START_Z	      50
+#define MAX_Z 500
+#define START_Z	      100
 #define END_OF_GAME_Z 200
 
-#define CLAW_GRAB	10
+#define CLAW_GRAB	0
 
 #define ROUND_MS	(test_offline ? 10*1000 : 30*1000)
 
@@ -125,7 +125,7 @@ init_servo()
 	exit(1);
     }
 
-    maestro_set_servo_range_pct(m, CLAW_SERVO, 12, 100);
+    maestro_set_servo_range_pct(m, CLAW_SERVO, 5, 100);
     maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
 }
 
