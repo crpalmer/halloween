@@ -459,18 +459,20 @@ int main(int argc, char **argv)
 
     mcp = new MCP23017();
 
-    init_lights();
     init_display();
     init_joysticks();
     init_buttons();
-    if (! test_offline) init_servo();
-
     if (argc > 1 && strcmp(argv[1], "--test-inputs") == 0) {
 	test_inputs();
 	exit(0);
     }
 
-    if (! test_offline) open_duet();
+    init_lights();
+
+    if (! test_offline) {
+	init_servo();
+	open_duet();
+    }
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28 Z");		// get the claw out of the prizes first!
