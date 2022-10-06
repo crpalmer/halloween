@@ -85,11 +85,12 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_Y 360
 #define MAX_Z 500
 #define START_Z	      100
-#define END_OF_GAME_Z 200
+#define END_OF_GAME_Z 100
+#define GRAB_Z	      (MAX_Z-50)
 
 #define CLAW_GRAB	0
 
-#define ROUND_MS	(test_offline ? 10*1000 : 30*1000)
+#define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
 static void
 display_image(Canvas *img)
@@ -439,7 +440,7 @@ end_of_round:
 	move_claw_to(100);
     }
 
-    duet_z = MAX_Z;
+    duet_z = GRAB_Z;
     duet_update_position();
     duet_wait_for_moves();
 
