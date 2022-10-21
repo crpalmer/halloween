@@ -42,3 +42,4 @@ endfunction()
 
 util_cpp(claw-pico)
 util_cpp(doug)
+util_cpp(sign-light)
