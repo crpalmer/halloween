@@ -12,6 +12,7 @@
 #include "pi-usb.h"
 #include "pico-slave.h"
 #include "st7735s.h"
+#include "track.h"
 #include "util.h"
 #include "ween-hours.h"
 
@@ -50,6 +51,9 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 static maestro_t *m;
 
 static PicoSlave *pico;
+
+static track_t *claw_music;
+static stop_t *claw_music_stop;
 
 static struct {
     const char *name;
@@ -367,6 +371,9 @@ play_one_round()
     pico->writeline("game");
     release_light->on();
 
+    stop_reset(claw_music_stop);
+    track_play_asynchronously(claw_music, claw_music_stop);
+
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
 	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
 
@@ -411,24 +418,17 @@ play_one_round()
 	if (move_z) z_has_moved = true;
 	if (move_servo) claw_has_moved = true;
 
-	if (time_state < a_bit_low && nano_elapsed_ms_now(&start) >= ROUND_MS-7500) {
-	    time_state = a_bit_low;
-	    //pico->writeline("time-a-bit-low");
-	    pico->writeline("time-low");
-	}
 	if (time_state < low && nano_elapsed_ms_now(&start) >= ROUND_MS-5000) {
 	    time_state = low;
 	    pico->writeline("time-low");
-	}
-	if (time_state < really_low && nano_elapsed_ms_now(&start) >= ROUND_MS-2500) {
-	    time_state = really_low;
-	    //pico->writeline("time-really-low");
 	}
     }
 
     pico->writeline("game-over");
 
 end_of_round:
+    stop_stop(claw_music_stop);
+
     release_light->off();
     display_image(booting_png);
 
@@ -489,6 +489,12 @@ int main(int argc, char **argv)
 	init_servo();
 	open_duet();
     }
+
+    claw_music = track_new("claw-music.wav");
+
+    if (! claw_music) exit(1);
+
+    claw_music_stop = stop_new();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28 Z");		// get the claw out of the prizes first!
