@@ -208,7 +208,7 @@ init_buttons()
     coin_acceptor->set_inverted();
     coin_override->set_inverted();
 
-    coin_acceptor->set_debounce(1);
+    //coin_acceptor->set_debounce(1);
     coin_override->set_debounce(5);
     start_button->set_debounce(50);
     release_button->set_debounce(10);
