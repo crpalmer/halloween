@@ -363,7 +363,7 @@ play_one_round()
     double servo_pos = 50;
     bool z_has_moved = false;
     bool claw_has_moved = false;
-    enum { early, a_bit_low, low, really_low} time_state = early;
+    enum { early, low } time_state = early;
 
     nano_gettime(&start);
     nano_gettime(&sleep_until);
