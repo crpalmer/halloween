@@ -24,7 +24,7 @@ public:
 	this->light = light;
 	this->button = button;
 	button->set_pullup_down();
-	button->set_debounce(100);
+	button->set_debounce(1);
 	pin = NULL;
 	cmd = NULL;
 	n_tracks = 0;
@@ -141,49 +141,63 @@ private:
     stop_t *stop;
 };
 
-class MandM : public Button {
+class Mosquito : public Button {
 public:
-    MandM() : Button(wb_get_output(2, 1), wb_get_input(4)) {
-	set_pin(wb_get_output(1, 1));
-	set_cmd("M&M");
+    Mosquito() : Button(wb_get_output(1, 1), wb_get_input(1)) {
+	set_pin(wb_get_output(2, 1));
+	set_cmd("mosquito");
+    }
+
+    void act() {
+	fprintf(stderr, "mosquito\n");
+	if (! file_exists("disable-mosquito")) attack(0.75, 2.5);
+    }
+};
+
+class Gater : public Button {
+public:
+    Gater() : Button(wb_get_output(1, 2), wb_get_input(2)) {
+	set_pin(wb_get_output(2, 2));
+	set_cmd("gater");
+    }
+
+    void act() {
+	fprintf(stderr, "gater\n");
+	if (! file_exists("disable-gater")) attack(1, 1);
+    }
+};
+
+class Question : public Button {
+public:
+    Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
+	set_pin(wb_get_output(2, 3));
+	add_track("laugh.wav");
+	set_cmd("question");
     }
 
     void act(void) {
-	fprintf(stderr, "M&M\n");
-	if (! file_exists("disable-m-and-m")) attack(1, 0.75);
+	fprintf(stderr, "question\n");
+	if (! file_exists("disable-question")) attack(1, 0.75);
     }
 };
 
-class Bunny : public Button {
+class Spider : public Button {
 public:
-    Bunny() : Button(wb_get_output(2, 2), wb_get_input(3)) {
-	set_pin(wb_get_output(1, 2));
-	set_cmd("bunny");
+    Spider() : Button(wb_get_output(1, 4), wb_get_input(4)) {
+	set_pin(wb_get_output(2, 4));
+	set_cmd("spider");
     }
 
-    void act() {
-	fprintf(stderr, "bunny\n");
-	if (! file_exists("disable-bunny")) attack(1, 1);
-    }
-};
-
-class Demono : public Button {
-public:
-    Demono() : Button(wb_get_output(2, 3), wb_get_input(2)) {
-	set_pin(wb_get_output(1, 3));
-	set_cmd("demono");
-    }
-
-    void act() {
-	fprintf(stderr, "demono\n");
-	if (! file_exists("disable-demono")) attack(0.75, 2.5);
+    void act(void) {
+	fprintf(stderr, "spider\n");
+	if (! file_exists("disable-spider")) attack(1, 0.75);
     }
 };
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(2, 4), wb_get_input(1)) {
-	set_pin(wb_get_output(1, 4));
+    Snake() : Button(wb_get_output(1, 5), wb_get_input(5)) {
+	set_pin(wb_get_output(2, 5));
 	set_cmd("snake");
     }
 
@@ -202,9 +216,10 @@ main(int argc, char **argv)
 
     AnimationStation *as = new AnimationStation();
     as->set_blink_ms(500);
-    as->add_action(new MandM());
-    as->add_action(new Bunny());
-    as->add_action(new Demono());
+    as->add_action(new Mosquito());
+    as->add_action(new Gater());
+    as->add_action(new Question());
+    as->add_action(new Spider());
     as->add_action(new Snake());
 
     AnimationStationController *asc = new AnimationStationController();
