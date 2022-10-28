@@ -84,6 +84,19 @@ protected:
 	}
     }
 
+    void track_start_random()
+    {
+	track_t *track = random_track();
+	stop_reset(stop);
+	track_play_asynchronously(track, stop);
+    }
+
+    void track_wait_done()
+    {
+	while (! stop_is_stopped(stop)) {
+	}
+    }
+	
     void attack_with_audio(track_t *t, double up, double down) {
 	stop_reset(stop);
 	track_play_asynchronously(t, stop);
@@ -170,15 +183,22 @@ public:
 class Question : public Button {
 public:
     Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
-	set_pin(wb_get_output(2, 3));
+	head = wb_get_output(2, 3);
 	add_track("laugh.wav");
 	set_cmd("question");
     }
 
-    void act(void) {
-	fprintf(stderr, "question\n");
-	if (! file_exists("disable-question")) attack(1, 0.75);
+    void act(Lights *l) {
+        l->blink_all();
+        head->set(true);
+	ms_sleep(200);
+	track_start_random();
+	track_wait_done();
+	head->set(false);
     }
+
+private:
+    output_t *head;
 };
 
 class Spider : public Button {
