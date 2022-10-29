@@ -90,7 +90,10 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_Z 500
 #define START_Z	      100
 #define END_OF_GAME_Z 100
-#define GRAB_Z	      (MAX_Z-50)
+// If it's low:
+//#define GRAB_Z	      (MAX_Z-50)
+// If it's full:
+#define GRAB_Z	      (MAX_Z-75)
 
 #define CLAW_GRAB	0
 
