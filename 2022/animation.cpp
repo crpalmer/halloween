@@ -64,9 +64,9 @@ public:
     virtual void act(void) { }
     virtual void act(Lights *lights) { act(); }
 
-    virtual char *handle_remote_cmd(const char *cmd) {
+    virtual char *handle_remote_cmd(const char *cmd, Lights *lights) {
 	if (this->cmd && strcmp(cmd, this->cmd) == 0) {
-	    act();
+	    act(lights);
 	    return strdup("ok");
 	}
 	return NULL;
@@ -189,6 +189,7 @@ public:
     }
 
     void act(Lights *l) {
+	fprintf(stderr, "question\n");
         l->blink_all();
         head->set(true);
 	ms_sleep(200);

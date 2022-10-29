@@ -19,6 +19,7 @@ public:
      virtual output_t *get_light()  { return NULL; }
      virtual bool is_triggered() { return false; }
      virtual char *handle_remote_cmd(const char *cmd) { return NULL; }
+     virtual char *handle_remote_cmd(const char *cmd, Lights *lights) { return handle_remote_cmd(cmd); }
      virtual void act(Lights *lights) {};
      virtual bool needs_exclusivity() { return true; }
 };

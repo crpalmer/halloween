@@ -109,7 +109,7 @@ was_busy:
 		return NULL;
 	    }
 	}
-	char *this_response = (*it)->handle_remote_cmd(cmd);
+	char *this_response = (*it)->handle_remote_cmd(cmd, lights);
 	if (needs_exclusivity) pthread_mutex_unlock(&lock);
 	if (this_response != NULL) {
 	    return this_response;
