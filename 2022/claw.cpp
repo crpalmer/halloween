@@ -503,6 +503,8 @@ int main(int argc, char **argv)
     duet_cmd("G28 Z");		// get the claw out of the prizes first!
     duet_cmd("G28");
 
+    int n_rounds= 0;
+
     while (1) {
 	duet_x = MAX_X / 2;
 	duet_y = MAX_Y / 2;
@@ -524,6 +526,17 @@ int main(int argc, char **argv)
 	while (! start_button->get()) {}
 	start_light->off();
 
+	printf("Starting round %d\n", ++n_rounds);
+
 	play_one_round();
+
+	if (n_rounds >= 10) {
+	    duet_z = 2;
+	    duet_update_position(12000);
+	    duet_cmd("G28 Z");
+
+	    duet_wait_for_moves();
+	    n_rounds = 0;
+	}
     }
 }
