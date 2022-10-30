@@ -48,6 +48,9 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 
 #define CLAW_SERVO 0
 #define CLAW_START_POS 25
+#define CLAW_GRAB_POS	5
+#define CLAW_OPEN_POS	100
+
 static maestro_t *m;
 
 static PicoSlave *pico;
@@ -94,8 +97,6 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 //#define GRAB_Z	      (MAX_Z-50)
 // If it's full:
 #define GRAB_Z	      (MAX_Z-75)
-
-#define CLAW_GRAB	0
 
 #define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
@@ -440,15 +441,15 @@ end_of_round:
 	/* Do an old style claw game drop */
 #endif
     if (! z_has_moved || ! claw_has_moved) {
-	move_claw_to(100);
+	move_claw_to(CLAW_OPEN_POS);
     }
 
     duet_z = GRAB_Z;
     duet_update_position();
     duet_wait_for_moves();
 
-    if (servo_pos > CLAW_GRAB) {
-	move_claw_to(CLAW_GRAB);
+    if (servo_pos > CLAW_GRAB_POS) {
+	move_claw_to(CLAW_GRAB_POS);
         ms_sleep(500);
     }
 #if 0
@@ -461,7 +462,7 @@ end_of_round:
     duet_update_position();
     duet_wait_for_moves();
 
-    move_claw_to(100);
+    move_claw_to(CLAW_OPEN_POS);
     ms_sleep(500);
     move_claw_to(CLAW_START_POS);
 
