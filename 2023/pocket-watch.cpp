@@ -8,48 +8,26 @@
 #include "servo.h"
 #include "util.h"
 
-#define ACCEL_S		0.050 /* seconds before reaching full speed */
-#define SLOW_V		1.5   /* seconds to cover the full range */
-#define FAST_V          (0.14 / 60 * 360)  /* seconds to cover the full range, maximum speed of the DS-3218MG @ 6V */
+#define ACCEL_S		0.100 /* seconds before reaching full speed */
+#define MAX_V          (1.0 / (0.15 / 60 * 270))  /* cover full range at max speed of the DS-3218MG @ 5V */
+#define FAST_V		(MAX_V * .75)
+#define SLOW_V		(MAX_V * .5)
+#define ACCEL_T		0.500 /* seconds */
+#define MAX_ACCEL	(MAX_V / ACCEL_T)
 
 #define LOW	0.0
 #define HIGH	1.0
 #define D       (HIGH - LOW)
 
-static Servo *head;
+static Servo *servo;
 static GPInput *button;
-
-static enum { FREQUENT, RARE } mode = RARE;
-
-#define WAIT_1 1000
-#define WAIT_2_RARE 30000
-#define WAIT_2_FREQUENT 2500
-
-static void sleep_with_button(int ms)
-{
-    if (ms > 100) {
-        printf("Sleep %5d ms\n", ms);
-	fflush(stdout);
-    }
-
-    while (ms > 0) {
-	ms_sleep(ms > 20 ? 20 : ms);
-	ms -= 20;
-
-	if (button->get()) {
-	    while (button->get()) {}
-	    mode = mode == RARE ? FREQUENT : RARE;
-	    return;
-	}
-    }
-}
 
 void move(Physics *p, double p0, int dir)
 {
     while (! p->done()) {
 	double pos = p0 + dir * p->get_pos();
-	head->go(pos);
-	sleep_with_button(20);
+	servo->go(pos);
+	ms_sleep(20);
     }
 }
 
@@ -58,26 +36,44 @@ main()
 {
     pi_init();
 
-    ms_sleep(1000);
-
-    Physics *slow = new Physics((1.0/SLOW_V) / ACCEL_S, 1.0 / SLOW_V);
-    Physics *fast = new Physics((1.0/FAST_V) / ACCEL_S, 1.0 / FAST_V);
+    Physics *p = new Physics();
 
     gpioInitialise();
 
-    head = new Servo(0);
+    servo = new Servo(0);
     button = new GPInput(1);
     button->set_pullup_up();
 
+    double last_pos = 0.5;
+
+    servo->go(last_pos);
+    ms_sleep(2000);
+
     while (1) {
-	printf("Go to HIGH\n");
-	slow->start_motion(0, D);
-	move(slow, LOW, +1);
-	sleep_with_button(WAIT_1);
-	printf("Go to LOW\n");
-	fast->start_motion(0, D);
-	move(fast, HIGH, -1);
-	int ms = (mode == RARE ? WAIT_2_RARE : WAIT_2_FREQUENT);
-	sleep_with_button(ms);
+#if 1
+	double pos;
+
+	do {
+	    pos = random_double_in_range(LOW, HIGH);
+	} while (fabs(pos - last_pos) < .25);
+
+	double v = random_double_in_range(SLOW_V, FAST_V);
+	//double a = MAX_ACCEL;
+	double a = v / ACCEL_T;
+	p->set_acceleration(a);
+	p->set_max_velocity(v);
+	printf("move %.2f -> %.2f a %.4f v %.4f [ %.4f..%.4f ]\n", last_pos, pos, a, v, SLOW_V, FAST_V);
+	double range = abs(pos - last_pos);
+	p->start_motion(0, range);
+	move(p, last_pos, pos > last_pos ? +1 : -1);
+	last_pos = pos;
+#else
+	p->set_acceleration(1 / SLOW_V);
+	p->set_max_velocity(SLOW_V);
+	p->start_motion(0, 1);
+	move(p, 0, +1);
+	p->start_motion(0, 1);
+	move(p, 1, -1);
+#endif
     }
 }
