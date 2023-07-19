@@ -8,72 +8,101 @@
 #include "servo.h"
 #include "util.h"
 
-#define ACCEL_S		0.100 /* seconds before reaching full speed */
+#define COORDINATED_SERVOS 0
+
+#define LOW  0.0
+#define HIGH 1.0
+
+#define N_SERVOS 2
+
 #define MAX_V          (1.0 / (0.15 / 60 * 270))  /* cover full range at max speed of the DS-3218MG @ 5V */
-#define FAST_V		(MAX_V * .75)
-#define SLOW_V		(MAX_V * .5)
-#define ACCEL_T		0.500 /* seconds */
-#define MAX_ACCEL	(MAX_V / ACCEL_T)
 
-#define LOW	0.0
-#define HIGH	1.0
-#define D       (HIGH - LOW)
+typedef struct {
+    int pin;
+    double min_v, max_v;
+    double accel_t;
+    double pos, last_pos;
+    Servo *servo;
+    Physics *p;
+} servo_t;
 
-static Servo *servo;
-static GPInput *button;
+static servo_t servos[N_SERVOS] = {
+	{ 0, MAX_V * 0.5, MAX_V * 0.75, 0.5 },
+	{ 1, MAX_V * 1.0, MAX_V * 0.75, 0.5 },
+};
 
-void move(Physics *p, double p0, int dir)
+static void
+start_motion(servo_t *s, double v, double a)
 {
-    while (! p->done()) {
-	double pos = p0 + dir * p->get_pos();
-	servo->go(pos);
-	ms_sleep(20);
+    s->p->set_max_velocity(v);
+    s->p->set_acceleration(a);
+    double range = fabs(s->pos - s->last_pos);
+    s->p->start_motion(0, range);
+    printf("servo %d: %.3f -> %.3f @ %.3f %.3f\n", s->pin, s->last_pos, s->pos, v, a);
+}
+
+static void
+pick_new_pos(servo_t *s)
+{
+    s->last_pos = s->pos;
+    do {
+	s->pos = random_double_in_range(LOW, HIGH);
+    } while (fabs(s->pos - s->last_pos) < .25);
+}
+
+static void
+move(servo_t *s)
+{
+#if ! COORDINATED_SERVOS
+    if (s->p->done()) {
+	pick_new_pos(s);
+	double v = random_double_in_range(s->min_v, s->max_v);
+	double a = v / s->accel_t;
+	start_motion(s, v, a);
     }
+#endif
+
+    int dir = s->pos < s->last_pos ? -1 : +1;
+    double pos = s->last_pos + dir * s->p->get_pos();
+    s->servo->go(pos);
 }
 
 int
 main()
 {
     pi_init();
-
-    Physics *p = new Physics();
-
     gpioInitialise();
 
-    servo = new Servo(0);
-    button = new GPInput(1);
-    button->set_pullup_up();
+    for (int i = 0; i < N_SERVOS; i++) {
+	servo_t *s = &servos[i];
+	s->pos = s->last_pos = 0.5;
+	s->servo = new Servo(s->pin);
+	s->p = new Physics();
+	s->servo->go(s->last_pos);
+    }
 
-    double last_pos = 0.5;
-
-    servo->go(last_pos);
-    ms_sleep(2000);
+    ms_sleep(1000);
 
     while (1) {
-#if 1
-	double pos;
-
-	do {
-	    pos = random_double_in_range(LOW, HIGH);
-	} while (fabs(pos - last_pos) < .25);
-
-	double v = random_double_in_range(SLOW_V, FAST_V);
-	//double a = MAX_ACCEL;
-	double a = v / ACCEL_T;
-	p->set_acceleration(a);
-	p->set_max_velocity(v);
-	printf("move %.2f -> %.2f a %.4f v %.4f [ %.4f..%.4f ]\n", last_pos, pos, a, v, SLOW_V, FAST_V);
-	double range = abs(pos - last_pos);
-	p->start_motion(0, range);
-	move(p, last_pos, pos > last_pos ? +1 : -1);
-	last_pos = pos;
-#else
-	p->set_acceleration(1 / SLOW_V);
-	p->set_max_velocity(SLOW_V);
-	p->start_motion(0, 1);
-	move(p, 0, +1);
-	p->start_motion(0, 1);
-	move(p, 1, -1);
+#if COORDINATED_SERVOS
+	if (servos[0].p->done()) {
+	    servo_t *s0 = &servos[0];
+	    pick_new_pos(s0);
+	    double v = random_double_in_range(s0->min_v, s0->max_v);
+	    double a = v / s0->accel_t;
+	    for (int i = 0; i < N_SERVOS; i++) {
+		servo_t *s = &servos[i];
+		if (i > 0) {
+		    s->last_pos = s->pos;
+		    s->pos = s0->pos;
+		}
+		start_motion(s, v, a);
+	    }
+	}
 #endif
+	for (int i = 0; i < N_SERVOS; i++) {
+	    move(&servos[i]);
+	}
+	ms_sleep(20);
     }
 }
