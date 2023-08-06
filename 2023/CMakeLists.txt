@@ -40,4 +40,3 @@ function(util_cpp targetName)
 endfunction()
 
 util_cpp(pocket-watch)
-util_cpp(test-eye)
