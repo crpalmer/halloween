@@ -1,11 +1,10 @@
-
 cmake_minimum_required(VERSION 3.12)
 
 # Pull in SDK (must be before project)
 
 include(pico_sdk_import.cmake)
 
-project(halloween2022)
+project(halloween20223)
 
 pico_sdk_init()
 
@@ -41,3 +40,4 @@ function(util_cpp targetName)
 endfunction()
 
 util_cpp(pocket-watch)
+util_cpp(test-eye)
