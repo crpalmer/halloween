@@ -39,4 +39,6 @@ function(util_cpp targetName)
     util_common(${targetName})
 endfunction()
 
+util_cpp(cheshire)
 util_cpp(pocket-watch)
+util_cpp(tweetle)
