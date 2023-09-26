@@ -14,7 +14,8 @@
 #define PAUSE_HIGH_MS	3000
 
 #define ALL_P		0.05
-#define FADE_INC	0.01
+#define FADE_INC_LOW	0.005
+#define FADE_INC_HIGH	0.01
 #define FADE_SLEEP_MS	10
 
 static NeoPixelPico *neo[N_NEO];
@@ -23,10 +24,20 @@ static bool lit[N_NEO] = { 0, };
 
 const char *names[] = { "left-eye", "right-eye", "nose", "mouth" };
 
+static double
+random_inc()
+{
+    double inc = random_double_in_range(FADE_INC_LOW, FADE_INC_HIGH);
+    printf("inc: %f ms %f\n", inc, 1/inc * FADE_SLEEP_MS);
+    return inc;
+}
+
 static void
 fade_in(int *set, int n_set)
 {
-    for (double b = FADE_INC; b <= 1; b += FADE_INC) {
+    double inc = random_inc();
+
+    for (double b = inc; b <= 1; b += inc) {
 	for (int i = 0; i < n_set; i++) {
 	    neo[set[i]]->set_brightness(b);
 	    neo[set[i]]->show();
@@ -38,7 +49,9 @@ fade_in(int *set, int n_set)
 static void
 fade_out(int *set, int n_set)
 {
-    for (double b = 1-FADE_INC; b >= 0; b -= FADE_INC) {
+    double inc = random_inc();
+
+    for (double b = 1-inc; b >= 0; b -= inc) {
 	for (int i = 0; i < n_set; i++) {
 	    neo[set[i]]->set_brightness(b);
 	    neo[set[i]]->show();
