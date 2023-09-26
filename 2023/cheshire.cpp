@@ -164,10 +164,8 @@ int main(int argc, char **argv)
 
 	if (n_set) {
 	    dump_state();
-
-	    ms_sleep(random_number_in_range(PAUSE_LOW_MS, PAUSE_HIGH_MS));
-
 	    printf("\n");
+	    ms_sleep(random_number_in_range(PAUSE_LOW_MS, PAUSE_HIGH_MS));
 	}
     }
 }
