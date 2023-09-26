@@ -35,6 +35,8 @@ random_inc()
 static void
 fade_in(int *set, int n_set)
 {
+    if (! n_set) return;
+
     double inc = random_inc();
 
     for (double b = inc; b <= 1; b += inc) {
@@ -49,6 +51,8 @@ fade_in(int *set, int n_set)
 static void
 fade_out(int *set, int n_set)
 {
+    if (! n_set) return;
+
     double inc = random_inc();
 
     for (double b = 1-inc; b >= 0; b -= inc) {
