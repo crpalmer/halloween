@@ -68,7 +68,7 @@ select_all(int *set)
     for (int i = 0; i < N_NEO; i++) {
 	if (! lit[i]) {
 	    set[n] = i;
-	    lit[n] = true;
+	    lit[i] = true;
 	    n++;
 	}
     }
