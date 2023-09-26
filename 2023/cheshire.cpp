@@ -10,8 +10,8 @@
 
 #define N_NEO		4
 
-#define PAUSE_LOW_MS	 500
-#define PAUSE_HIGH_MS	2500
+#define PAUSE_LOW_MS	1000
+#define PAUSE_HIGH_MS	3000
 
 #define ALL_P		0.05
 #define FADE_INC	0.01
