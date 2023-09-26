@@ -10,6 +10,9 @@
 
 #define N_NEO		4
 
+#define PAUSE_LOW_MS	 500
+#define PAUSE_HIGH_MS	2500
+
 #define ALL_P		0.05
 #define FADE_INC	1
 #define FADE_SLEEP_MS	10
@@ -21,16 +24,16 @@ static bool lit[N_NEO] = { 0, };
 const char *names[] = { "left-eye", "right-eye", "nose", "mouth" };
 
 static void
-fade_in(int *set, int n_set, int final_r, int final_g, int final_b)
+fade_in(int *set, int n_set)
 {
-    int r = 0, g = 0, b = 0;
+    int r = 0, final_r = 255;
 
-    while (r < final_r || g < final_g || b < final_b) {
+    while (r < final_r) {
 	if (r < final_r) r += FADE_INC;
-	if (g < final_g) g += FADE_INC;
-	if (b < final_b) b += FADE_INC;
+	if (r > final_r) r = final_r;
+
 	for (int i = 0; i < n_set; i++) {
-	    neo[set[i]]->set_all(r, g, b);
+	    neo[set[i]]->set_all(r, 0, 0);
 	    neo[set[i]]->show();
 	}
 	ms_sleep(FADE_SLEEP_MS);
@@ -38,14 +41,15 @@ fade_in(int *set, int n_set, int final_r, int final_g, int final_b)
 }
 
 static void
-fade_out(int *set, int n_set, int r, int g, int b)
+fade_out(int *set, int n_set)
 {
-    while (r > 0 || g > 0 || b > 0) {
+    int r = 255;
+    while (r > 0) {
 	if (r > 0) r -= FADE_INC;
-	if (g > 0) g -= FADE_INC;
-	if (b > 0) b -= FADE_INC;
+	if (r < 0) r = 0;
+
 	for (int i = 0; i < n_set; i++) {
-	    neo[set[i]]->set_all(r, g, b);
+	    neo[set[i]]->set_all(r, 0, 0);
 	    neo[set[i]]->show();
 	}
 	ms_sleep(FADE_SLEEP_MS);
@@ -141,29 +145,25 @@ int main(int argc, char **argv)
 	if (random_number() < all_P) {
 	    n_set = select_all(set);
 	    dump_set("all", set, n_set);
+	    fade_in(set, n_set);
 	    all_P = ALL_P;
-	} else {
+	} else if (random_number() < 0.5) {
 	    all_P += ALL_P;
 	    n_set = select_set(set, false, N_NEO);
 	    dump_set(" in", set, n_set);
-        }
-	if (n_set) {
-	    fade_in(set, n_set, 255, 0, 0);
-	    dump_state();
-
-	    ms_sleep(1000);
-	}
-
-	n_set = select_set(set, true, N_NEO);
-	if (n_set) {
+	    fade_in(set, n_set);
+        } else {
+	    n_set = select_set(set, true, N_NEO);
 	    dump_set("out", set, n_set);
-	    fade_out(set, n_set, 255, 0, 0);
-
-	    dump_state();
-
-	    ms_sleep(1000);
+	    fade_out(set, n_set);
 	}
 
-	printf("\n");
+	if (n_set) {
+	    dump_state();
+
+	    ms_sleep(random_number_in_range(PAUSE_LOW_MS, PAUSE_HIGH_MS));
+
+	    printf("\n");
+	}
     }
 }
