@@ -14,7 +14,7 @@
 #define PAUSE_HIGH_MS	2500
 
 #define ALL_P		0.05
-#define FADE_INC	1
+#define FADE_INC	0.01
 #define FADE_SLEEP_MS	10
 
 static NeoPixelPico *neo[N_NEO];
@@ -26,14 +26,9 @@ const char *names[] = { "left-eye", "right-eye", "nose", "mouth" };
 static void
 fade_in(int *set, int n_set)
 {
-    int r = 0, final_r = 255;
-
-    while (r < final_r) {
-	if (r < final_r) r += FADE_INC;
-	if (r > final_r) r = final_r;
-
+    for (double b = FADE_INC; b <= 1; b += FADE_INC) {
 	for (int i = 0; i < n_set; i++) {
-	    neo[set[i]]->set_all(r, 0, 0);
+	    neo[set[i]]->set_brightness(b);
 	    neo[set[i]]->show();
 	}
 	ms_sleep(FADE_SLEEP_MS);
@@ -43,13 +38,9 @@ fade_in(int *set, int n_set)
 static void
 fade_out(int *set, int n_set)
 {
-    int r = 255;
-    while (r > 0) {
-	if (r > 0) r -= FADE_INC;
-	if (r < 0) r = 0;
-
+    for (double b = 1-FADE_INC; b >= 0; b -= FADE_INC) {
 	for (int i = 0; i < n_set; i++) {
-	    neo[set[i]]->set_all(r, 0, 0);
+	    neo[set[i]]->set_brightness(b);
 	    neo[set[i]]->show();
 	}
 	ms_sleep(FADE_SLEEP_MS);
