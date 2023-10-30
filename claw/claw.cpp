@@ -34,7 +34,7 @@ static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 
 static MCP23017 *mcp;
 static input_t *forward, *backward, *left, *right;
-static input_t *start_button, *release_button, *is_full;
+static input_t *start_button, *release_button, *dip[3];
 static output_t *start_light, *release_light;
 
 static ST7735S *display;
@@ -65,7 +65,9 @@ static struct {
     { "right", &right, 0, NULL },
     { "start", &start_button, 0, &start_light },
     { "release", &release_button, 0, &release_light },
-    { "is_full", &is_full, 0, NULL },
+    { "dip-0", &dip[0], 0, NULL },
+    { "dip-1", &dip[1], 0, NULL },
+    { "dip-2", &dip[2], 0, NULL },
 };
 
 const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
@@ -81,9 +83,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_Z 500
 #define START_Z	      100
 #define END_OF_GAME_Z 100
-#define GRAB_Z_VERY_LOW	      (MAX_Z)
-#define GRAB_Z_LOW	      (MAX_Z-50)
-#define GRAB_Z_FULL	      (MAX_Z-100)
+#define GRAB_Z_RANGE  150
 
 #define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
@@ -166,7 +166,13 @@ init_joysticks()
 static void
 init_buttons()
 {
-    is_full = mcp->get_input(1, 0);
+    for (int i = 0; i < 3; i++) {
+	dip[i] = mcp->get_input(1, i);
+	dip[i]->set_pullup_up();
+	dip[i]->set_inverted();
+	dip[i]->set_debounce(5);
+    }
+
     start_button = mcp->get_input(1, 4);
     start_light = mcp->get_output(1, 5);
     release_button = mcp->get_input(1, 6);
@@ -174,13 +180,10 @@ init_buttons()
 
     start_button->set_pullup_up();
     release_button->set_pullup_up();
-    is_full->set_pullup_up();
 
     start_button->set_inverted();
     release_button->set_inverted();
-    is_full->set_inverted();
 
-    is_full->set_debounce(5);
     start_button->set_debounce(50);
     release_button->set_debounce(10);
 
@@ -326,11 +329,27 @@ calculate_position(int *pos, int *last_move, int this_move)
     *last_move = this_move;
 }
 
+static double
+get_dip_pct()
+{
+    int inum = 
+        (dip[0]->get() ? 1 : 0) |
+        (dip[1]->get() ? 2 : 0) |
+        (dip[2]->get() ? 4 : 0);
+    const double dip_max = 7;
+
+fprintf(stderr, "dip %d: %d %d %d\n", inum, dip[0]->get(), dip[1]->get(), dip[2]->get());
+    return 1.0 - inum / dip_max;
+}
+
 static int
 grab_z()
 {
-    if (is_full->get()) return GRAB_Z_FULL;
-    else return GRAB_Z_LOW;
+    double pct = get_dip_pct();
+    int    z   = MAX_Z - get_dip_pct() * GRAB_Z_RANGE;
+
+    fprintf(stderr, "Percentage full = %.0f -> z = %d\n", pct*100, z);
+    return z;
 }
 
 static void
