@@ -135,13 +135,20 @@ init_display()
 static void
 init_servo()
 {
+retry:
     if ((m = maestro_new()) == NULL) {
 	fprintf(stderr, "Failed to initialize the maestro servo controller\n");
 	exit(1);
     }
 
-    maestro_set_servo_range_pct(m, CLAW_SERVO, 5, 100);
-    maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS);
+    maestro_set_servo_range_pct(m, CLAW_SERVO, 0, 100);
+    if (! maestro_set_servo_pos(m, CLAW_SERVO, CLAW_START_POS)) {
+	fprintf(stderr, "Trying to reset controller\n");
+	maestro_factory_reset(m);
+	maestro_destroy(m);
+	ms_sleep(5000);
+	goto retry;
+    }
 }
 
 static void
