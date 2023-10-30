@@ -329,7 +329,7 @@ calculate_position(int *pos, int *last_move, int this_move)
 static int
 grab_z()
 {
-    if (is_full) return GRAB_Z_FULL;
+    if (is_full->get()) return GRAB_Z_FULL;
     else return GRAB_Z_LOW;
 }
 
