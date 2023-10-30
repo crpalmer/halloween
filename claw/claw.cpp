@@ -92,10 +92,12 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define MAX_Z 500
 #define START_Z	      100
 #define END_OF_GAME_Z 100
+// If it's really low:
+#define GRAB_Z	      (MAX_Z)
 // If it's low:
 //#define GRAB_Z	      (MAX_Z-50)
 // If it's full:
-#define GRAB_Z	      (MAX_Z-75)
+//#define GRAB_Z	      (MAX_Z-75)
 
 #define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
