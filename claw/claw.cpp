@@ -26,6 +26,7 @@ static struct timespec start;
 
 static int duet = -1;
 static char duet_reply[100000];
+static int duet_force_echo = 0;
 
 static int last_x = -1, last_y = -1, last_z = -1;
 static int duet_x = 100, duet_y = 100, duet_z = 100;
@@ -251,6 +252,8 @@ const char *
 duet_cmd(const char *cmd, bool echo = true)
 {
     int len = 0, got;
+
+    if (duet_force_echo) echo = true;
 
     if (duet < 0) return "no tty";
 
