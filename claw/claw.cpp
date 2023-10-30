@@ -83,7 +83,7 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define END_OF_GAME_Z 100
 #define GRAB_Z_VERY_LOW	      (MAX_Z)
 #define GRAB_Z_LOW	      (MAX_Z-50)
-#define GRAB_Z_FULL	      (MAX_Z-75)
+#define GRAB_Z_FULL	      (MAX_Z-100)
 
 #define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
