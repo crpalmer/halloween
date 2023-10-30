@@ -47,7 +47,7 @@ static CanvasPNG *booting_png, *coin_png, *start_png;
 
 #define CLAW_SERVO 0
 #define CLAW_START_POS 25
-#define CLAW_GRAB_POS	5
+#define CLAW_GRAB_POS	0
 #define CLAW_OPEN_POS	100
 
 static maestro_t *m;
