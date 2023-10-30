@@ -437,6 +437,16 @@ end_of_round:
     pico->writeline("off");
 }
 
+static void
+go_to_start_position(int z = START_Z)
+{
+    duet_x = MAX_X / 2;
+    duet_y = MAX_Y / 2;
+    duet_z = z;
+    duet_update_position(12000);
+    duet_wait_for_moves();
+}
+
 int main(int argc, char **argv)
 {
     gpioInitialise();
@@ -475,11 +485,7 @@ int main(int argc, char **argv)
     int n_rounds= 0;
 
     while (1) {
-	duet_x = MAX_X / 2;
-	duet_y = MAX_Y / 2;
-	duet_z = START_Z;
-	duet_update_position(12000);
-	duet_wait_for_moves();
+	go_to_start_position();
 
 	pico->writeline("hit-start");
 	display_image(start_png);
@@ -492,10 +498,8 @@ int main(int argc, char **argv)
 	play_one_round();
 
 	if (n_rounds >= 1) {
-	    duet_z = 2;
-	    duet_update_position(12000);
+	    go_to_start_position(2);
 	    duet_cmd("G28 Z");
-
 	    duet_wait_for_moves();
 	    n_rounds = 0;
 	}
