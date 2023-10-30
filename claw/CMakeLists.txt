@@ -40,5 +40,4 @@ function(util_cpp targetName)
     util_common(${targetName})
 endfunction()
 
-util_cpp(doug)
-util_cpp(sign-light)
+util_cpp(claw-pico)
