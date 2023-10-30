@@ -537,7 +537,7 @@ int main(int argc, char **argv)
 
 	play_one_round();
 
-	if (n_rounds >= 10) {
+	if (n_rounds >= 1) {
 	    duet_z = 2;
 	    duet_update_position(12000);
 	    duet_cmd("G28 Z");
