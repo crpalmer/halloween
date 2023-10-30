@@ -14,7 +14,6 @@
 #include "st7735s.h"
 #include "track.h"
 #include "util.h"
-#include "ween-hours.h"
 
 #define MANUAL_MODE 0
 
