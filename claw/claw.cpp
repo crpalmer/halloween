@@ -15,8 +15,6 @@
 #include "track.h"
 #include "util.h"
 
-#define MANUAL_MODE 0
-
 const bool test_offline = false;
 
 #define VENDOR_ID 0x1d50
@@ -35,9 +33,6 @@ static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 
 static MCP23017 *mcp;
 static input_t *forward, *backward, *left, *right;
-#if MANUAL_MODE
-static input_t *up, *down, *opening, *closing;
-#endif
 static input_t *start_button, *release_button, *coin_acceptor, *coin_override;
 static output_t *start_light, *release_light, *coin_acceptor_power;
 
@@ -67,12 +62,6 @@ static struct {
     { "backward", &backward, 0, NULL },
     { "left", &left, 0, NULL },
     { "right", &right, 0, NULL },
-#if MANUAL_MODE
-    { "up", &up, 0, NULL },
-    { "down", &down, 0, NULL },
-    { "opening", &opening, 0, NULL },
-    { "closing", &closing, 0, NULL },
-#endif
     { "start", &start_button, 0, &start_light },
     { "release", &release_button, 0, &release_light },
     { "coin acceptor", &coin_acceptor, 0, NULL },
@@ -175,28 +164,6 @@ init_joysticks()
     backward->set_debounce(1);
     left->set_debounce(1);
     right->set_debounce(1);
-
-#if MANUAL_MODE
-    opening = mcp->get_input(0, 4);
-    closing = mcp->get_input(0, 5);
-    down = mcp->get_input(0, 6);
-    up = mcp->get_input(0, 7);
-
-    up->set_pullup_up();
-    down->set_pullup_up();
-    opening->set_pullup_up();
-    closing->set_pullup_up();
-
-    up->set_inverted();
-    down->set_inverted();
-    opening->set_inverted();
-    closing->set_inverted();
-
-    up->set_debounce(1);
-    down->set_debounce(1);
-    opening->set_debounce(1);
-    closing->set_debounce(1);
-#endif
 }
 
 static void
@@ -401,12 +368,6 @@ play_one_round()
 	    if (backward->get()) move_y = -1;
 	    if (left->get())     move_x = -1;
 	    if (right->get())    move_x = +1;
-#if MANUAL_MODE
-	    if (down->get())     move_z = +1;
-	    if (up->get())       move_z = -1;
-	    if (opening->get())  move_servo = 1;
-	    if (closing->get())  move_servo = -1;
-#endif
 
 	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
 	    if (time_left != last_time_shown) {
