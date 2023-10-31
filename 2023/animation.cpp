@@ -163,7 +163,7 @@ public:
 
     void act() {
 	fprintf(stderr, "bunny\n");
-	if (! file_exists("disable-bunny")) attack(0.75, 2.5);
+	if (! file_exists("disable-bunny")) attack(1.0, 2.5);
     }
 };
 
@@ -176,7 +176,7 @@ public:
 
     void act() {
 	fprintf(stderr, "gater\n");
-	if (! file_exists("disable-gater")) attack(1, 1);
+	if (! file_exists("disable-gater")) attack(2, 2);
     }
 };
 
