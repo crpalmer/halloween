@@ -154,16 +154,16 @@ private:
     stop_t *stop;
 };
 
-class Mosquito : public Button {
+class Bunny : public Button {
 public:
-    Mosquito() : Button(wb_get_output(1, 1), wb_get_input(1)) {
+    Bunny() : Button(wb_get_output(1, 1), wb_get_input(1)) {
 	set_pin(wb_get_output(2, 1));
-	set_cmd("mosquito");
+	set_cmd("bunny");
     }
 
     void act() {
-	fprintf(stderr, "mosquito\n");
-	if (! file_exists("disable-mosquito")) attack(0.75, 2.5);
+	fprintf(stderr, "bunny\n");
+	if (! file_exists("disable-bunny")) attack(0.75, 2.5);
     }
 };
 
@@ -202,16 +202,16 @@ private:
     output_t *head;
 };
 
-class Spider : public Button {
+class Pillar : public Button {
 public:
-    Spider() : Button(wb_get_output(1, 4), wb_get_input(4)) {
+    Pillar() : Button(wb_get_output(1, 4), wb_get_input(4)) {
 	set_pin(wb_get_output(2, 4));
-	set_cmd("spider");
+	set_cmd("pillar");
     }
 
     void act(void) {
-	fprintf(stderr, "spider\n");
-	if (! file_exists("disable-spider")) attack(1, 0.75);
+	fprintf(stderr, "pillar\n");
+	if (! file_exists("disable-pillar")) attack(1, 0.75);
     }
 };
 
@@ -237,10 +237,10 @@ main(int argc, char **argv)
 
     AnimationStation *as = new AnimationStation();
     as->set_blink_ms(500);
-    as->add_action(new Mosquito());
+    as->add_action(new Bunny());
     as->add_action(new Gater());
     as->add_action(new Question());
-    as->add_action(new Spider());
+    as->add_action(new Pillar());
     as->add_action(new Snake());
 
     AnimationStationController *asc = new AnimationStationController();
