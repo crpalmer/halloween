@@ -76,7 +76,7 @@ set_active_target(int p, int t)
 static void *
 player_main(void *p_as_void)
 {
-    int p = (int) p_as_void;
+    int p = (unsigned long long) p_as_void;
     struct timespec last_hit;
 
     nano_gettime(&last_hit);

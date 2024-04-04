@@ -297,7 +297,7 @@ talker_main(void *args_as_vp)
     if (in) {
 	audio_set_volume(in, 50);
 	assert(audio_get_buffer_size(in) == size);
-        fprintf(stderr, "Copying from capture to play using %u byte buffers\n", size);
+        fprintf(stderr, "Copying from capture to play using %u byte buffers\n", (unsigned) size);
     } else {
 	fprintf(stderr, "Processing remote speech commands\n");
     }

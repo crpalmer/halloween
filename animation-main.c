@@ -65,7 +65,7 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 static void *
 station_main(void *station_as_vp)
 {
-    unsigned station = (unsigned) station_as_vp;
+    unsigned station = (unsigned long long) station_as_vp;
     enum { READY, LOCKOUT } state = READY;
     struct timespec last_button, last_notify;
     unsigned pin;
@@ -172,7 +172,7 @@ init_stations(unsigned pin0)
 	pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
 	pthread_cond_init(&station_cond[i], &attr);
 
-	pthread_create(&thread[i], NULL, station_main, (void *) i);
+	pthread_create(&thread[i], NULL, station_main, (void *) (unsigned long long) i);
     }
 
     while (i < MAX_STATIONS) {
