@@ -22,7 +22,7 @@ all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a
 
 alien: alien.o $(DEP_LIBS)
 	$(CXX) -o $@ alien.o $(LIBS)
