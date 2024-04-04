@@ -10,10 +10,10 @@ all: $(PROPS)
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
 
-LIBS = $(LIB) -lusb -lrt -lpthread
+LIBS = $(LIB) -lusb -lrt -lpthread -lpigpio
 
 band: band.o $(LIB)
-	$(CC) -o $@ band.o $(LIBS)
+	$(CC) -o $@ band.o $(LIBS) -lpigpio
 
 talker: talker.o $(LIB)
 	$(CC) -o $@ talker.o $(LIBS)

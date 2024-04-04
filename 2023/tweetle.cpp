@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "externals/PIGPIO/pigpio.h"
+#include "pigpio.h"
 #include "gp-input.h"
 #include "pi.h"
 #include "physics.h"

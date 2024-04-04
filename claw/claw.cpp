@@ -37,8 +37,8 @@ static input_t *forward, *backward, *left, *right;
 static input_t *start_button, *release_button, *dip[3];
 static output_t *start_light, *release_light;
 
-static ST7735S *display;
-static ST7735S_Canvas *canvas;
+static Display *display;
+static Canvas *canvas;
 static CanvasPNG *booting_png, *coin_png, *start_png;
 
 #define CLAW_SERVO 0

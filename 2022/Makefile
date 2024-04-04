@@ -10,8 +10,7 @@ all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread -lpng16 ../../tinyalsa/build/libtinyalsa.a
-
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread -lpng16 ../../tinyalsa/build/libtinyalsa.a -lpigpio
 
 animation: animation.o $(DEP_LIBS)
 	$(CXX) -o $@ animation.o $(LIBS)

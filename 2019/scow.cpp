@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "externals/PIGPIO/pigpio.h"
+#include "pigpio.h"
 #include "animation-station.h"
 #include "l298n.h"
 #include "mcp23017.h"

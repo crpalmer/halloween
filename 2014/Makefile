@@ -15,10 +15,10 @@ all: $(PROPS)
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
 
-LIBS = $(LIB) -lusb -lrt -lpthread
+LIBS = $(LIB) -lusb -lrt -lpthread -lpigpio
 
 animation: animation.o $(LIB)
-	$(CC) -o $@ animation.o $(LIBS)
+	$(CC) -o $@ animation.o $(LIBS) -lpigpio
 
 banjo: banjo.o $(LIB)
 	$(CC) banjo.o -o $@ $(LIBS)

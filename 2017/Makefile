@@ -15,7 +15,7 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread -lpigpio
 
 animation: animation.o $(DEP_LIBS)
 	$(CC) -o $@ animation.o $(LIBS)
