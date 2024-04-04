@@ -17,8 +17,8 @@ function(util_common targetName)
     pico_add_extra_outputs(${targetName})
 
     target_include_directories(${targetName} PRIVATE .)
-    target_include_directories(${targetName} PRIVATE /home/crpalmer/pico/lib)
-    target_link_directories(${targetName} PRIVATE /home/crpalmer/pico/lib/build)
+    target_include_directories(${targetName} PRIVATE ../../lib)
+    target_link_directories(${targetName} PRIVATE ../../lib/build)
     target_link_libraries(
 	${targetName}
 	PRIVATE pi

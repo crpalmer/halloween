@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "pigpio.h"
+#include "pi-gpio.h"
 #include "util.h"
 #include "wb.h"
 

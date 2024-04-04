@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "pigpio.h"
+#include "pi-gpio.h"
 #include "animation-station.h"
 #include "track.h"
 #include "util.h"
