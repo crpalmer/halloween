@@ -14,7 +14,7 @@ all: $(PROPS)
 -include $(OBJS:.o=.d)
 
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lpigpio
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lgpiod
 
 band: band.o $(DEP_LIBS)
 	$(CXX) -o $@ band.o $(LIBS)

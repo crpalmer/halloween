@@ -9,7 +9,7 @@ ALL = \
 
 all: $(ALL)
 
-LIBS = $(LIB) -lusb -lrt -lpthread ../tinyalsa/build/libtinyalsa.a -lpigpio
+LIBS = $(LIB) -lusb -lrt -lpthread ../tinyalsa/build/libtinyalsa.a -lgpiod
 
 ANIMATION_OBJS= animation-station.o animation-main.o
 FOGGER_OBJS = fogger.o
