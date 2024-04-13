@@ -8,7 +8,7 @@ PROPS = \
 	hypnopops \
 	witch \
 
-NO_LONGER_SUPPORTED = \
+DATA = \
 	guitar.ops \
 	piano.ops \
 	vocals.ops \
@@ -18,7 +18,7 @@ all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lgpiod
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lpigpio
 
 animation: animation.o $(DEP_LIBS)
 	$(CXX) -o $@ animation.o $(LIBS)

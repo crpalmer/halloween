@@ -9,7 +9,7 @@ PROPS = \
 	jacob \
 	talker-and-fogger \
 
-NO_LONGER_SUPPORTED = \
+DATA = \
 	pour-some-sugar.wav \
 	pour-some-sugar-drums.wav \
 	pour-some-sugar-guitar.wav \
@@ -22,7 +22,7 @@ all: $(PROPS) $(DATA)
 
 # pull in dependency info for *existing* .o files
 DEP_LIBS = ../libhalloween.a ~/lib/lib.a
-LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lgpiod
+LIBS = $(DEP_LIBS) -lusb -lrt -lpthread ../../tinyalsa/build/libtinyalsa.a -lpigpio
 
 alien: alien.o $(DEP_LIBS)
 	$(CXX) -o $@ alien.o $(LIBS)
