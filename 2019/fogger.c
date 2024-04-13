@@ -4,7 +4,7 @@
 #include <time.h>
 #include <pthread.h>
 #include "fogger.h"
-#include "util.h"
+#include "time-utils.h"
 #include "wb.h"
 
 #define FOGGER_PIN	2, 1

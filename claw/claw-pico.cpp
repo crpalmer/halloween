@@ -189,14 +189,14 @@ main()
 	    ms_sleep(1);
 	}
 
-	pico_readline(line, sizeof(line));
+	pi_readline(line, sizeof(line));
 
 	int space = 0;
 	while (line[space] && line[space] != ' ') space++;
 
 	if (strcmp(line, "bootsel") == 0) {
 	    printf("Rebooting into bootloader mode...\n");
-	    reset_usb_boot(1<<PICO_DEFAULT_LED_PIN, 0);
+	    reset_usb_boot(0, 0);
 	} else if (strcmp(line, "off") == 0) {
 	    set_new_mode(off_mode);
 	} else if (strcmp(line, "insert-coin") == 0) {

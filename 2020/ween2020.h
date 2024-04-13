@@ -3,6 +3,7 @@
 
 #include <sys/stat.h>
 #include "audio.h"
+#include "time-utils.h"
 #include "ween-time.h"
 
 static inline int ween2020_is_ignored()

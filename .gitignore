@@ -10,4 +10,5 @@ fogger.duty
 lightning
 libhalloween.a
 strobe
-build
+build/
+build.*/

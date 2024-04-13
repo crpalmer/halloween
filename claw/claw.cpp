@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
-#include "canvas_png.h"
+#include "canvas-png.h"
 #include "maestro.h"
 #include "mcp23017.h"
 #include "pi-usb.h"
