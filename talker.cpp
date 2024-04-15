@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include <sys/stat.h>
 #include "audio.h"
 #include "maestro.h"
@@ -50,7 +50,7 @@ typedef struct {
 
 stats_t stats[MAX_STATS];
 
-static pthread_mutex_t speak_lock;
+static pi_mutex_t *speak_lock;
 static talking_skull_t *skull;
 
 static unsigned any_audio;
@@ -175,7 +175,7 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
     /* Expect sample rate 16000 mono and playing 48000 stereo */
     data = (unsigned char *) fatal_malloc(size + 100);
 
-    pthread_mutex_lock(&speak_lock);
+    pi_mutex_lock(speak_lock);
 
     for (i = 5, j = 0; command[i]; i++) {
 	if (command[i] == '\\') {
@@ -214,12 +214,12 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
 	free(data);
     }
 
-    pthread_mutex_unlock(&speak_lock);
+    pi_mutex_unlock(speak_lock);
 
     return strdup(SERVER_OK);
 }
 
-static void *
+static void
 play_thread_main(void *out_as_vp)
 {
     audio_t *out = (audio_t *) out_as_vp;
@@ -232,11 +232,9 @@ play_thread_main(void *out_as_vp)
 	free(e->buffer);
 	free(e);
     }
-
-    return NULL;
 }
 
-void *
+void
 talker_main(void *args_as_vp)
 {
     talker_args_t *args = (talker_args_t *) args_as_vp;
@@ -245,8 +243,6 @@ talker_main(void *args_as_vp)
     audio_config_t cfg;
     audio_meta_t meta;
     server_args_t server_args;
-    pthread_t server_thread;
-    pthread_t play_thread;
     unsigned char *auto_play_buffer = NULL;
     size_t auto_play_bytes_left = 0;
     audio_t *out;
@@ -261,21 +257,21 @@ talker_main(void *args_as_vp)
 
     fprintf(stderr, "Using %d idle tracks\n", n_idle_tracks);
 
-    pthread_mutex_init(&speak_lock, NULL);
+    speak_lock = pi_mutex_new();
     server_args.port = 5555;
     server_args.command = remote_event;
     server_args.state = args;
 
     pc = producer_consumer_new(1);
 
-    pthread_create(&server_thread, NULL, server_thread_main, &server_args);
+    pi_thread_create_anonymous(server_thread_main, &server_args);
 
     audio_config_init_default(&cfg);
     cfg.channels = 2;
     cfg.rate = 48000;
 
     out = audio_new(&cfg, &args->out_dev);
-    pthread_create(&play_thread, NULL, play_thread_main, out);
+    pi_thread_create_anonymous(play_thread_main, out);
 
     if (args->no_input) in = NULL;
     else {
@@ -331,17 +327,17 @@ talker_main(void *args_as_vp)
 	    auto_play_buffer += n;
 	    auto_play_bytes_left -= n;
 
-	    pthread_mutex_lock(&speak_lock);
+	    pi_mutex_lock(speak_lock);
 	    produce(pc, STATS_AUTO, args->track_vol, buffer);
-	    pthread_mutex_unlock(&speak_lock);
+	    pi_mutex_unlock(speak_lock);
 
 	    buffer = (unsigned char *) fatal_malloc(size);
 	} else if (! in) {
 	    ms_sleep(100);
 	} else {
-	    pthread_mutex_lock(&speak_lock);
+	    pi_mutex_lock(speak_lock);
 	    produce(pc, STATS_MICROPHONE, args->mic_vol, buffer);
-	    pthread_mutex_unlock(&speak_lock);
+	    pi_mutex_unlock(speak_lock);
 	    buffer = (unsigned char *) fatal_malloc(size);
 	}
     }
@@ -351,16 +347,12 @@ talker_main(void *args_as_vp)
     audio_destroy(in);
     audio_destroy(out);
     free(buffer);
-
-    return 0;
 }
 
 void
 talker_run_in_background(talker_args_t *args)
 {
-    pthread_t thread;
-
-    pthread_create(&thread, NULL, talker_main, args);
+    pi_thread_create_anonymous(talker_main, args);
 }
 
 static bool

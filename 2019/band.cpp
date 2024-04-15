@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "maestro.h"
 #include "pi-usb.h"
 #include "talking-skull.h"

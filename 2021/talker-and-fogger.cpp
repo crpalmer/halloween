@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "fogger.h"
 #include "maestro.h"
 #include "pi-usb.h"

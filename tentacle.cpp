@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include <math.h>
 #include "util.h"
 

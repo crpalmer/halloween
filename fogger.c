@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "server.h"
 #include "track.h"
 #include "time-utils.h"
@@ -19,9 +19,8 @@
 static double default_duty = .1;
 static double delta_duty = 0.01;
 static double duty = .10;
-static pthread_mutex_t lock;
-static pthread_mutex_t fog_lock;
-static pthread_t fogger;
+static pi_mutex_t *lock;
+static pi_mutex_t *fog_lock;
 
 static unsigned fogger_bank, fogger_pin;
 
@@ -68,14 +67,14 @@ do_fog(unsigned ms)
 {
     if (ms == 0) return;
 
-    pthread_mutex_lock(&lock);
+    pi_mutex_lock(lock);
     wb_set(fogger_bank, fogger_pin, 1);
     fprintf(stderr, "sleeping for ON %d\n", ms);
     ms_sleep(ms);
     wb_set(fogger_bank, fogger_pin, 0);
     fprintf(stderr, "sleeping for OFF_DELAY %d\n", OFF_DELAY);
     ms_sleep(OFF_DELAY);
-    pthread_mutex_unlock(&lock);
+    pi_mutex_unlock(lock);
 }
 
 static char *
@@ -106,11 +105,11 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 	write_duty_cycle(duty);
 	return return_duty();
     } else if (strcmp(command, "fog") == 0) {
-        if (pthread_mutex_trylock(&fog_lock) != 0) {
+        if (pi_mutex_trylock(fog_lock) != 0) {
 	    return strdup("prop is busy");
 	}
 	do_fog(FOG_BURST_MS);
-	pthread_mutex_unlock(&fog_lock);
+	pi_mutex_unlock(fog_lock);
     } else {
         return strdup("invalid command");
     }
@@ -118,11 +117,10 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
     return strdup("ok");
 }
 
-static void *
+static void
 fogger_main(void *args_as_vp)
 {
     server_args_t server_args;
-    pthread_t server_thread;
     fogger_args_t *args = (fogger_args_t *) args_as_vp;
 
     if (args) {
@@ -132,14 +130,14 @@ fogger_main(void *args_as_vp)
 
     duty = read_duty_cycle();
 
-    pthread_mutex_init(&lock, NULL);
-    pthread_mutex_init(&fog_lock, NULL);
+    lock = pi_mutex_new();
+    fog_lock = pi_mutex_new();
 
     server_args.port = 5556;
     server_args.command = remote_event;
     server_args.state = NULL;
 
-    pthread_create(&server_thread, NULL, server_thread_main, &server_args);
+    pi_thread_create_anonymous(server_thread_main, &server_args);
 
     while(true) {
 	if (args->is_active && args->is_active()) {
@@ -149,8 +147,6 @@ fogger_main(void *args_as_vp)
 	    do_fog(5000 * duty);
 	}
     }
-
-    return NULL;
 }
 
 void
@@ -159,5 +155,5 @@ fogger_run_in_background(unsigned bank, unsigned pin, fogger_args_t *args)
     fogger_bank = bank;
     fogger_pin = pin;
 
-    pthread_create(&fogger, NULL, fogger_main, args);
+    pi_thread_create_anonymous(fogger_main, args);
 }

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "server.h"
 #include "time-utils.h"
 #include "util.h"
@@ -16,7 +16,7 @@ public:
     unsigned get_period_ms() { return 100*1000*1000; }
 };
 
-void *
+void
 AnimationStation::main(void *as_as_vp)
 {
     AnimationStation *as = (AnimationStation *) as_as_vp;
@@ -24,7 +24,7 @@ AnimationStation::main(void *as_as_vp)
 
     nano_gettime(&last_notify);
     as->lights->chase();
-    pthread_mutex_lock(&as->lock);
+    pi_mutex_lock(as->lock);
 
     while (true) {
 	while (as->active_action == NULL) {
@@ -33,7 +33,7 @@ AnimationStation::main(void *as_as_vp)
 	    wait_until = last_notify;
 	    nano_add_ms(&wait_until, as->waiting->get_period_ms());
 	    
-	    pthread_cond_timedwait(&as->cond, &as->lock, &wait_until);
+	    pi_cond_timedwait(as->cond, as->lock, &wait_until);
 
 	    nano_gettime(&now);
 
@@ -62,17 +62,14 @@ AnimationStation::AnimationStation(AnimationStationWaiting *waiting) : active_ac
     this->waiting = waiting != NULL ? waiting : new DummyWaiting();
     nano_gettime(&start_waiting);
 
-    pthread_mutex_init(&lock, NULL);
-    pthread_condattr_t attr;
-    pthread_condattr_init(&attr);
-    pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-    pthread_cond_init(&cond, &attr);
+    lock = pi_mutex_new();
+    cond = pi_cond_new();
 }
 
 void
 AnimationStation::start()
 {
-    pthread_create(&thread, NULL, main, this);
+    pi_thread_create_anonymous(main, this);
 }
 
 void
@@ -89,8 +86,8 @@ AnimationStation::check_inputs()
     for (std::list<AnimationStationAction *>::iterator it = actions.begin(); ! active_action && it != actions.end(); it++) {
 	if ((*it)->is_triggered()) {
 	    active_action = *it;
-	    pthread_cond_signal(&cond);
-	    pthread_mutex_unlock(&lock);
+	    pi_cond_signal(cond);
+	    pi_mutex_unlock(lock);
 	}
     }
 }
@@ -101,16 +98,16 @@ AnimationStation::handle_remote_cmd(const char *cmd, bool &busy)
     for (std::list<AnimationStationAction *>::iterator it = actions.begin(); it != actions.end(); it++) {
 	bool needs_exclusivity = (*it)->needs_exclusivity();
 	if (needs_exclusivity) {
-	    if (pthread_mutex_trylock(&lock) != 0) goto was_busy;
+	    if (pi_mutex_trylock(lock) != 0) goto was_busy;
 	    if (active_action) {
-		pthread_mutex_unlock(&lock);
+		pi_mutex_unlock(lock);
 was_busy:
 		busy = true;
 		return NULL;
 	    }
 	}
 	char *this_response = (*it)->handle_remote_cmd(cmd, lights);
-	if (needs_exclusivity) pthread_mutex_unlock(&lock);
+	if (needs_exclusivity) pi_mutex_unlock(lock);
 	if (this_response != NULL) {
 	    return this_response;
 	}
@@ -151,7 +148,7 @@ AnimationStationController::main()
     server_args.command = remote_event;
     server_args.state = this;
 
-    pthread_create(&thread, NULL, server_thread_main, &server_args);
+    pi_thread_create_anonymous(server_thread_main, &server_args);
 
     for (std::list<AnimationStation *>::iterator it = stations.begin(); it != stations.end(); it++) {
 	(*it)->start();

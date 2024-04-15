@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include <string.h>
 #include "digital-counter.h"
 #include "earth-invaders-io.h"
@@ -191,10 +191,9 @@ if (argc > 1) return(0);
     start_track = track_new("ready-set-go.wav");
     winner_track = track_new("high-score.wav");
 
-    pthread_t motor_thread, p1_thread, p2_thread;
-    pthread_create(&motor_thread, NULL, motor_main, NULL);
-    pthread_create(&p1_thread, NULL, player_main, (void *) PLAYER_1);
-    pthread_create(&p2_thread, NULL, player_main, (void *) PLAYER_2);
+    pi_thread_create_anonymous(motor_main, NULL);
+    pi_thread_create_anonymous(player_main, (void *) PLAYER_1);
+    pi_thread_create_anonymous(player_main, (void *) PLAYER_2);
 
     AnimationStation *as = new AnimationStation();
     as->add_action(new StartButton());

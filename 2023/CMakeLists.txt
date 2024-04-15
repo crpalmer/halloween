@@ -12,6 +12,6 @@ if("${PLATFORM}" STREQUAL pico)
   ween_executable(pocket-watch pocket-watch.cpp)
   ween_executable(tweetle tweetle.cpp)
 else()
-  ween_executable(animation animation.cpp)
-  ween_executable_libraries(animation net)
 endif()
+
+ween_executable(animation animation.cpp)

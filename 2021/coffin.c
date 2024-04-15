@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include <string.h>
 #include "maestro.h"
 #include "pi-usb.h"

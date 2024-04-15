@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "lights.h"
 #include "maestro.h"
 #include "pi-usb.h"
@@ -27,7 +27,7 @@ static tentacle_t tentacles[2] = {
     }
 };
 
-static void *
+static void
 do_stirring(void *unused)
 {
     while (1) {
@@ -42,11 +42,9 @@ do_stirring(void *unused)
 	    ms_sleep(20);
 	}
     }
-
-    return NULL;
 }
 
-static void *
+static void
 do_lights(void *unused)
 {
     class Lights *l[2];
@@ -78,14 +76,10 @@ do_lights(void *unused)
 	    last = action;
 	}
     }
-
-    return NULL;
 }
 
 int main(int argc, char **argv)
 {
-    pthread_t lights, stirring;
-
     wb_init();
     pi_usb_init();
 
@@ -97,8 +91,8 @@ int main(int argc, char **argv)
 
     for (tentacle_t &t : tentacles) tentacle_init(&t, m);
 
-    pthread_create(&lights, NULL, do_lights, NULL);
-    pthread_create(&stirring, NULL, do_stirring, NULL);
+    pi_thread_create_anonymous(do_lights, NULL);
+    pi_thread_create_anonymous(do_stirring, NULL);
 
     while (1) { sleep(60); }
 }

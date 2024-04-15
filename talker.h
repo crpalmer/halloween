@@ -22,7 +22,7 @@ typedef struct {
 void
 talker_args_init(talker_args_t *args);
 
-void *
+void
 talker_main(void *talker_args);
 
 void

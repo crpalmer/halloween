@@ -1,7 +1,7 @@
 #ifndef __ANIMATION_STATION_H__
 #define __ANIMATION_STATION_H__
 
-#include <pthread.h>
+#include "pi-threads.h"
 #include <list>
 #include "io.h"
 #include "server.h"
@@ -38,7 +38,7 @@ protected:
     void start();
 
 private:
-    static void *main(void *this_as_vp);
+    static void main(void *this_as_vp);
 
     Lights *lights;
 
@@ -49,9 +49,8 @@ private:
 
     AnimationStationAction *active_action;
 
-    pthread_t thread;
-    pthread_mutex_t lock;
-    pthread_cond_t cond;
+    pi_mutex_t *lock;
+    pi_cond_t *cond;
 };
 
 class AnimationStationController {
@@ -63,7 +62,6 @@ public:
 private:
     static char *remote_event(void *this_as_vp, const char *cmd, struct sockaddr_in *addr, size_t size);
     std::list<AnimationStation *> stations;
-    pthread_t thread;
     unsigned port;
 };
     

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include "maestro.h"
 #include "pi-usb.h"
 #include "server.h"
@@ -195,7 +195,6 @@ static void
 start_server()
 {
     static server_args_t server_args;
-    pthread_t thread;
 
     server_args.port = 5555;
     server_args.command = remote_event;
@@ -203,7 +202,7 @@ start_server()
 
     fprintf(stderr, "starting server on port %d\n", server_args.port);
 
-    pthread_create(&thread, NULL, server_thread_main, &server_args);
+    pi_thread_create_anonymous(server_thread_main, &server_args);
 }
 
 int

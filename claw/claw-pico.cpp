@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pico/bootrom.h>
 #include "pico/multicore.h"
-#include <tusb.h>
 #include "neopixel-pico.h"
 #include "pi.h"
 #include "time-utils.h"
@@ -185,10 +183,6 @@ main()
     multicore_launch_core1(lights_main);
 
     for (;;) {
-	while (!tud_cdc_connected()) {
-	    ms_sleep(1);
-	}
-
 	pi_readline(line, sizeof(line));
 
 	int space = 0;
@@ -196,7 +190,7 @@ main()
 
 	if (strcmp(line, "bootsel") == 0) {
 	    printf("Rebooting into bootloader mode...\n");
-	    reset_usb_boot(0, 0);
+	    pi_reboot_bootloader();
 	} else if (strcmp(line, "off") == 0) {
 	    set_new_mode(off_mode);
 	} else if (strcmp(line, "insert-coin") == 0) {

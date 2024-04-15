@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <pthread.h>
+#include "pi-threads.h"
 #include <string.h>
 #include "audio.h"
 #include "mcp23017.h"
@@ -18,7 +18,8 @@
 
 #define VOLUME 85
 
-static void *gauge(void *unused)
+static void
+gauge(void *unused)
 {
     maestro_t *m = maestro_new();
     double pos = (GAUGE_HIGH - GAUGE_LOW) / 2.0;
@@ -39,13 +40,11 @@ static void *gauge(void *unused)
 
 int main(int argc, char **argv)
 {
-    pthread_t thread;
-
     gpioInitialise();
     seed_random();
     pi_usb_init();
 
-    pthread_create(&thread, NULL, gauge, NULL);
+    pi_thread_create_anonymous(gauge, NULL);
 
     track_t *t = track_new_usb_out("jacob.wav");
     track_set_volume(t, VOLUME);

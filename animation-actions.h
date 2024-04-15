@@ -21,7 +21,7 @@ typedef struct {
 typedef struct {
     bool has_lights;
     action_t *actions;
-    pthread_mutex_t *lock;
+    pi_mutex_t *lock;
     waiting_fn_t waiting;
     unsigned waiting_period_ms;
 } station_t;

@@ -18,7 +18,7 @@ else()
   )
   platform_executable(claw-pico)
   target_link_libraries(claw-pico
-    pi
+    pi-core
     pico_multicore
   )
 endif()
