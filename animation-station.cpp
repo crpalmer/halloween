@@ -69,7 +69,7 @@ AnimationStation::AnimationStation(AnimationStationWaiting *waiting) : active_ac
 void
 AnimationStation::start()
 {
-    pi_thread_create_anonymous(main, this);
+    pi_thread_create("station", main, this);
 }
 
 void
@@ -148,7 +148,7 @@ AnimationStationController::main()
     server_args.command = remote_event;
     server_args.state = this;
 
-    pi_thread_create_anonymous(server_thread_main, &server_args);
+    pi_thread_create("server", server_thread_main, &server_args);
 
     for (std::list<AnimationStation *>::iterator it = stations.begin(); it != stations.end(); it++) {
 	(*it)->start();

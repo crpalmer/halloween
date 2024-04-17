@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     seed_random();
     pi_usb_init();
 
-    pi_thread_create_anonymous(gauge, NULL);
+    pi_thread_create("gauge", gauge, NULL);
 
     track_t *t = track_new_usb_out("jacob.wav");
     track_set_volume(t, VOLUME);

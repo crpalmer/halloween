@@ -19,7 +19,6 @@ static unsigned min_pin[MAX_STATIONS];
 static unsigned max_pin[MAX_STATIONS];
 static unsigned wb_mask[MAX_STATIONS];
 
-static pi_thread_t *thread[MAX_STATIONS];
 static pi_mutex_t *station_lock[MAX_STATIONS];
 static pi_cond_t *station_cond[MAX_STATIONS];
 static unsigned current_pin[MAX_STATIONS];
@@ -167,7 +166,7 @@ init_stations(unsigned pin0)
 	station_lock[i] = pi_mutex_new();
 	station_cond[i] = pi_cond_new();
 
-	thread[i] = pi_thread_new(station_main, (void *) (unsigned long long) i);
+	pi_thread_create("station-main", station_main, (void *) (unsigned long long) i);
     }
 
     while (i < MAX_STATIONS) {
@@ -202,7 +201,7 @@ animation_main_with_pin0(station_t *stations_, unsigned pin0)
     server_args.command = remote_event;
     server_args.state = NULL;
 
-    pi_thread_create_anonymous(server_thread_main, &server_args);
+    pi_thread_create("server", server_thread_main, &server_args);
 
     while (true) {
 	unsigned pin = wb_wait_for_pins(pin_mask, pin_mask);

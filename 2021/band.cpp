@@ -202,7 +202,7 @@ start_server()
 
     fprintf(stderr, "starting server on port %d\n", server_args.port);
 
-    pi_thread_create_anonymous(server_thread_main, &server_args);
+    pi_thread_create("server", server_thread_main, &server_args);
 }
 
 int

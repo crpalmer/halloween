@@ -191,9 +191,9 @@ if (argc > 1) return(0);
     start_track = track_new("ready-set-go.wav");
     winner_track = track_new("high-score.wav");
 
-    pi_thread_create_anonymous(motor_main, NULL);
-    pi_thread_create_anonymous(player_main, (void *) PLAYER_1);
-    pi_thread_create_anonymous(player_main, (void *) PLAYER_2);
+    pi_thread_create("motor", motor_main, NULL);
+    pi_thread_create("player 1", player_main, (void *) PLAYER_1);
+    pi_thread_create("player 2", player_main, (void *) PLAYER_2);
 
     AnimationStation *as = new AnimationStation();
     as->add_action(new StartButton());

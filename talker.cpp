@@ -264,14 +264,14 @@ talker_main(void *args_as_vp)
 
     pc = producer_consumer_new(1);
 
-    pi_thread_create_anonymous(server_thread_main, &server_args);
+    pi_thread_create("server", server_thread_main, &server_args);
 
     audio_config_init_default(&cfg);
     cfg.channels = 2;
     cfg.rate = 48000;
 
     out = audio_new(&cfg, &args->out_dev);
-    pi_thread_create_anonymous(play_thread_main, out);
+    pi_thread_create("audio", play_thread_main, out);
 
     if (args->no_input) in = NULL;
     else {
@@ -352,7 +352,7 @@ talker_main(void *args_as_vp)
 void
 talker_run_in_background(talker_args_t *args)
 {
-    pi_thread_create_anonymous(talker_main, args);
+    pi_thread_create("talker", talker_main, args);
 }
 
 static bool

@@ -91,8 +91,8 @@ int main(int argc, char **argv)
 
     for (tentacle_t &t : tentacles) tentacle_init(&t, m);
 
-    pi_thread_create_anonymous(do_lights, NULL);
-    pi_thread_create_anonymous(do_stirring, NULL);
+    pi_thread_create("lights", do_lights, NULL);
+    pi_thread_create("stirring", do_stirring, NULL);
 
     while (1) { sleep(60); }
 }

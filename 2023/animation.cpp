@@ -168,12 +168,12 @@ main_thread(void *arg_unused)
 int
 main(int argc, char **argv)
 {
-    pi_threads_init();
+    pi_init_with_threads();
 
     gpioInitialise();
     seed_random();
     wb_init();
 
-    pi_thread_create_anonymous(main_thread, NULL);
+    pi_thread_create("main", main_thread, NULL);
     pi_threads_start_and_wait();
 }

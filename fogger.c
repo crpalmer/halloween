@@ -137,7 +137,7 @@ fogger_main(void *args_as_vp)
     server_args.command = remote_event;
     server_args.state = NULL;
 
-    pi_thread_create_anonymous(server_thread_main, &server_args);
+    pi_thread_create("server", server_thread_main, &server_args);
 
     while(true) {
 	if (args->is_active && args->is_active()) {
@@ -155,5 +155,5 @@ fogger_run_in_background(unsigned bank, unsigned pin, fogger_args_t *args)
     fogger_bank = bank;
     fogger_pin = pin;
 
-    pi_thread_create_anonymous(fogger_main, args);
+    pi_thread_create("fogger", fogger_main, args);
 }
