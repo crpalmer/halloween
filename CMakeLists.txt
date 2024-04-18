@@ -23,7 +23,6 @@ endif()
 
 add_library(halloween STATIC
   animation-station.cpp
-  animation-main.c
   ween-time.c
   ${LIB_OBJS}
 )
