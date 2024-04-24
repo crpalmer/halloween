@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pi-threads.h"
 #include <string.h>
+#include "audio.h"
+#include "audio-player.h"
 #include "maestro.h"
+#include "pi-threads.h"
 #include "pi-usb.h"
-#include "track.h"
 #include "time-utils.h"
 #include "util.h"
+#include "wav.h"
 #include "wb.h"
 #include "ween-hours.h"
 
@@ -33,6 +35,9 @@
 #define HEAD_SIDE	70
 #define HEAD_SIDE_SPEED	1000
 
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
+
 static void blink_lights_for(bool *is_lit, int ms)
 {
     struct timespec start;
@@ -52,8 +57,6 @@ static void blink_lights_for(bool *is_lit, int ms)
 int
 main(int argc, char **argv)
 {
-    stop_t *stop;
-    track_t *track;
     maestro_t *servo;
 
     seed_random();
@@ -69,13 +72,8 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    if ((track = track_new("coffin-dog.wav")) == NULL) {
-	perror("coffin-dog.wav");
-    } else {
-	track_set_volume(track, 50);
-    }
-
-    stop = stop_new();
+    Wav *wav = new Wav(new BufferFile("coffin-dog.wav"));
+    //audio->set_volume(50);
 
     wb_set(LIGHT_PIN, 1);
     wb_set(LID_PIN, 0);
@@ -86,13 +84,11 @@ main(int argc, char **argv)
 
 	while (! ween_hours_is_primetime()) sleep(1);
 
-	stop_reset(stop);
-
-	if (track) track_play_asynchronously(track, stop);
+	player->play(wav->to_audio_buffer());
 
 	ms_sleep(ACTION_START);
 
-	while (! (track == NULL && it > 4) && ! stop_is_stopped(stop)) {
+	while (player->is_active()) {
 	    int open_time = random_number_in_range(LID_OPEN_LOW, LID_OPEN_HIGH);
 	    int closed_time = random_number_in_range(LID_CLOSED_LOW, LID_CLOSED_HIGH);
 

@@ -1,19 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pi-threads.h"
 #include <string.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include "audio.h"
+#include "audio-player.h"
 #include "canvas-png.h"
 #include "maestro.h"
 #include "mcp23017.h"
+#include "pi-threads.h"
 #include "pi-usb.h"
 #include "pico-slave.h"
 #include "st7735s.h"
-#include "track.h"
 #include "util.h"
+#include "wav.h"
 
 const bool test_offline = false;
 
@@ -50,8 +52,9 @@ static maestro_t *m;
 
 static PicoSlave *pico;
 
-static track_t *claw_music;
-static stop_t *claw_music_stop;
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
+static Wav *claw_music;
 
 static struct {
     const char *name;
@@ -368,8 +371,7 @@ play_one_round()
     pico->writeline("game");
     release_light->on();
 
-    stop_reset(claw_music_stop);
-    track_play_asynchronously(claw_music, claw_music_stop);
+    player->play(claw_music->to_audio_buffer());
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
 	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
@@ -418,8 +420,7 @@ play_one_round()
     pico->writeline("game-over");
 
 end_of_round:
-    stop_stop(claw_music_stop);
-
+    player->stop();
     release_light->off();
     display_image(booting_png);
 
@@ -491,11 +492,8 @@ int main(int argc, char **argv)
 	open_duet();
     }
 
-    claw_music = track_new("claw-music.wav");
-
+    claw_music = new Wav(new BufferFile("claw-music.wav"));
     if (! claw_music) exit(1);
-
-    claw_music_stop = stop_new();
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");
     duet_cmd("G28 Z");		// get the claw out of the prizes first!

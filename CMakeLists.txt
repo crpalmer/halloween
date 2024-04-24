@@ -16,7 +16,7 @@ add_subdirectory(2019)
 if("${PLATFORM}" STREQUAL "pi")
   set(LIB_OBJS
     fogger.c
-    talker.cpp
+#    talker.cpp
   tentacle.cpp
   )
 endif()
@@ -30,6 +30,7 @@ add_library(halloween STATIC
 target_include_directories(halloween PUBLIC .)
 
 target_link_libraries(halloween
+  pi-audio
   pi-core
   pi-net
   pi-threads

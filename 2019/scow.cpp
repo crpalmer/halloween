@@ -1,13 +1,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "pi-gpio.h"
 #include "animation-station.h"
+#include "audio.h"
+#include "audio-player.h"
 #include "l298n.h"
 #include "mcp23017.h"
-#include "track.h"
+#include "pi-gpio.h"
 #include "util.h"
+#include "wav.h"
 #include "wb.h"
+
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
 
 static L298N *motor;
 static MCP23017 *mcp;
@@ -88,14 +93,12 @@ get_es(int i)
 class Button : public AnimationStationAction {
 public:
     Button() {
-	stop = stop_new();
-
 	light = wb_get_output(2, 8);
 	button = wb_get_input(5);
 	button->set_pullup_down();
 	button->set_debounce(10);
 
-	if ((track = track_new("scow.wav")) == NULL) exit(1);
+ 	wav = new Wav(new BufferFile("scow.wav"));
     }
 
     output_t *get_light() override { return light; }
@@ -108,8 +111,7 @@ public:
 	struct timespec start;
 
 	nano_gettime(&start);
-	stop_reset(stop);
-	track_play_asynchronously(track, stop);
+	player->play(wav->to_audio_buffer());
 
 	up();
 
@@ -117,7 +119,7 @@ public:
 
 	down();
 
-	stop_request_stop(stop);
+	player->stop();
 	nano_gettime(&start);
 	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
 	motor->stop();
@@ -125,9 +127,8 @@ public:
 
 private:
     output_t *light;
-    input_t *button;
-    track_t *track;
-    stop_t *stop;
+    input_t  *button;
+    Wav      *wav;
 };
 
 class ScowAction : public AnimationStationAction {

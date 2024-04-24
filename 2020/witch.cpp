@@ -1,34 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "track.h"
+#include "audio.h"
+#include "audio-player.h"
 #include "util.h"
+#include "wav.h"
 #include "ween2020.h"
 
-unsigned int range[2][2] = {
+static unsigned int range[2][2] = {
     { 4*60*1000, 6*60*1000 },
     { 30*1000, 1*60*1000 }
 };
 
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
+
 int main(int argc, char **argv)
 {
-    track_t *track;
-    audio_device_t dev;
+    Wav *wav;
 
     seed_random();
 
-    audio_device_init(&dev, 1, 0, true);
-
-    if ((track = track_new_audio_dev("nibble nibble little mouse.wav", &dev)) == NULL) {
-	fprintf(stderr, "failed to load audio\n");
-	exit(1);
-    }
+    wav = new Wav(new BufferFile("nibble nibble little mouse.wav"));
 
     while (1) {
 	unsigned int *r;
 
 	ween2020_wait_until_valid();
 	r = range[ween2020_is_trick_or_treating()];
-	track_play(track);
+	player->play_sync(wav->to_audio_buffer());
 	ms_sleep(random_number_in_range(r[0], r[1]));
     }
 

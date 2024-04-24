@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pi-threads.h"
+#include "audio.h"
+#include "audio-player.h"
 #include "maestro.h"
+#include "pi-threads.h"
 #include "pi-usb.h"
 #include "server.h"
 #include "talking-skull.h"
+#include "talking-skull-from-audio.h"
 #include "time-utils.h"
-#include "track.h"
 #include "util.h"
+#include "wav.h"
 #include "wb.h"
 #include "ween-hours.h"
 
@@ -25,10 +28,10 @@
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
 #define SONG_WAV	"pour-some-sugar.wav"
-#define VOCALS_OPS	"vocals.ops"
-#define DRUM_OPS	"drums.ops"
-#define GUITAR_OPS	"guitar.ops"
-#define KEYBOARD_OPS	"vocals.ops"
+#define VOCALS_OPS	"pour-some-sugar-vocals.wav"
+#define DRUM_OPS	"pour-some-sugar-drums.wav"
+#define GUITAR_OPS	"pour-some-sugar-guitar.wav"
+#define KEYBOARD_OPS	"pour-some-sugar-vocals.wav"
 
 #define GUITAR_UP_STATE_MS	300
 #define GUITAR_DOWN_STATE_MS	40
@@ -36,138 +39,162 @@
 
 static maestro_t *m;
 
-static track_t *song;
-static talking_skull_actor_t *vocals, *drum, *guitar, *keyboard;
-static bool force = false;
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
 
-typedef struct {
-    int		servo;
-    int		eyes;
-    int		eyes_high;
-    int		eyes_on_pct;
-    int		eye_pin;
-} servo_state_t;
+static Wav *song;
+static bool force = true;
 
-typedef struct {
-    struct timespec at;
-    int		is_up;
-    int		wants_up;
-} guitar_state_t;
+class ServoInterface {
+public:
+    virtual void move_to(double pos) = 0;
+};
 
-typedef struct {
-    int		is_down;
-    int		n_in_down;
-    int         hold;
-} keyboard_state_t;
+class Servo : public ServoInterface {
+public:
+    Servo(int servo, int eyes_pin = -1, bool eyes_inverted = false, int eyes_on_pct = 50) : servo(servo), eyes_pin(eyes_pin), eyes_inverted(eyes_inverted) { }
 
-static servo_state_t vocals_state = { VOCALS_SERVO, 0, 1, 30, VOCALS_EYES };
-static servo_state_t drum_state[2] = { { DRUM_SERVO0, 0, 0, 50, -1 }, { DRUM_SERVO0+1, 0, 0, 50, -1 } };
-static guitar_state_t guitar_state = { 0 };
-static keyboard_state_t keyboard_state = { 0, };
+    void move_to(double pos) override {
+        bool new_eyes;
 
-static void
-servo_update(void *state_as_vp, double new_pos)
-{
-    servo_state_t *s = (servo_state_t *) state_as_vp;
-    int new_eyes;
-    double pos;
+        if (pos > 100) pos = 100;
+        maestro_set_servo_pos(m, servo, pos);
 
-    pos = new_pos;
-    if (pos > 100) pos = 100;
+        new_eyes = pos >= eyes_on_pct;
+        if (eyes_inverted) new_eyes = !new_eyes;
+
+        if (eyes != new_eyes) {
+	    if (eyes_pin >= 0) wb_set(EYE_BANK, eyes_pin, new_eyes);
+	    eyes = new_eyes;
+        }
+    }
+
+private:
+    int servo;
+    int eyes_pin;
+    bool eyes_inverted;
+    int eyes_on_pct;
+    bool eyes = false;
+};
+
+class VocalsTalkingSkull : public TalkingSkull, public Servo {
+public:
+    VocalsTalkingSkull(TalkingSkullOps *ops) : Servo(VOCALS_SERVO, VOCALS_EYES), TalkingSkull(ops, "vocals") {}
+    void update_pos(double pos) override { move_to(pos); }
+};
+
+class DrumTalkingSkull : public TalkingSkull, public ServoInterface {
+public:
+     DrumTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops) {
+	servo0 = new Servo(DRUM_SERVO0);
+	servo1 = new Servo(DRUM_SERVO0+1);
+     }
+
+     void update_pos(double pos) override {
+	move_to(pos);
+     }
+
+     void move_to(double pos) override {
+	servo0->move_to(pos);
+	servo1->move_to(pos);
+     }
+
+private:
+     Servo *servo0;
+     Servo *servo1;
+};
+
+class GuitarTalkingSkull : public TalkingSkull, public Servo {
+public:
+    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "guitar"), Servo(GUITAR_SERVO) { }
+
+    void update_pos(double new_pos) override {
+        bool new_up = new_pos > 10;
+        struct timespec now;
+        int ms;
+
+        nano_gettime(&now);
+        ms = nano_elapsed_ms(&now, &at);
+
+        if (new_up != wants_up) {
+	    wants_up = new_up;
+	    at = now;
+	    is_up = new_up;
+        } else if (wants_up && ms > (is_up ? GUITAR_UP_STATE_MS : GUITAR_DOWN_STATE_MS)) {
+	    is_up = ! is_up;
+	    at = now;
+        }
+        move_to(wants_up && ! is_up ? 0 : new_pos * GUITAR_MULT);
+    }
+
+private:
+    bool wants_up = false;
+    bool is_up = false;
+    struct timespec at = { 0, };
+};
+
+class KeyboardTalkingSkull : public TalkingSkull, public ServoInterface {
+public:
+    KeyboardTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "keyboard") {
+	servo0 = new Servo(KEYBOARD_SERVO0);
+        servo1 = new Servo(KEYBOARD_SERVO0+1);
+    }
+
+    void update_pos(double new_pos) override {
+	bool new_down = new_pos > 5;
     
-    maestro_set_servo_pos(m, s->servo, pos);
+	if (hold > 1) {
+	    hold--;
+	    return;
+	}
 
-    new_eyes = pos >= s->eyes_on_pct;
-    if (! s->eyes_high) new_eyes = !new_eyes;
+	if (is_down && n_in_down > 20) {
+	    hold = 20;
+	    new_down = 0;
+	}
 
-    if (s->eyes != new_eyes) {
-	if (s->eye_pin >= 0) wb_set(EYE_BANK, s->eye_pin, new_eyes);
-	s->eyes = new_eyes;
-    }
-}
+	if (new_down != is_down) {
+	    is_down = new_down;
+	    n_in_down = 0;
+	    move_to(is_down ? 100 : 0);
+	}
 
-static void
-drum_update(void *state_as_vp, double new_pos)
-{
-    servo_state_t *s = (servo_state_t *) state_as_vp;
-    servo_update(&s[0], new_pos);
-    servo_update(&s[1], new_pos);
-}
-
-static void
-guitar_update(void *state_as_vp, double new_pos)
-{
-    guitar_state_t *g = (guitar_state_t *) state_as_vp;
-    int new_up = new_pos > 10;
-    struct timespec now;
-    int ms;
-
-    nano_gettime(&now);
-    ms = nano_elapsed_ms(&now, &g->at);
-
-#if 0
-    fprintf(stderr, "%03d %d %d %d\n", ms, new_up, g->wants_up, g->is_up);
-#endif
-
-    if (new_up != g->wants_up) {
-	g->wants_up = new_up;
-	g->at = now;
-	g->is_up = new_up;
-    } else if (g->wants_up && ms > (g->is_up ? GUITAR_UP_STATE_MS : GUITAR_DOWN_STATE_MS)) {
-	g->is_up = ! g->is_up;
-	g->at = now;
-    }
-    maestro_set_servo_pos(m, GUITAR_SERVO, g->wants_up && ! g->is_up ? 0 : new_pos * GUITAR_MULT);
-}
-
-static void
-keyboard_update(void *state_as_vp, double new_pos)
-{
-    keyboard_state_t *s = (keyboard_state_t *) state_as_vp;
-    int new_down = new_pos > 5;
-    
-    if (s->hold > 1) {
-	s->hold--;
-	return;
+	if (is_down) n_in_down++;
     }
 
-    if (s->is_down && s->n_in_down > 20) {
-	s->hold = 20;
-	new_down = 0;
+    void move_to(double pos) override {
+	servo0->move_to(pos);
+	servo1->move_to(pos);
     }
 
-    if (new_down != s->is_down) {
-	s->is_down = new_down;
-	s->n_in_down = 0;
-	maestro_set_servo_pos(m, KEYBOARD_SERVO0, s->is_down ? 100 : 0);
-	maestro_set_servo_pos(m, KEYBOARD_SERVO0+1, s->is_down ? 0 : 100);
-    }
+private:
+    Servo *servo0, *servo1;
+    int hold = 0;
+    bool is_down = false;
+    int n_in_down = 0;
+};
 
-    if (s->is_down) s->n_in_down++;
-}
+static VocalsTalkingSkull *vocals;
+static DrumTalkingSkull *drum;
+static GuitarTalkingSkull *guitar;
+static KeyboardTalkingSkull *keyboard;
 
 static void
 rest_servos(void)
 {
-    servo_update(&vocals_state, 0);
-    servo_update(&drum_state[0], 100);
-    servo_update(&drum_state[1], 100);
-    servo_update(&guitar_state, 0);
-    maestro_set_servo_pos(m, KEYBOARD_SERVO0, 100);
-    maestro_set_servo_pos(m, KEYBOARD_SERVO0+1, 100);
+    vocals->move_to(0);
+    drum->move_to(100);
+    guitar->move_to(0);
+    keyboard->move_to(100);
 }
 
 static void
 init_servos(void)
 {
-    vocals = talking_skull_actor_new_ops(VOCALS_OPS, servo_update, &vocals_state);
-    drum = talking_skull_actor_new_ops(DRUM_OPS, drum_update, &drum_state);
-    guitar = talking_skull_actor_new_ops(GUITAR_OPS, guitar_update, &guitar_state);
-    keyboard = talking_skull_actor_new_ops(KEYBOARD_OPS, keyboard_update, &keyboard_state);
-
-    if (! vocals || ! drum || ! guitar || ! keyboard) {
-	exit(1);
-    }
+    vocals = new VocalsTalkingSkull(new TalkingSkullAudioOps(VOCALS_OPS));
+    drum = new DrumTalkingSkull(new TalkingSkullAudioOps(DRUM_OPS));
+    guitar = new GuitarTalkingSkull(new TalkingSkullAudioOps(GUITAR_OPS));
+    keyboard = new KeyboardTalkingSkull(new TalkingSkullAudioOps(KEYBOARD_OPS));
 
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1296);
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1400);
@@ -216,11 +243,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    song = track_new(SONG_WAV);
-    if (! song) {
-	perror(SONG_WAV);
-	exit(1);
-    }
+    song = new Wav(new BufferFile(SONG_WAV));
 
     init_servos();
 
@@ -229,21 +252,25 @@ main(int argc, char **argv)
 
     start_server();
 
-    while (! ween_hours_is_valid() && ! force) {
-	ms_sleep(1000);
+    while (1) {
+        while (! ween_hours_is_valid() && ! force) {
+	    ms_sleep(1000);
+        }
+
+        wb_set(LIGHTS, 1);
+
+        vocals->play();
+        drum->play();
+        guitar->play();
+        //keyboard->play();
+
+        player->play(song->to_audio_buffer());
+	player->wait_done();
+
+        wb_set(LIGHTS, 0);
+
+        ms_sleep(BETWEEN_SONG_MS);
     }
-
-    wb_set(LIGHTS, 1);
-
-    talking_skull_actor_play(vocals);
-    talking_skull_actor_play(drum);
-    talking_skull_actor_play(guitar);
-    //talking_skull_actor_play(keyboard);
-    track_play(song);
-
-    wb_set(LIGHTS, 0);
-
-    ms_sleep(BETWEEN_SONG_MS);
 
     return 0;
 }

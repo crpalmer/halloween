@@ -2,13 +2,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "pi-gpio.h"
 #include "animation-station.h"
-#include "track.h"
+#include "audio.h"
+#include "audio-player.h"
+#include "pi-gpio.h"
+#include "random-wavs.h"
 #include "util.h"
 #include "wb.h"
 
-#define MAX_TRACKS	10
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
 
 static bool
 file_exists(const char *fname)
@@ -27,12 +30,6 @@ public:
 	button->set_debounce(100);
 	pin = NULL;
 	cmd = NULL;
-	n_tracks = 0;
-	last_track = -1;
-	stop = stop_new();
-	audio_dev.card = 0;
-	audio_dev.device = 0;
-	audio_dev.playback = true;
     }
 
     void set_pin(output_t *pin) {
@@ -42,21 +39,6 @@ public:
     void set_cmd(const char *cmd) {
 	if (this->cmd) free(this->cmd);
 	this->cmd = strdup(cmd);
-    }
-
-    void add_track(const char *wav) {
-	if (n_tracks >= MAX_TRACKS) {
-	    fprintf(stderr, "too many tracks: %s\n", wav);
-	    exit(1);
-	}
-
-	track_t *t = track_new_audio_dev(wav, &audio_dev);
-
-	if (! t) {
-	    perror(wav);
-	    exit(1);
-	}
-	tracks[n_tracks++] = t;
     }
 
     output_t *get_light() override { return light; }
@@ -84,14 +66,12 @@ protected:
 	}
     }
 
-    void attack_with_audio(track_t *t, double up, double down) {
-	stop_reset(stop);
-	track_play_asynchronously(t, stop);
-	while (! stop_is_stopped(stop)) {
+    void attack_with_audio(double up, double down) {
+	while (player->is_active()) {
 	    pin->set(true);
 	    ms_sleep(up_ms(up));
 	    pin->set(false);
-	    if (! stop_is_stopped(stop)) ms_sleep(down_ms(down));
+	    if (! player->is_active()) ms_sleep(down_ms(down));
 	}
     }
 
@@ -105,22 +85,17 @@ protected:
 
         nano_gettime(&start);
 
-	if (n_tracks == 0) attack_without_audio(up, down);
-	else attack_with_audio(random_track(), up, down);
+	if (random_wavs->is_empty()) {
+	    attack_without_audio(up, down);
+	} else {
+	    random_wavs->play_random(player);
+	    attack_with_audio(up, down);
+	}
 
 	fprintf(stderr, "total time: %d ms\n", nano_elapsed_ms_now(&start));
     }
 
 private:
-    track_t *random_track() {
-	int track;
-	do {
-	    track = random_number_in_range(0, n_tracks-1);
-	} while (n_tracks > 1 && track == last_track);
-	last_track = track;
-	return tracks[track];
-    }
-
     unsigned up_ms(double up) {
         return (500 + random_number_in_range(0, 250) - 125)*up;
     }
@@ -134,11 +109,7 @@ private:
     input_t *button;
     output_t *pin;
     char *cmd;
-    audio_device_t audio_dev;
-    track_t *tracks[MAX_TRACKS];
-    int n_tracks;
-    int last_track;
-    stop_t *stop;
+    RandomWavs *random_wavs = new RandomWavs();
 };
 
 class MandM : public Button {

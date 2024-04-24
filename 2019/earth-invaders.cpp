@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "pi-threads.h"
 #include <string.h>
+#include "audio.h"
+#include "audio-player.h"
 #include "digital-counter.h"
 #include "earth-invaders-io.h"
 #include "l298n.h"
-#include "pca9685.h"
 #include "mcp23017.h"
+#include "pca9685.h"
+#include "pi-threads.h"
 #include "time-utils.h"
-#include "track.h"
 #include "util.h"
+#include "wav.h"
 #include "animation-station.h"
 
 #define SCORE_INC	10
@@ -17,39 +19,44 @@
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
 
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
 static double speed = 0;
 
 static earth_invaders_io_t *io;
 
-static track_t *game_over_track;
-static track_t *hit_track[2];
-static track_t *start_track;
-static track_t *winner_track;
+static Wav *game_over_track;
+static Wav *hit_track[2];
+static Wav *start_track;
+static Wav *winner_track;
 static bool game_active;
 static int high_score;
 static int scores[2];
 static bool mean_mode[2];
 
-static void yield()
-{
+static void yield() {
     ms_sleep(1);
 }
 
-static void *
-motor_main(void *unused)
-{
-    bool direction = true;
+class MotorThread : public PiThread {
+public:
+    MotorThread(const char *name) : PiThread(name) { }
 
-    while (1) {
-	if (direction == TO_IDLER && io->endstop_idler->get() == ENDSTOP_TRIGGERED) {
-	    direction = TO_MOTOR;
-	    io->change_motor(direction, speed);
-	} else if (direction == TO_MOTOR && io->endstop_motor->get() == ENDSTOP_TRIGGERED) {
-	    direction = TO_IDLER;
-	    io->change_motor(direction, speed);
+    void main() {
+	bool direction = true;
+
+	while (1) {
+	    if (direction == TO_IDLER && io->endstop_idler->get() == ENDSTOP_TRIGGERED) {
+		direction = TO_MOTOR;
+		io->change_motor(direction, speed);
+	    } else if (direction == TO_MOTOR && io->endstop_motor->get() == ENDSTOP_TRIGGERED) {
+		direction = TO_IDLER;
+		io->change_motor(direction, speed);
+	    }
 	}
     }
-}
+};
+
 
 static void
 motor_start(void)
@@ -73,39 +80,44 @@ set_active_target(int p, int t)
     }
 }
 
-static void *
-player_main(void *p_as_void)
-{
-    int p = (unsigned long long) p_as_void;
-    struct timespec last_hit;
+class PlayerThread : public PiThread {
+public:
+    PlayerThread(const char *name, int p) : PiThread(name), p(p) { }
 
-    nano_gettime(&last_hit);
-    for (;;) {
-	while (! game_active) yield();
-	int active_target = random_number_in_range(0, 2);
-	set_active_target(p, active_target);
-	struct timespec active_at;
-	nano_gettime(&active_at);
-        while (game_active) {
-	    int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
-	    if (nano_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
-		track_play_asynchronously(hit_track[p], NULL);
-		scores[p] += SCORE_INC;
-		io->score[p]->set(scores[p]);
-		need_new_target = true;
-		nano_gettime(&last_hit);
+    void main() {
+	struct timespec last_hit;
+
+	nano_gettime(&last_hit);
+	for (;;) {
+	    while (! game_active) yield();
+	    int active_target = random_number_in_range(0, 2);
+	    set_active_target(p, active_target);
+	    struct timespec active_at;
+	    nano_gettime(&active_at);
+	    while (game_active) {
+		int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
+		if (nano_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
+		    player->play(hit_track[p]->to_audio_buffer());
+		    scores[p] += SCORE_INC;
+		    io->score[p]->set(scores[p]);
+		    need_new_target = true;
+		    nano_gettime(&last_hit);
+		}
+		if (need_new_target) {
+		    int last_target = active_target;
+		    while (last_target == active_target) active_target = random_number_in_range(0, 2);
+		    set_active_target(p, active_target);
+		    nano_gettime(&active_at);
+		}
 	    }
-	    if (need_new_target) {
-		int last_target = active_target;
-		while (last_target == active_target) active_target = random_number_in_range(0, 2);
-		set_active_target(p, active_target);
-		nano_gettime(&active_at);
-	    }
+	    io->lights[p][active_target]->off();
+	    mean_mode[p] = false;
 	}
-	io->lights[p][active_target]->off();
-	mean_mode[p] = false;
     }
-}
+
+private:
+    int p;
+};
 
 static void
 start_pushed(void)
@@ -114,7 +126,7 @@ start_pushed(void)
     io->score[0]->set(0);
     io->score[1]->set(0);
 
-    track_play(start_track);
+    player->play_sync(start_track->to_audio_buffer());
 
     motor_start();
     io->laser->on();
@@ -132,9 +144,9 @@ start_pushed(void)
 
     if (high_score > old_high_score) {
 	io->high_score->set(high_score);
-	track_play(winner_track);
+	player->play_sync(winner_track->to_audio_buffer());
     } else {
-	track_play(game_over_track);
+	player->play_sync(game_over_track->to_audio_buffer());
     }
 }
 
@@ -185,15 +197,15 @@ int main(int argc, char **argv)
 
 if (argc > 1) return(0);
 
-    game_over_track = track_new("game-over.wav");
-    hit_track[0] = track_new("hit1.wav");
-    hit_track[1] = track_new("hit2.wav");
-    start_track = track_new("ready-set-go.wav");
-    winner_track = track_new("high-score.wav");
+    game_over_track = new Wav(new BufferFile("game-over.wav"));
+    hit_track[0] = new Wav(new BufferFile("hit1.wav"));
+    hit_track[1] = new Wav(new BufferFile("hit2.wav"));
+    start_track = new Wav(new BufferFile("ready-set-go.wav"));
+    winner_track = new Wav(new BufferFile("high-score.wav"));
 
-    pi_thread_create("motor", motor_main, NULL);
-    pi_thread_create("player 1", player_main, (void *) PLAYER_1);
-    pi_thread_create("player 2", player_main, (void *) PLAYER_2);
+    new MotorThread("motor");
+    new PlayerThread("player 1", 1);
+    new PlayerThread("player 2", 2);
 
     AnimationStation *as = new AnimationStation();
     as->add_action(new StartButton());

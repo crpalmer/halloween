@@ -4,12 +4,13 @@
 #include "pi-threads.h"
 #include <string.h>
 #include "audio.h"
+#include "audio-player.h"
 #include "mcp23017.h"
 #include "maestro.h"
 #include "pi-usb.h"
 #include "time-utils.h"
-#include "track.h"
 #include "util.h"
+#include "wav.h"
 #include "ween-hours.h"
 
 #define GAUGE 0
@@ -17,6 +18,9 @@
 #define GAUGE_HIGH  70
 
 #define VOLUME 85
+
+static Audio *audio = new AudioPi();
+static AudioPlayer *player = new AudioPlayer(audio);
 
 static void
 gauge(void *unused)
@@ -46,9 +50,8 @@ int main(int argc, char **argv)
 
     pi_thread_create("gauge", gauge, NULL);
 
-    track_t *t = track_new_usb_out("jacob.wav");
-    track_set_volume(t, VOLUME);
-    track_play_loop(t, NULL);
+    Wav *wav = new Wav(new BufferFile("jacob.wav"));
+    //audio->set_volume(t, VOLUME);
 
     MCP23017 *mcp = new MCP23017();
     output_t *light[8];
@@ -68,6 +71,7 @@ int main(int argc, char **argv)
 	    int flashes = random_number_in_range(2, 5);
 	    int mean = 120 / flashes;
 	    for (int j = 0; j < flashes; j++) {
+		if (! player->is_active()) player->play(wav->to_audio_buffer());
 		light[i]->set(1);
 		ms_sleep(random_number_in_range(mean-15, mean+15));
 		light[i]->set(0);
