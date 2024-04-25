@@ -5,7 +5,7 @@
 #include "gp-input.h"
 #include "pi.h"
 #include "physics.h"
-#include "servo.h"
+#include "servo-gpio.h"
 #include "util.h"
 
 #define COORDINATED_SERVOS 0
@@ -18,7 +18,7 @@
 #define MAX_V          (1.0 / (0.15 / 60 * 270))  /* cover full range at max speed of the DS-3218MG @ 5V */
 
 typedef struct {
-    int pin;
+    unsigned pin;
     double min_v, max_v;
     double accel_t;
     double pos, last_pos;
@@ -64,7 +64,7 @@ move(servo_t *s)
 
     int dir = s->pos < s->last_pos ? -1 : +1;
     double pos = s->last_pos + dir * s->p->get_pos();
-    s->servo->go(pos);
+    s->servo->move_to(pos);
 }
 
 int
@@ -76,9 +76,9 @@ main()
     for (int i = 0; i < N_SERVOS; i++) {
 	servo_t *s = &servos[i];
 	s->pos = s->last_pos = 0.5;
-	s->servo = new Servo(s->pin);
+	s->servo = new GpioServo(s->pin);
 	s->p = new Physics();
-	s->servo->go(s->last_pos);
+	s->servo->move_to(s->last_pos);
     }
 
     ms_sleep(1000);

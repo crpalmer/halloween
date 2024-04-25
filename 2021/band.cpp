@@ -45,16 +45,11 @@ static AudioPlayer *player = new AudioPlayer(audio);
 static Wav *song;
 static bool force = true;
 
-class ServoInterface {
+class BandServo : public Servo {
 public:
-    virtual void move_to(double pos) = 0;
-};
+    BandServo(int servo, int eyes_pin = -1, bool eyes_inverted = false, int eyes_on_pct = 50) : servo(servo), eyes_pin(eyes_pin), eyes_inverted(eyes_inverted) { }
 
-class Servo : public ServoInterface {
-public:
-    Servo(int servo, int eyes_pin = -1, bool eyes_inverted = false, int eyes_on_pct = 50) : servo(servo), eyes_pin(eyes_pin), eyes_inverted(eyes_inverted) { }
-
-    void move_to(double pos) override {
+    bool move_to(double pos) override {
         bool new_eyes;
 
         if (pos > 100) pos = 100;
@@ -67,6 +62,7 @@ public:
 	    if (eyes_pin >= 0) wb_set(EYE_BANK, eyes_pin, new_eyes);
 	    eyes = new_eyes;
         }
+	return true;
     }
 
 private:
@@ -77,36 +73,35 @@ private:
     bool eyes = false;
 };
 
-class VocalsTalkingSkull : public TalkingSkull, public Servo {
+class VocalsTalkingSkull : public TalkingSkull, public BandServo {
 public:
-    VocalsTalkingSkull(TalkingSkullOps *ops) : Servo(VOCALS_SERVO, VOCALS_EYES), TalkingSkull(ops, "vocals") {}
+    VocalsTalkingSkull(TalkingSkullOps *ops) : BandServo(VOCALS_SERVO, VOCALS_EYES), TalkingSkull(ops, "vocals") {}
     void update_pos(double pos) override { move_to(pos); }
 };
 
-class DrumTalkingSkull : public TalkingSkull, public ServoInterface {
+class DrumTalkingSkull : public TalkingSkull, public Servo {
 public:
      DrumTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops) {
-	servo0 = new Servo(DRUM_SERVO0);
-	servo1 = new Servo(DRUM_SERVO0+1);
+	servo0 = new BandServo(DRUM_SERVO0);
+	servo1 = new BandServo(DRUM_SERVO0+1);
      }
 
      void update_pos(double pos) override {
 	move_to(pos);
      }
 
-     void move_to(double pos) override {
-	servo0->move_to(pos);
-	servo1->move_to(pos);
+     bool move_to(double pos) override {
+	return servo0->move_to(pos) && servo1->move_to(pos);
      }
 
 private:
-     Servo *servo0;
-     Servo *servo1;
+     BandServo *servo0;
+     BandServo *servo1;
 };
 
-class GuitarTalkingSkull : public TalkingSkull, public Servo {
+class GuitarTalkingSkull : public TalkingSkull, public BandServo {
 public:
-    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "guitar"), Servo(GUITAR_SERVO) { }
+    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "guitar"), BandServo(GUITAR_SERVO) { }
 
     void update_pos(double new_pos) override {
         bool new_up = new_pos > 10;
@@ -133,11 +128,11 @@ private:
     struct timespec at = { 0, };
 };
 
-class KeyboardTalkingSkull : public TalkingSkull, public ServoInterface {
+class KeyboardTalkingSkull : public TalkingSkull, public Servo {
 public:
     KeyboardTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "keyboard") {
-	servo0 = new Servo(KEYBOARD_SERVO0);
-        servo1 = new Servo(KEYBOARD_SERVO0+1);
+	servo0 = new BandServo(KEYBOARD_SERVO0);
+        servo1 = new BandServo(KEYBOARD_SERVO0+1);
     }
 
     void update_pos(double new_pos) override {
@@ -162,13 +157,12 @@ public:
 	if (is_down) n_in_down++;
     }
 
-    void move_to(double pos) override {
-	servo0->move_to(pos);
-	servo1->move_to(pos);
+    bool move_to(double pos) override {
+	return servo0->move_to(pos) && servo1->move_to(pos);
     }
 
 private:
-    Servo *servo0, *servo1;
+    BandServo *servo0, *servo1;
     int hold = 0;
     bool is_down = false;
     int n_in_down = 0;

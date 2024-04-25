@@ -5,7 +5,7 @@
 #include "gp-input.h"
 #include "pi.h"
 #include "physics.h"
-#include "servo.h"
+#include "servo-gpio.h"
 #include "util.h"
 
 #define ACCEL		3
@@ -70,7 +70,7 @@ move(servo_t *s)
     if (! s->p->done()) {
 	int dir = s->pos < s->last_pos ? -1 : +1;
 	double pos = s->last_pos + dir * s->p->get_pos();
-	s->servo->go(pos);
+	s->servo->move_to(pos);
     }
 }
 
@@ -101,11 +101,11 @@ main()
 
 	printf("  servo: %d [%d .. %d] range, %.03f max_v, %f a\n", s->pin, s->min_us, s->max_us, s->max_v, s->a);
 
-        s->servo = new Servo(s->pin, s->min_us, s->max_us);
+        s->servo = new GpioServo(s->pin, s->min_us, s->max_us);
         s->p = new Physics();
         s->p->set_max_velocity(s->max_v);
         s->p->set_acceleration(s->a);
-        s->servo->go(s->pos);
+        s->servo->move_to(s->pos);
         ms_sleep(1000);
 
     }
@@ -118,7 +118,7 @@ main()
     // Helper code to tune what positions to use for a servo
     while (1) {
 	printf("%.2f\n", pos);
-	servos[0].servo->go(pos);
+	servos[0].servo->move_to(pos);
 	ms_sleep(200);
 	pos += 0.01;
 	if (pos > .90) pos = .70;

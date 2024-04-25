@@ -4,7 +4,7 @@
 #include "pi-gpio.h"
 #include "gp-input.h"
 #include "pi.h"
-#include "servo.h"
+#include "servo-gpio.h"
 #include "util.h"
 
 #define LOW	0.45
@@ -45,7 +45,7 @@ void move(double l, double h, double delta)
 
     while ((delta < 0 ? pos >= h : pos <= h)) {
 	pos += delta * MULTI_STEPS;
-	head->go(pos);
+	head->move_to(pos);
 	sleep_with_button(20 * MULTI_STEPS);
     }
 }
@@ -59,7 +59,7 @@ main()
 
     gpioInitialise();
 
-    head = new Servo(0);
+    head = new GpioServo(0);
     button = new GPInput(1);
     button->set_pullup_up();
 

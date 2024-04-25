@@ -16,6 +16,9 @@ else()
   add_executable(claw-pico
     claw-pico.cpp
   )
+  pico_enable_stdio_usb(claw-pico 1)
+  pico_enable_stdio_uart(claw-pico 0)
+
   platform_executable(claw-pico)
   target_link_libraries(claw-pico
     pi-core
