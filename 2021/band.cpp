@@ -75,7 +75,7 @@ private:
 
 class VocalsTalkingSkull : public TalkingSkull, public BandServo {
 public:
-    VocalsTalkingSkull(TalkingSkullOps *ops) : BandServo(VOCALS_SERVO, VOCALS_EYES), TalkingSkull(ops, "vocals") {}
+    VocalsTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "vocals"), BandServo(VOCALS_SERVO, VOCALS_EYES) {}
     void update_pos(double pos) override { move_to(pos); }
 };
 

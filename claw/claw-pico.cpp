@@ -153,6 +153,7 @@ static void lights_main(void)
 	    }
 	}
 	switch(mode) {
+	case drop_mode: break;
 	case off_mode: break;
 	case insert_coin_mode: insert_coin_step(neo); break;
 	case hit_start_mode: hit_start_step(neo); break;

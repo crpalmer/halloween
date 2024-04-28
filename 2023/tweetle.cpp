@@ -126,8 +126,6 @@ main()
 #endif
 
     while (1) {
-	printf("moving to %d: ");
-
 	for (int i = 0; i < N_SERVOS; i++) {
 	    printf("%s%d -> %.2f", i > 0 ? ", " : "",  servos[i].pin, positions[which][i]);
 	    start_motion(&servos[i], positions[which][i]);
