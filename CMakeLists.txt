@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.12)
 
+if("${PLATFORM}" STREQUAL "pico")
+  include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+endif()
+
+project(halloween)
+
 include(lib/platform.cmake)
 
 add_subdirectory(lib)
-
-project(halloween)
 
 add_subdirectory(claw)
 add_subdirectory(2023)
@@ -17,7 +21,7 @@ if("${PLATFORM}" STREQUAL "pi")
   set(LIB_OBJS
     fogger.c
 #    talker.cpp
-  tentacle.cpp
+    tentacle.cpp
   )
 endif()
 
