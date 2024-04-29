@@ -10,7 +10,6 @@
 #include "talking-skull.h"
 #include "talking-skull-from-audio.h"
 #include "time-utils.h"
-#include "util.h"
 #include "wav.h"
 #include "wb.h"
 #include "ween-hours.h"
@@ -75,13 +74,14 @@ private:
 
 class VocalsTalkingSkull : public TalkingSkull, public BandServo {
 public:
-    VocalsTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "vocals"), BandServo(VOCALS_SERVO, VOCALS_EYES) {}
+    VocalsTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("vocals"), BandServo(VOCALS_SERVO, VOCALS_EYES) { this->ops(ops); }
     void update_pos(double pos) override { move_to(pos); }
 };
 
 class DrumTalkingSkull : public TalkingSkull, public Servo {
 public:
-     DrumTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops) {
+     DrumTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("drums") {
+	this->ops(ops);
 	servo0 = new BandServo(DRUM_SERVO0);
 	servo1 = new BandServo(DRUM_SERVO0+1);
      }
@@ -101,7 +101,7 @@ private:
 
 class GuitarTalkingSkull : public TalkingSkull, public BandServo {
 public:
-    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "guitar"), BandServo(GUITAR_SERVO) { }
+    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("guitar"), BandServo(GUITAR_SERVO) { this->ops(ops); }
 
     void update_pos(double new_pos) override {
         bool new_up = new_pos > 10;
@@ -130,7 +130,8 @@ private:
 
 class KeyboardTalkingSkull : public TalkingSkull, public Servo {
 public:
-    KeyboardTalkingSkull(TalkingSkullOps *ops) : TalkingSkull(ops, "keyboard") {
+    KeyboardTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("keyboard") {
+	this->ops(ops);
 	servo0 = new BandServo(KEYBOARD_SERVO0);
         servo1 = new BandServo(KEYBOARD_SERVO0+1);
     }
@@ -185,10 +186,10 @@ rest_servos(void)
 static void
 init_servos(void)
 {
-    vocals = new VocalsTalkingSkull(new TalkingSkullAudioOps(VOCALS_OPS));
-    drum = new DrumTalkingSkull(new TalkingSkullAudioOps(DRUM_OPS));
-    guitar = new GuitarTalkingSkull(new TalkingSkullAudioOps(GUITAR_OPS));
-    keyboard = new KeyboardTalkingSkull(new TalkingSkullAudioOps(KEYBOARD_OPS));
+    vocals = new VocalsTalkingSkull(new TalkingSkullWavOps(VOCALS_OPS));
+    drum = new DrumTalkingSkull(new TalkingSkullWavOps(DRUM_OPS));
+    guitar = new GuitarTalkingSkull(new TalkingSkullWavOps(GUITAR_OPS));
+    keyboard = new KeyboardTalkingSkull(new TalkingSkullWavOps(KEYBOARD_OPS));
 
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1296);
     maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1400);
