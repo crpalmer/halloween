@@ -3,7 +3,6 @@
 #include <string.h>
 #include "pi-threads.h"
 #include <math.h>
-#include "util.h"
 
 #include "tentacle.h"
 

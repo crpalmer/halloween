@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "audio.h"
 #include "audio-player.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wav.h"
 #include "ween2020.h"
 

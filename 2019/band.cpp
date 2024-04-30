@@ -6,7 +6,6 @@
 #include "talking-skull.h"
 #include "time-utils.h"
 #include "track.h"
-#include "util.h"
 #include "wb.h"
 #include "ween2019.h"
 

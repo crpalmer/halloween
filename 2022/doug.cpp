@@ -5,7 +5,6 @@
 #include "gp-input.h"
 #include "pi.h"
 #include "servo-gpio.h"
-#include "util.h"
 
 #define LOW	0.45
 #define HIGH	0.60

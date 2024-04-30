@@ -4,7 +4,6 @@
 #include "audio-player.h"
 #include "io.h"
 #include "pi-gpio.h"
-#include "util.h"
 #include "wav.h"
 #include "wb.h"
 #include "ween-time.h"

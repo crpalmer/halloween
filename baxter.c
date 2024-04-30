@@ -3,7 +3,7 @@
 #include <string.h>
 #include "maestro.h"
 #include "pi-usb.h"
-#include "util.h"
+#include "random-utils.h"
 #include "talking-skull.h"
 #include "time-utils.h"
 #include "track.h"

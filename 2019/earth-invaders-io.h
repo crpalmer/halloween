@@ -16,7 +16,6 @@
 #include "l298n.h"
 #include "mcp23017.h"
 #include "pca9685.h"
-#include "util.h"
 #include "wb.h"
 
 /* PLAYER_x : see the comment in *-io to explain the numbering */

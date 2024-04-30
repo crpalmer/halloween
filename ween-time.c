@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <time.h>
 #include "time-utils.h"
-#include "util.h"
 #include "ween-time.h"
 
 #define OCTOBER	9 /* 0 based month number */

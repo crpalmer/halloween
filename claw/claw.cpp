@@ -14,7 +14,7 @@
 #include "pi-usb.h"
 #include "pico-slave.h"
 #include "st7735s.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wav.h"
 
 const bool test_offline = false;

@@ -10,7 +10,7 @@
 #include "pca9685.h"
 #include "pi-threads.h"
 #include "time-utils.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wav.h"
 #include "animation-station.h"
 

@@ -2,7 +2,7 @@
 #define __RANDOM_WAVS_H__
 
 #include "audio-player.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wav.h"
 
 #define MAX_WAVS 32

@@ -6,7 +6,6 @@
 #include "pi.h"
 #include "physics.h"
 #include "servo-gpio.h"
-#include "util.h"
 
 #define ACCEL		3
 #define SERVO_MAX_V(s_per_60_deg, range_in_deg) (1.0 / (s_per_60_deg / 60 * range_in_deg))  /* cover full range at max speed of the DS-3218MG @ 5V */

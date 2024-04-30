@@ -6,7 +6,7 @@
 #include "pi.h"
 #include "physics.h"
 #include "servo-gpio.h"
-#include "util.h"
+#include "random-utils.h"
 
 #define COORDINATED_SERVOS 0
 

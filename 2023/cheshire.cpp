@@ -6,7 +6,7 @@
 #include "neopixel-pico.h"
 #include "pi.h"
 #include "time-utils.h"
-#include "util.h"
+#include "random-utils.h"
 
 #define N_NEO		4
 

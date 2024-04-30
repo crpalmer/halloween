@@ -4,7 +4,6 @@
 #include <time.h>
 #include "pi-threads.h"
 #include "fogger.h"
-#include "util.h"
 #include "wb.h"
 #include "ween2020.h"
 

@@ -7,7 +7,6 @@
 #include "maestro.h"
 #include "pi-usb.h"
 #include "talker.h"
-#include "util.h"
 #include "wb.h"
 #include "ween-hours.h"
 

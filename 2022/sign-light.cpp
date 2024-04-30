@@ -7,7 +7,6 @@
 #include "neopixel-pico.h"
 #include "pi.h"
 #include "time-utils.h"
-#include "util.h"
 
 #define N_LEDS 52
 #define MS	10

@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include "pi-gpio.h"
 #include "animation-station.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wb.h"
 
 #define MAX_TRACKS	10

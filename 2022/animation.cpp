@@ -7,7 +7,7 @@
 #include "audio-player.h"
 #include "pi-gpio.h"
 #include "random-wavs.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wb.h"
 
 static Audio *audio;

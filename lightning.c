@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include "track.h"
-#include "util.h"
+#include "random-utils.h"
 #include "wb.h"
 #include "ween-time.h"
 
