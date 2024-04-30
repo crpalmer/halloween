@@ -9,164 +9,183 @@
 #include "mem.h"
 #include "pi-usb.h"
 #include "producer-consumer.h"
+#include "random-wavs.h"
 #include "server.h"
 #include "talking-skull.h"
+#include "talking-skull-from-audio.h"
 #include "wav.h"
 #include "wb.h"
 
 #include "talker.h"
 
-#define N_HISTORY 50
-#define MICROPHONE_HISTORY_EPSILON 5
-#define MICROPHONE_GAIN_TARGET     65
-#define MICROPHONE_MAX_GAIN	   5
-#define OTHER_MAX_GAIN		   100
-#define OTHER_GAIN_TARGET          65
-#define OTHER_HISTORY_EPSILON      0
-
 #define MAX_ANY_AUDIO 10
 #define ANY_AUDIO_THRESHOLD 2
 
-#define STATS_MICROPHONE 0
-#define STATS_AUTO	 256
-#define MAX_STATS (STATS_AUTO+1)
+#define N_GAIN_HISTORY 50
+#define N_TALKER_GAIN 256
 
-typedef struct {
-    double history[N_HISTORY];
-    size_t history_i;
-    double sum_history;
-    bool history_full;
-    double gain;
-    double gain_target;
-    double max_gain;
-    double epsilon;
-} stats_t;
-
-typedef struct {
-    int stats_who;
-    unsigned char *buffer;
-    int vol;
-} event_t;
-
-stats_t stats[MAX_STATS];
-
-static pi_mutex_t *speak_lock;
-static talking_skull_t *skull;
+static PiMutex *speak_lock;
 
 static unsigned any_audio;
 static struct timespec last_audio;
 
-static producer_consumer_t *pc;
-size_t size;
-
 #define MAX_IDLE_TRACKS		20
 #define IDLE_TRACK_PREFIX	"talker"
-static wav_t *idle_tracks[MAX_IDLE_TRACKS];
-static int n_idle_tracks;
+static RandomWavs random_wavs;
 
-/* Only used by the single threaded consumer thread */
-static int current_stats_who;
+class TalkerGain {
+public:
+    void set_gain(double new_gain) { gain = new_gain; }
+    void set_gain_target(double new_target) { gain_target = new_target; }
+    void set_max_gain(double new_max_gain) { max_gain = new_max_gain; }
+    void set_epsilon(double new_epsilon) { epsilon = new_epsilon; }
 
-static void
-update_history_and_gain(stats_t *s, double pos)
-{
-    if (pos > s->epsilon) {
-	int n_avg;
+    double get_gain() { return gain; }
 
-        s->sum_history = s->sum_history - s->history[s->history_i] + pos;
-        s->history[s->history_i] = pos;
-        s->history_i = (s->history_i + 1) % N_HISTORY;
-	if (s->history_i == 0) {
-	    s->history_full = true;
+    void add_sample(double pos) {
+	update_any_audio_count(pos);
+	if (is_audible(pos)) update_gain(pos);
+    }
+
+    bool is_audible(double pos) { return pos > epsilon; }
+
+private:
+    void update_gain(double pos) {
+        sum_history = sum_history - history[history_i] + pos;
+        history[history_i] = pos;
+        history_i = (history_i + 1) % N_GAIN_HISTORY;
+	if (history_i == 0) history_full = true;
+
+	int n_avg = history_full ? N_GAIN_HISTORY : history_i;
+        gain = gain_target / (sum_history / n_avg);
+    }
+
+    void update_any_audio_count(double pos) {
+	if (is_audible(pos)) {
+	    if (any_audio < MAX_ANY_AUDIO) any_audio++;
+	} else {
+	    if (any_audio > 0) any_audio--;
 	}
-	n_avg = s->history_full ? N_HISTORY : s->history_i;
-        s->gain = s->gain_target / (s->sum_history / n_avg);
-    }
-}
-
-static void
-update_any_audio_check(double pos)
-{
-    stats_t *s = &stats[current_stats_who];
-
-    if (pos > s->epsilon) {
-	if (any_audio < MAX_ANY_AUDIO) any_audio++;
-    } else {
-	if (any_audio > 0) any_audio--;
-    }
-    if (any_audio > ANY_AUDIO_THRESHOLD) nano_gettime(&last_audio);
-}
-
-static void
-update_servo_and_eyes(talker_args_t *args, double pos)
-{
-    static int eyes = -1;
-    int new_eyes;
-    stats_t *s = &stats[current_stats_who];
-
-    if (pos < s->epsilon) {
-	pos = 0;
+	if (any_audio > ANY_AUDIO_THRESHOLD) nano_gettime(&last_audio);
     }
 
-    pos *= s->gain;
-    if (pos > 100) pos = 100;
-    if (args->m) {
-	maestro_set_servo_pos(args->m, args->servo_id, pos);
-    } else {
-	static double last_pos = -1;
-	if (pos != last_pos) {
-	    printf("servo: %.2f %.0f\n", s->gain, pos);
-	    last_pos = pos;
+private:
+    double gain = 3;
+    double gain_target = 65;
+    double max_gain = 100;
+    double epsilon = 0;
+
+    double history[N_GAIN_HISTORY];
+    size_t history_i = 0;
+    double sum_history = 0;
+    bool history_full = false;
+};
+
+static TalkerGain talker_gain[N_TALKER_GAIN];
+static TalkerGain talker_gain_mic;
+
+class TalkerTalkingSkull : public TalkingSkull {
+public:
+    TalkerTalkingSkull(TalkerGain *who, TalkingSkullOps *ops) : who(who), TalkingSkull(ops, "talker-talking-skull") {}
+
+    void update_pos(double pos) override {
+        bool new_eyes;
+
+	who->add_sample(pos);
+
+        if (! who->is_audible(pos)) pos = 0;
+
+	pos *= who->get_gain();
+	if (pos > 100) pos = 100;
+	if (args->m) {
+	    maestro_set_servo_pos(args->m, args->servo_id, pos);
+	} else {
+	    static double last_pos = -1;
+	    if (pos != last_pos) {
+		printf("servo: %.2f %.0f\n", s->gain, pos);
+		last_pos = pos;
+	    }
 	}
+
+	new_eyes = (pos >= 50);
+	if (new_eyes != eyes) {
+	    eyes = new_eyes;
+	    if (args->eyes) args->eyes->set(eyes);
+	 }
     }
 
-    new_eyes = (pos >= 50);
-    if (new_eyes != eyes) {
-	eyes = new_eyes;
-	if (args->eyes) args->eyes->set(eyes);
-     }
-}
+private:
+    TalkerGain *who;
+    bool eyes = false;
+};
 
-static void
-servo_update(void *args, double pos)
-{
-    if (current_stats_who != STATS_AUTO) {
-	update_history_and_gain(&stats[current_stats_who], pos);
+/* TODO: Can this be moved into Talker */
+
+class AudioEvent {
+public:
+    AudioEvent(Audio *audio, AudioConfig *audio_config, TalkerGain *who, void *data, size_t size, int vol) :
+           audio(audio), who(who), data(data), size(size), vol(vol) {
+	audio_buffer = new AudioBuffer(new Buffer(data, size), audio_config);
+	talking_skull = new TalkerTalkingSkull(who, new TalkingSkullAudioOps(audio_buffer));
     }
-    update_any_audio_check(pos);
-    update_servo_and_eyes((talker_args_t *) args, pos);
-}
 
-static void
-play_one_buffer(audio_t *out, void *buffer, int vol, size_t size)
-{
-    talking_skull_play(skull, (unsigned char *) buffer, size);
-    audio_set_volume(out, vol);
-    if (! audio_play_buffer(out, (unsigned char *) buffer, size)) {
-	fprintf(stderr, "Failed to play buffer!\n");
-	exit(1);
+    void play() {
+	if (! audio->configure(audio_buffer->get_audio_config())) {
+	    consoles_fatal_printf("Could not configure audio device.\n");
+	}
+
+        // audio_set_volume(out, vol);
+
+	talking_skull->play();
+        if (! audio->play(buffer, size)) {
+	    consoles_fatal_printf(stderr, "Failed to play audio buffer!\n");
+        }
     }
-}
 
-static void
-produce(producer_consumer_t *pc, int stats_who, int vol, unsigned char *buffer)
-{
-    event_t *e = (event_t *) fatal_malloc(sizeof(*e));
+private:
+    Audio *audio;
+    AudioBuffer *audio_buffer;
+    TalkerGain *who;
+    TalkingSkull *talking_skull;
+    void *data;
+    size_t size;
+    int vol;
+};
 
-    e->stats_who = stats_who;
-    e->buffer = buffer;
-    e->vol = vol;
+class TalkerBackgroundThread : PiThread {
+public:
+    TalkerBackgroundThread(Audio *audio, AudioConfig *audio_config) : audio(audio), audio_config(audio_config) {
+	pc = producer_consumer_new(1);
+	start();
+    }
 
-    producer_consumer_produce(pc, e);
-}
+    ~Talker() {
+	producer_consumer_destroy(pc);
+    }
 
+    void enqueue_buffer(TalkerGain *who, AudioConfig *audio_config, void *data, size_t size, int vol) {
+	producer_consumer_produce(new AudioEvent(audio, audio_config, who, data, size, vol));
+    }
+
+    void main(void) {
+	AudioEvent *e;
+
+	while ((e = (AudioEvent *) producer_consumer_consume(pc, &seq_unused)) != NULL) e->play(e);
+    }
+
+private:
+    Audio *audio;
+    producer_consumer *pc;
+};
+
+#if 0
 static char *
 remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, size_t addr_size)
 {
     talker_args_t *args = (talker_args_t *) args_as_vp;
     unsigned char *data;
     size_t i, j;
-    int ip = addr->sin_addr.s_addr>>24 % 256;
+    int ip = addr->sin_addr.s_addr>>24 % (N_AUTO_GAIN);
 
     if (strncmp(command, "play ", 5) != 0) {
 	return strdup("Invalid command");
@@ -175,7 +194,7 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
     /* Expect sample rate 16000 mono and playing 48000 stereo */
     data = (unsigned char *) fatal_malloc(size + 100);
 
-    pi_mutex_lock(speak_lock);
+    speak_lock->lock();
 
     for (i = 5, j = 0; command[i]; i++) {
 	if (command[i] == '\\') {
@@ -201,7 +220,7 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
 	    }
 	}
 	if (j >= size) {
-	    produce(pc, ip, args->remote_vol, data);
+	    produce(pc, &talker_gain[ip], args->remote_vol, data);
 	    data = (unsigned char *) fatal_malloc(size + 100);
 	    j = 0;
 	}
@@ -214,25 +233,19 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
 	free(data);
     }
 
-    pi_mutex_unlock(speak_lock);
+    speak_lock->unlock();
 
     return strdup(SERVER_OK);
 }
 
-static void
-play_thread_main(void *out_as_vp)
-{
-    audio_t *out = (audio_t *) out_as_vp;
-    unsigned seq_unused;
-    event_t *e;
+#endif
 
-    while ((e = (event_t *) producer_consumer_consume(pc, &seq_unused)) != NULL) {
-	current_stats_who = e->stats_who;
-	play_one_buffer(out, e->buffer, e->vol, size);
-	free(e->buffer);
-	free(e);
+class TalkerMainThread : public PiThread {
+public:
+    TalkerMainThread() {
+        start();
     }
-}
+};
 
 void
 talker_main(void *args_as_vp)
@@ -257,21 +270,14 @@ talker_main(void *args_as_vp)
 
     fprintf(stderr, "Using %d idle tracks\n", n_idle_tracks);
 
-    speak_lock = pi_mutex_new();
+#if 0
+    speak_lock = new PiMutex();
     server_args.port = 5555;
     server_args.command = remote_event;
     server_args.state = args;
 
-    pc = producer_consumer_new(1);
-
     pi_thread_create("server", server_thread_main, &server_args);
-
-    audio_config_init_default(&cfg);
-    cfg.channels = 2;
-    cfg.rate = 48000;
-
-    out = audio_new(&cfg, &args->out_dev);
-    pi_thread_create("audio", play_thread_main, out);
+#endif
 
     if (args->no_input) in = NULL;
     else {
@@ -305,16 +311,9 @@ talker_main(void *args_as_vp)
 
     nano_gettime(&last_audio);
 
-    for (i = 0; i < MAX_STATS; i++) {
-	stats[i].gain = 5;
-	stats[i].gain_target = OTHER_GAIN_TARGET;
-	stats[i].max_gain = OTHER_MAX_GAIN;
-	stats[i].epsilon = OTHER_HISTORY_EPSILON;
-    }
-    stats[STATS_MICROPHONE].gain_target = MICROPHONE_GAIN_TARGET;
-    stats[STATS_MICROPHONE].max_gain = MICROPHONE_MAX_GAIN;
-    stats[STATS_MICROPHONE].epsilon = MICROPHONE_HISTORY_EPSILON;
-    stats[STATS_AUTO].gain = 3;
+    talker_gain_mic.set_gain(3);
+    talker_gain_mic.set_epsilon(5);
+    talker_gain_mic.set_max_gain(5);
 
     while (! in || audio_capture_buffer(in, buffer)) {
 	if (auto_play_bytes_left == 0 && nano_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0 && args->is_valid()) {
@@ -327,17 +326,17 @@ talker_main(void *args_as_vp)
 	    auto_play_buffer += n;
 	    auto_play_bytes_left -= n;
 
-	    pi_mutex_lock(speak_lock);
-	    produce(pc, STATS_AUTO, args->track_vol, buffer);
-	    pi_mutex_unlock(speak_lock);
+	    speak_lock->lock();
+	    produce(pc, NULL, args->track_vol, buffer);
+	    speak_lock->unlock();
 
 	    buffer = (unsigned char *) fatal_malloc(size);
 	} else if (! in) {
 	    ms_sleep(100);
 	} else {
-	    pi_mutex_lock(speak_lock);
-	    produce(pc, STATS_MICROPHONE, args->mic_vol, buffer);
-	    pi_mutex_unlock(speak_lock);
+	    speak_lock->lock();
+	    produce(pc, &talker_gain_mic, args->mic_vol, buffer);
+	    speak_lock->unlock();
 	    buffer = (unsigned char *) fatal_malloc(size);
 	}
     }

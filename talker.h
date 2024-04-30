@@ -1,6 +1,8 @@
 #ifndef __TALKER_H__
 #define __TALKER_H__
 
+#if 0
+
 #include "audio.h"
 #include "io.h"
 #include "wb.h"
@@ -27,5 +29,7 @@ talker_main(void *talker_args);
 
 void
 talker_run_in_background(talker_args_t *args);
+
+#endif
 
 #endif

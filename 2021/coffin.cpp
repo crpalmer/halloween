@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
 #include "maestro.h"

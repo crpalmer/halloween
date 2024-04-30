@@ -19,7 +19,6 @@ add_subdirectory(2019)
 
 if("${PLATFORM}" STREQUAL "pi")
   set(LIB_OBJS
-    fogger.c
 #    talker.cpp
     tentacle.cpp
   )
@@ -27,6 +26,7 @@ endif()
 
 add_library(halloween STATIC
   animation-station.cpp
+  fogger.c
   ween-time.c
   ${LIB_OBJS}
 )
@@ -39,7 +39,3 @@ target_link_libraries(halloween
   pi-net
   pi-threads
 )
-
-if("${PLATFORM}" STREQUAL "pi")
-  target_link_libraries(halloween pi-net)
-endif()

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "pi.h"
 #include "pi-threads.h"
 #include <string.h>
 #include "audio.h"

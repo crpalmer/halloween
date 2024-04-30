@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "pi.h"
 #include "animation-station.h"
 #include "audio.h"
 #include "audio-player.h"

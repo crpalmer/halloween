@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
 #include "canvas-png.h"
