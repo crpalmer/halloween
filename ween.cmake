@@ -9,7 +9,7 @@ function(ween_executable exe_name)
   set_target_properties(${exe_name}-${YEAR} PROPERTIES OUTPUT_NAME ${exe_name})
   if("${PLATFORM}" STREQUAL "pico")
     pico_enable_stdio_usb(${exe_name}-${YEAR} 1)
-    pico_enable_stdio_uart(${exe_name}-${YEAR} 0)
+    pico_enable_stdio_uart(${exe_name}-${YEAR} 1)
     # create map/bin/hex file etc.
     pico_add_extra_outputs(${exe_name}-${YEAR})
   endif()
