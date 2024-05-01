@@ -24,7 +24,7 @@ file_exists(const char *fname)
 
 class Button : public AnimationStationAction {
 public:
-    Button(output_t *light, input_t *button) {
+    Button(Output *light, Input *button) {
 	this->light = light;
 	this->button = button;
 	button->set_pullup_down();
@@ -33,7 +33,7 @@ public:
 	cmd = NULL;
     }
 
-    void set_pin(output_t *pin) {
+    void set_pin(Output *pin) {
 	this->pin = pin;
     }
 
@@ -42,7 +42,7 @@ public:
 	this->cmd = strdup(cmd);
     }
 
-    output_t *get_light() override { return light; }
+    Output *get_light() override { return light; }
     bool is_triggered() override { return button->get(); }
     virtual void act(void) { }
     virtual void act(Lights *lights) { act(); }
@@ -108,9 +108,9 @@ private:
     }
 
 private:
-    output_t *light;
-    input_t *button;
-    output_t *pin;
+    Output *light;
+    Input *button;
+    Output *pin;
     char *cmd;
 };
 

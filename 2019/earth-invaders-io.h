@@ -83,17 +83,17 @@ public:
 	motor->speed(0);
     }
 
-     output_t	*laser;
-     input_t	*triggers[2];
+     Output	*laser;
+     Input	*triggers[2];
 
-     output_t	*start_light;
-     input_t	*start_button;
+     Output	*start_light;
+     Input	*start_button;
 
-     input_t	*endstop_motor, *endstop_idler;
+     Input	*endstop_motor, *endstop_idler;
      motor_t	*motor;
 
-     output_t   *lights[3][3];
-     input_t	*targets[3][3];
+     Output   *lights[3][3];
+     Input	*targets[3][3];
 
      digital_counter_t *score[2];
      digital_counter_t *high_score;

@@ -152,7 +152,7 @@ start_pushed(void)
 }
 
 class StartButton : public AnimationStationAction {
-    output_t *get_light() override { return io->start_light; }
+    Output *get_light() override { return io->start_light; }
     bool is_triggered() override { return io->start_button->get() == BUTTON_PUSHED; }
     void act(Lights *lights) override {
 	start_pushed();

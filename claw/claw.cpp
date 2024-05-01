@@ -36,9 +36,9 @@ static int duet_x = 100, duet_y = 100, duet_z = 100;
 static int duet_x_state = 0, duet_y_state = 0, duet_z_state = 0;
 
 static MCP23017 *mcp;
-static input_t *forward, *backward, *left, *right;
-static input_t *start_button, *release_button, *dip[3];
-static output_t *start_light, *release_light;
+static Input *forward, *backward, *left, *right;
+static Input *start_button, *release_button, *dip[3];
+static Output *start_light, *release_light;
 
 static Display *display;
 static Canvas *canvas;
@@ -59,9 +59,9 @@ static Wav *claw_music;
 
 static struct {
     const char *name;
-    input_t **input;
+    Input **input;
     int value;
-    output_t **output;
+    Output **output;
 } inputs[] = {
     { "forward", &forward, 0, NULL },
     { "backward", &backward, 0, NULL },

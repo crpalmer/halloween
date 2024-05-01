@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     //audio->set_volume(t, VOLUME);
 
     MCP23017 *mcp = new MCP23017();
-    output_t *light[8];
+    Output *light[8];
 
     for (int i = 0; i < 8; i++) {
 	light[i] = mcp->get_output(i);

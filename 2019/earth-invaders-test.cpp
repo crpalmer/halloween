@@ -13,7 +13,7 @@ input()
 }
 
 static void
-test_button(input_t *t, const char *w)
+test_button(Input *t, const char *w)
 {
    if (t->get() == BUTTON_PUSHED) printf("   **** FAILURE: button is pushed\n");
    printf("    Push the %s: ", w); fflush(stdout);
@@ -54,7 +54,7 @@ test_start()
 }
 
 static void
-test_endstop(input_t *i, const char *w)
+test_endstop(Input *i, const char *w)
 {
     if (i->get() == ENDSTOP_TRIGGERED) printf("    *** ENDSTOP IS TRIGGERED WHEN IT SHOULDN'T BE!!\n");
     printf("   Trigger the %s endstop: ", w);

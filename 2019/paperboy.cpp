@@ -22,8 +22,8 @@ int
 main(int argc, char **argv)
 {
     Wav *wav;
-    input_t *input;
-    output_t *output;
+    Input *input;
+    Output *output;
 
     gpioInitialise();
     wb_init();

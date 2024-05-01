@@ -43,7 +43,7 @@ AnimationStation::main(void *as_as_vp)
 	}
 
 	as->lights->off();
-	output_t *light = as->active_action->get_light();
+	Output *light = as->active_action->get_light();
 	if (light) light->on();
 
 	as->active_action->act(as->lights);
@@ -75,7 +75,7 @@ void
 AnimationStation::add_action(AnimationStationAction *action)
 {
     actions.push_back(action);
-    output_t *light = action->get_light();
+    Output *light = action->get_light();
     if (light) lights->add(light);
 }
 

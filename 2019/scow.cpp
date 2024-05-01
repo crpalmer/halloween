@@ -17,7 +17,7 @@ static AudioPlayer *player = new AudioPlayer(audio);
 
 static L298N *motor;
 static MCP23017 *mcp;
-static input_t *low_es, *high_es;
+static Input *low_es, *high_es;
 
 #define ES_HIT 1
 #define UP false
@@ -36,7 +36,7 @@ down()
 }
 
 static void
-test_es(const char *name, input_t *es)
+test_es(const char *name, Input *es)
 {
     if (es->get_with_debounce() == ES_HIT) printf("  *** %s ENDSTOP ALREADY TRIGGERED!\n", name);
     printf("Trigger %s end-stop: ", name); fflush(stdout);
@@ -80,10 +80,10 @@ test_motor_es()
      motor->stop();
 }
 
-static input_t *
+static Input *
 get_es(int i)
 {
-    input_t *es = wb_get_input(i);
+    Input *es = wb_get_input(i);
 
     es->set_pullup_down();
     es->set_debounce(10);
@@ -102,7 +102,7 @@ public:
  	wav = new Wav(new BufferFile("scow.wav"));
     }
 
-    output_t *get_light() override { return light; }
+    Output *get_light() override { return light; }
     bool is_triggered() override { return button->get(); }
     void act(Lights *lights) override {
 	scow();
@@ -127,8 +127,8 @@ public:
     }
 
 private:
-    output_t *light;
-    input_t  *button;
+    Output *light;
+    Input  *button;
     Wav      *wav;
 };
 

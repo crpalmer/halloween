@@ -10,7 +10,7 @@
 typedef struct {
     maestro_t *m;
     int servo_id;
-    output_t *eyes;
+    Output *eyes;
     const char *idle_track_prefix;
     unsigned idle_ms;
     audio_device_t out_dev;
