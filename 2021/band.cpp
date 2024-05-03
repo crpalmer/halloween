@@ -4,21 +4,32 @@
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
-#include "maestro.h"
 #include "pi-threads.h"
-#include "pi-usb.h"
 #include "server.h"
+#include "servos.h"
 #include "talking-skull.h"
 #include "talking-skull-from-audio.h"
 #include "time-utils.h"
 #include "wav.h"
-#include "wb.h"
 #include "ween-hours.h"
 
-#define EYE_BANK	2
-#define VOCALS_EYES	8
+#ifdef PLATFORM_pi
+#include "maestro.h"
+#include "pi-usb.h"
+#include "wb.h"
+#else
+#include "gp-input.h"
+#include "gp-output.h"
+#include "servo-gpio.h"
+#include "wifi.h"
+#endif
 
-#define LIGHTS		1,1
+#define EYES_BANK		2
+#define VOCALS_EYES_PI_PIN	8
+#define VOCALS_EYES_PICO_PIN	7
+
+#define LIGHTS_PI_PIN		1,1
+#define LIGHTS_PICO_PIN		8
 
 #define VOCALS_SERVO	0
 #define DRUM_SERVO0	1
@@ -28,81 +39,81 @@
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
 #define SONG_WAV	"pour-some-sugar.wav"
-#define VOCALS_OPS	"pour-some-sugar-vocals.wav"
-#define DRUM_OPS	"pour-some-sugar-drums.wav"
-#define GUITAR_OPS	"pour-some-sugar-guitar.wav"
-#define KEYBOARD_OPS	"pour-some-sugar-vocals.wav"
+#define VOCALS_WAV	"pour-some-sugar-vocals.wav"
+#ifdef PLATFORM_pi
+#define DRUM_WAV	"pour-some-sugar-drums.wav"
+#define GUITAR_WAV	"pour-some-sugar-guitar.wav"
+#define KEYBOARD_WAV	"pour-some-sugar-vocals.wav"
+#else
+// Running out of memory...
+#define DRUM_WAV	"pour-some-sugar-drums-30.wav"
+#define GUITAR_WAV	"pour-some-sugar-guitar-30.wav"
+#define KEYBOARD_WAV	"pour-some-sugar-vocals-30.wav"
+#endif
+
+#ifdef PLATFORM_pi
+#define TALKING_SKULL_BYTES_PER_OP 2
+#else
+#define TALKING_SKULL_BYTES_PER_OP 1
+#endif
 
 #define GUITAR_UP_STATE_MS	300
 #define GUITAR_DOWN_STATE_MS	40
 #define GUITAR_MULT		1
 
-static maestro_t *m;
+static ServoFactory *servo_factory;
 
-static Audio *audio = new AudioPi();
-static AudioPlayer *player = new AudioPlayer(audio);
+static Audio *audio;
+static AudioPlayer *player;
 
-static Wav *song;
+static Output *vocals_eyes;
+static Output *lights;
+
 static bool force = true;
 
 class BandServo : public Servo {
 public:
-    BandServo(int servo, int eyes_pin = -1, bool eyes_inverted = false, int eyes_on_pct = 50) : servo(servo), eyes_pin(eyes_pin), eyes_inverted(eyes_inverted) { }
+    BandServo(unsigned servo_id, Output *eyes_output = NULL, bool eyes_inverted = false, int eyes_on_pct = 50) : servo(servo_factory->get_servo(servo_id)), eyes_output(eyes_output), eyes_inverted(eyes_inverted) {
+    }
 
     bool move_to(double pos) override {
         bool new_eyes;
 
         if (pos > 100) pos = 100;
-        maestro_set_servo_pos(m, servo, pos);
+        servo->move_to(pos);
 
         new_eyes = pos >= eyes_on_pct;
         if (eyes_inverted) new_eyes = !new_eyes;
 
         if (eyes != new_eyes) {
-	    if (eyes_pin >= 0) wb_set(EYE_BANK, eyes_pin, new_eyes);
+	    if (eyes_output) eyes_output->set(new_eyes);
 	    eyes = new_eyes;
         }
 	return true;
     }
 
 private:
-    int servo;
-    int eyes_pin;
+    Servo *servo;
+    Output *eyes_output;
     bool eyes_inverted;
     int eyes_on_pct;
     bool eyes = false;
 };
 
-class VocalsTalkingSkull : public TalkingSkull, public BandServo {
+class BandTalkingSkull : public TalkingSkull, public Servos {
 public:
-    VocalsTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("vocals"), BandServo(VOCALS_SERVO, VOCALS_EYES) { this->ops(ops); }
+    BandTalkingSkull(const char *wav_fname, const char *name = "band-ts") : TalkingSkull(name, TALKING_SKULL_BYTES_PER_OP) {
+	TalkingSkullOps *ops = new TalkingSkullWavOps(wav_fname);
+        this->set_ops(ops);
+	delete ops;
+    }
+
     void update_pos(double pos) override { move_to(pos); }
 };
 
-class DrumTalkingSkull : public TalkingSkull, public Servo {
+class GuitarTalkingSkull : public BandTalkingSkull {
 public:
-     DrumTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("drums") {
-	this->ops(ops);
-	servo0 = new BandServo(DRUM_SERVO0);
-	servo1 = new BandServo(DRUM_SERVO0+1);
-     }
-
-     void update_pos(double pos) override {
-	move_to(pos);
-     }
-
-     bool move_to(double pos) override {
-	return servo0->move_to(pos) && servo1->move_to(pos);
-     }
-
-private:
-     BandServo *servo0;
-     BandServo *servo1;
-};
-
-class GuitarTalkingSkull : public TalkingSkull, public BandServo {
-public:
-    GuitarTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("guitar"), BandServo(GUITAR_SERVO) { this->ops(ops); }
+    GuitarTalkingSkull(const char *wav_fname) : BandTalkingSkull(wav_fname, "guitar") { }
 
     void update_pos(double new_pos) override {
         bool new_up = new_pos > 10;
@@ -129,13 +140,9 @@ private:
     struct timespec at = { 0, };
 };
 
-class KeyboardTalkingSkull : public TalkingSkull, public Servo {
+class KeyboardTalkingSkull : public BandTalkingSkull {
 public:
-    KeyboardTalkingSkull(TalkingSkullOps *ops) : TalkingSkull("keyboard") {
-	this->ops(ops);
-	servo0 = new BandServo(KEYBOARD_SERVO0);
-        servo1 = new BandServo(KEYBOARD_SERVO0+1);
-    }
+    KeyboardTalkingSkull(const char *wav_fname) : BandTalkingSkull(wav_fname, "keyboard") { }
 
     void update_pos(double new_pos) override {
 	bool new_down = new_pos > 5;
@@ -159,21 +166,16 @@ public:
 	if (is_down) n_in_down++;
     }
 
-    bool move_to(double pos) override {
-	return servo0->move_to(pos) && servo1->move_to(pos);
-    }
-
 private:
-    BandServo *servo0, *servo1;
     int hold = 0;
     bool is_down = false;
     int n_in_down = 0;
 };
 
-static VocalsTalkingSkull *vocals;
-static DrumTalkingSkull *drum;
-static GuitarTalkingSkull *guitar;
-static KeyboardTalkingSkull *keyboard;
+static BandTalkingSkull *vocals;
+static BandTalkingSkull *drum;
+static BandTalkingSkull *guitar;
+static BandTalkingSkull *keyboard;
 
 static void
 rest_servos(void)
@@ -187,19 +189,28 @@ rest_servos(void)
 static void
 init_servos(void)
 {
-    vocals = new VocalsTalkingSkull(new TalkingSkullWavOps(VOCALS_OPS));
-    drum = new DrumTalkingSkull(new TalkingSkullWavOps(DRUM_OPS));
-    guitar = new GuitarTalkingSkull(new TalkingSkullWavOps(GUITAR_OPS));
-    keyboard = new KeyboardTalkingSkull(new TalkingSkullWavOps(KEYBOARD_OPS));
+    printf("Generating vocals.\n");
+    vocals = new BandTalkingSkull(VOCALS_WAV, "vocals");
+    vocals->add(new BandServo(VOCALS_SERVO, vocals_eyes));
+    vocals->set_range(976, 1296);
+    vocals->set_is_inverted(true);
 
-    maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1296);
-    maestro_set_servo_physical_range(m, VOCALS_SERVO, 976, 1400);
-    maestro_set_servo_is_inverted(m, VOCALS_SERVO, 1);
-    maestro_set_servo_physical_range(m, DRUM_SERVO0, 1696, 2000);
-    maestro_set_servo_physical_range(m, DRUM_SERVO0+1, 1696, 2000); // TBD
-    maestro_set_servo_physical_range(m, GUITAR_SERVO, 1200, 1800);
-    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0, 1400, 1700);
-    maestro_set_servo_physical_range(m, KEYBOARD_SERVO0+1, 1400, 1700);
+    printf("Generating drum.\n");
+    drum = new BandTalkingSkull(DRUM_WAV, "drums");
+    drum->add(new BandServo(DRUM_SERVO0));
+    drum->add(new BandServo(DRUM_SERVO0+1));
+    drum->set_range(1696, 2000);
+
+    printf("Generating guitar.\n");
+    guitar = new GuitarTalkingSkull(GUITAR_WAV);
+    guitar->add(new BandServo(GUITAR_SERVO));
+    guitar->set_range(1200, 1800);
+
+    printf("Generating keyboard.\n");
+    keyboard = new KeyboardTalkingSkull(KEYBOARD_WAV);
+    keyboard->add(new BandServo(KEYBOARD_SERVO0));
+    keyboard->add(new BandServo(KEYBOARD_SERVO0+1));
+    keyboard->set_range(1400, 1700);
 
     rest_servos();
 }
@@ -228,22 +239,37 @@ start_server()
     pi_thread_create("server", server_thread_main, &server_args);
 }
 
-int
-main(int argc, char **argv)
-{
-    pi_usb_init();
+static void platform_setup() {
+#ifdef PLATFORM_pi
     wb_init();
+    pi_usb_init();
+    servo_factory = new Maestro();
+    audio = new AudioPi();
+    vocals_eyes = wb_get_output(EYES_BANK, VOCALS_EYES_PI_PIN);
+    lights = wb_get_output(LIGHTS_PI_PIN);
+#else
+    wifi_init();
 
-    if ((m = maestro_new()) == NULL) {
-	fprintf(stderr, "Failed to initialize servo controller\n");
-	exit(1);
-    }
+    int pins[] = { 22, 2, 3, 4, 5, 6 };
+    servo_factory = new GpioServoFactory(pins, sizeof(pins) / sizeof(pins[0]));
+    audio = new AudioPico();
+    vocals_eyes = new GPOutput(VOCALS_EYES_PICO_PIN);
+    lights = new GPOutput(LIGHTS_PICO_PIN);
+#endif
+    player = new AudioPlayer(audio);
+}
 
-    song = new Wav(new BufferFile(SONG_WAV));
+static void threads_main(int argc, char **argv)
+{
+    platform_setup();
+
+    printf("Loading %s\n", SONG_WAV);
+    Wav *song = new Wav(new BufferFile(SONG_WAV));
+    AudioBuffer *audio_buffer = song->to_audio_buffer();
 
     init_servos();
 
-    wb_set(LIGHTS, 0);
+    lights->set(0);
     rest_servos();
 
     start_server();
@@ -253,20 +279,26 @@ main(int argc, char **argv)
 	    ms_sleep(1000);
         }
 
-        wb_set(LIGHTS, 1);
+        lights->set(1);
 
         vocals->play();
-        drum->play();
-        guitar->play();
+        //drum->play();
+        //guitar->play();
         //keyboard->play();
 
-        player->play(song->to_audio_buffer());
+	audio_buffer->reset();
+        player->play(audio_buffer);
 	player->wait_done();
 
-        wb_set(LIGHTS, 0);
+        lights->set(0);
+
+	pi_threads_dump_state();
 
         ms_sleep(BETWEEN_SONG_MS);
     }
+}
 
+int main(int argc, char **argv) {
+    pi_init_with_threads(threads_main, argc, argv);
     return 0;
 }
