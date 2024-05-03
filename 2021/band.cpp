@@ -4,9 +4,12 @@
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
+#include "net-console.h"
+#include "net-listener.h"
 #include "pi-threads.h"
-#include "server.h"
 #include "servos.h"
+#include "sntp.h"
+#include "stdout-writer.h"
 #include "talking-skull.h"
 #include "talking-skull-from-audio.h"
 #include "time-utils.h"
@@ -215,29 +218,42 @@ init_servos(void)
     rest_servos();
 }
 
-static char *
-remote_event(void *unused, const char *cmd, struct sockaddr_in *addr, size_t size)
-{
-    if (strcmp(cmd, "play") == 0) {
-	force = true;
-	return strdup("ok");
+class BandConsole : public NetConsole, public PiThread {
+public:
+   BandConsole(int fd) : NetConsole(new NetReader(fd), new NetWriter(fd)), PiThread("console") { start(); }
+
+    void main(void) override {
+	NetConsole::main();
     }
-    return NULL;
-}
 
-static void
-start_server()
-{
-    static server_args_t server_args;
+    void process_cmd(const char *cmd) override {
+	if (strcmp(cmd, "play") == 0) {
+	    force = true;
+	    printf("play: force mode enabled.\n");
+        } else {
+	    NetConsole::process_cmd(cmd);
+	}
+    }
 
-    server_args.port = 5555;
-    server_args.command = remote_event;
-    server_args.state = NULL;
+    void usage() override {
+	NetConsole::usage();
+	printf("play - disable any ween hours processing.\n");
+    }
+};
 
-    fprintf(stderr, "starting server on port %d\n", server_args.port);
+class BandListener : public NetListener {
+public:
+   BandListener(uint16_t port = 5555) : NetListener(port) { start(); }
 
-    pi_thread_create("server", server_thread_main, &server_args);
-}
+   void main() override {
+	net_sntp_set_pico_rtc(NULL);
+	NetListener::main();
+   }
+
+   void accepted(int fd) {
+	new BandConsole(fd);
+   }
+};
 
 static void platform_setup() {
 #ifdef PLATFORM_pi
@@ -262,6 +278,8 @@ static void platform_setup() {
 static void threads_main(int argc, char **argv)
 {
     platform_setup();
+    new BandListener();
+    new Console(NULL, new StdoutWriter());
 
     printf("Loading %s\n", SONG_WAV);
     Wav *song = new Wav(new BufferFile(SONG_WAV));
@@ -271,8 +289,6 @@ static void threads_main(int argc, char **argv)
 
     lights->set(0);
     rest_servos();
-
-    start_server();
 
     while (1) {
         while (! ween_hours_is_valid() && ! force) {
@@ -291,8 +307,6 @@ static void threads_main(int argc, char **argv)
 	player->wait_done();
 
         lights->set(0);
-
-	pi_threads_dump_state();
 
         ms_sleep(BETWEEN_SONG_MS);
     }
