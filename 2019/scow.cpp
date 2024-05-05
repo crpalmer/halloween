@@ -99,7 +99,7 @@ public:
 	button->set_pullup_down();
 	button->set_debounce(10);
 
- 	wav = new Wav(new BufferFile("scow.wav"));
+ 	wav = wav_open("scow.wav");
     }
 
     Output *get_light() override { return light; }
@@ -112,7 +112,7 @@ public:
 	struct timespec start;
 
 	nano_gettime(&start);
-	player->play(wav->to_audio_buffer());
+	player->play(wav);
 
 	up();
 
@@ -129,7 +129,7 @@ public:
 private:
     Output *light;
     Input  *button;
-    Wav      *wav;
+    AudioBuffer *wav;
 };
 
 class ScowAction : public AnimationStationAction {

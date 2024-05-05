@@ -73,7 +73,7 @@ main(int argc, char **argv)
 	exit(1);
     }
 
-    Wav *wav = new Wav(new BufferFile("coffin-dog.wav"));
+    AudioBuffer *wav = wav_open("coffin-dog.wav");
     //audio->set_volume(50);
 
     wb_set(LIGHT_PIN, 1);
@@ -85,7 +85,7 @@ main(int argc, char **argv)
 
 	while (! ween_hours_is_primetime()) sleep(1);
 
-	player->play(wav->to_audio_buffer());
+	player->play(wav);
 
 	ms_sleep(ACTION_START);
 

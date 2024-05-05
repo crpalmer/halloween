@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 
     pi_thread_create("gauge", gauge, NULL);
 
-    Wav *wav = new Wav(new BufferFile("jacob.wav"));
+    AudioBuffer *wav = wav_open("jacob.wav");
     //audio->set_volume(t, VOLUME);
 
     MCP23017 *mcp = new MCP23017();
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	    int flashes = random_number_in_range(2, 5);
 	    int mean = 120 / flashes;
 	    for (int j = 0; j < flashes; j++) {
-		if (! player->is_active()) player->play(wav->to_audio_buffer());
+		if (! player->is_active()) player->play(wav);
 		light[i]->set(1);
 		ms_sleep(random_number_in_range(mean-15, mean+15));
 		light[i]->set(0);

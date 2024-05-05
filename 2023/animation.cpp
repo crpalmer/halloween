@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "pi-gpio.h"
+#include "pi.h"
 #include "animation-station.h"
+#include "audio.h"
+#include "audio-player.h"
+#include "pi-gpio.h"
 #include "random-utils.h"
+#include "wav.h"
 #include "wb.h"
 
-#define MAX_TRACKS	10
+static Audio *audio;
+static AudioPlayer *audio_player;
 
 static bool
 file_exists(const char *fname)
@@ -19,7 +24,7 @@ file_exists(const char *fname)
 
 class Button : public AnimationStationAction {
 public:
-    Button(output_t *light, input_t *button) {
+    Button(Output *light, Input *button) {
 	this->light = light;
 	this->button = button;
 	button->set_pullup_down();
@@ -28,7 +33,7 @@ public:
 	cmd = NULL;
     }
 
-    void set_pin(output_t *pin) {
+    void set_pin(Output *pin) {
 	this->pin = pin;
     }
 
@@ -37,7 +42,7 @@ public:
 	this->cmd = strdup(cmd);
     }
 
-    output_t *get_light() override { return light; }
+    Output *get_light() override { return light; }
     bool is_triggered() override { return button->get(); }
     virtual void act(void) { }
     virtual void act(Lights *lights) { act(); }
@@ -72,9 +77,9 @@ private:
     }
 
 private:
-    output_t *light;
-    input_t *button;
-    output_t *pin;
+    Output *light;
+    Input *button;
+    Output *pin;
     char *cmd;
 };
 
@@ -108,19 +113,22 @@ class Question : public Button {
 public:
     Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
 	head = wb_get_output(2, 3);
+	audio_buffer = wav_open("question.wav");
 	set_cmd("question");
     }
 
     void act(Lights *l) {
 	fprintf(stderr, "question\n");
+	audio_player->play(audio_buffer);
         l->blink_all();
         head->set(true);
-	ms_sleep(200);
+	audio_player->wait_done();
 	head->set(false);
     }
 
 private:
-    output_t *head;
+    Output *head;
+    AudioBuffer *audio_buffer;
 };
 
 class Pillar : public Button {
@@ -169,6 +177,13 @@ void threads_main(int argc, char **argv) {
     gpioInitialise();
     seed_random();
     wb_init();
+
+#ifdef PLATFORM_pico
+    audio = new AudioPico();
+#else
+    audio = new AudioPi();
+#endif
+    audio_player = new AudioPlayer(audio);
 
     pi_thread_create("main", main_thread, NULL);
 }

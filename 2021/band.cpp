@@ -4,14 +4,17 @@
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
-#include "net-console.h"
 #include "net-listener.h"
+#include "net-reader.h"
+#include "net-writer.h"
 #include "pi-threads.h"
 #include "servos.h"
 #include "sntp.h"
+#include "stdin-reader.h"
 #include "stdout-writer.h"
 #include "talking-skull.h"
 #include "talking-skull-from-audio.h"
+#include "threads-console.h"
 #include "time-utils.h"
 #include "wav.h"
 #include "ween-hours.h"
@@ -41,8 +44,8 @@
 
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
-#define SONG_WAV	"pour-some-sugar.wav"
-#define VOCALS_WAV	"pour-some-sugar-vocals.wav"
+#define SONG_WAV	"pour-some-sugar-30.wav"
+#define VOCALS_WAV	"pour-some-sugar-vocals-30.wav"
 #ifdef PLATFORM_pi
 #define DRUM_WAV	"pour-some-sugar-drums.wav"
 #define GUITAR_WAV	"pour-some-sugar-guitar.wav"
@@ -106,7 +109,7 @@ private:
 class BandTalkingSkull : public TalkingSkull, public Servos {
 public:
     BandTalkingSkull(const char *wav_fname, const char *name = "band-ts") : TalkingSkull(name, TALKING_SKULL_BYTES_PER_OP) {
-	TalkingSkullOps *ops = new TalkingSkullWavOps(wav_fname);
+	TalkingSkullOps *ops = TalkingSkullAudioOps::open_wav(wav_fname);
         this->set_ops(ops);
 	delete ops;
     }
@@ -218,12 +221,14 @@ init_servos(void)
     rest_servos();
 }
 
-class BandConsole : public NetConsole, public PiThread {
+class BandConsole : public ThreadsConsole, public PiThread {
 public:
-   BandConsole(int fd) : NetConsole(new NetReader(fd), new NetWriter(fd)), PiThread("console") { start(); }
+   BandConsole(int fd) : BandConsole(new NetReader(fd), new NetWriter(fd)) {}
+   //BandConsole(int fd) : ThreadsConsole(new NetReader(fd), new NetWriter(fd)), PiThread("console") { start(0); }
+   BandConsole(Reader *r, Writer *w) : ThreadsConsole(r, w), PiThread("console") { start(0); }
 
     void main(void) override {
-	NetConsole::main();
+	ThreadsConsole::main();
     }
 
     void process_cmd(const char *cmd) override {
@@ -231,12 +236,12 @@ public:
 	    force = true;
 	    printf("play: force mode enabled.\n");
         } else {
-	    NetConsole::process_cmd(cmd);
+	    ThreadsConsole::process_cmd(cmd);
 	}
     }
 
     void usage() override {
-	NetConsole::usage();
+	ThreadsConsole::usage();
 	printf("play - disable any ween hours processing.\n");
     }
 };
@@ -279,11 +284,14 @@ static void threads_main(int argc, char **argv)
 {
     platform_setup();
     new BandListener();
-    new Console(NULL, new StdoutWriter());
+    new BandConsole(new StdinReader(), new StdoutWriter());
 
     printf("Loading %s\n", SONG_WAV);
-    Wav *song = new Wav(new BufferFile(SONG_WAV));
-    AudioBuffer *audio_buffer = song->to_audio_buffer();
+    AudioBuffer *song = wav_open(SONG_WAV);
+    if (! song) {
+	consoles_printf("COULDN'T OPEN %s\n", SONG_WAV);
+	while (1) ms_sleep(1000);
+    }
 
     init_servos();
 
@@ -302,8 +310,7 @@ static void threads_main(int argc, char **argv)
         //guitar->play();
         //keyboard->play();
 
-	audio_buffer->reset();
-        player->play(audio_buffer);
+        player->play(song);
 	player->wait_done();
 
         lights->set(0);

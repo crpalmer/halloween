@@ -21,7 +21,6 @@ static AudioPlayer *player = new AudioPlayer(audio);
 int
 main(int argc, char **argv)
 {
-    Wav *wav;
     Input *input;
     Output *output;
 
@@ -35,7 +34,7 @@ main(int argc, char **argv)
     output = wb_get_output(1);
     output->on();
 
-    wav = new Wav(new BufferFile("extra-extra-read-all-about-it.wav"));
+    AudioBuffer *wav = wav_open("extra-extra-read-all-about-it.wav");
 
     while (true) {
 	unsigned delay = 0;
@@ -49,7 +48,7 @@ main(int argc, char **argv)
 	}
 	if (delay > 0) {
 	    output->off();
-	    player->play_sync(wav->to_audio_buffer());
+	    player->play_sync(wav);
 	    ms_sleep(delay*1000);
 	    output->on();
 	}

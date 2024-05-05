@@ -7,7 +7,7 @@
 #include "audio.h"
 #include "audio-player.h"
 #include "pi-gpio.h"
-#include "random-wavs.h"
+#include "random-audio.h"
 #include "random-utils.h"
 #include "wb.h"
 
@@ -86,17 +86,17 @@ protected:
 
         nano_gettime(&start);
 
-	if (random_wavs->is_empty()) {
+	if (random_audio->is_empty()) {
 	    attack_without_audio(up, down);
 	} else {
-	    random_wavs->play_random(player);
+	    random_audio->play_random(player);
 	    attack_with_audio(up, down);
 	}
 
 	fprintf(stderr, "total time: %d ms\n", nano_elapsed_ms_now(&start));
     }
 
-    RandomWavs *random_wavs = new RandomWavs();
+    RandomAudio *random_audio = new RandomAudio();
 
 private:
     unsigned up_ms(double up) {
@@ -144,7 +144,7 @@ class Question : public Button {
 public:
     Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
 	head = wb_get_output(2, 3);
-	random_wavs->add("laugh.wav");
+	random_audio->add("laugh.wav");
 	set_cmd("question");
     }
 
@@ -153,7 +153,7 @@ public:
         l->blink_all();
         head->set(true);
 	ms_sleep(200);
-	random_wavs->play_random(player);
+	random_audio->play_random(player);
 	player->wait_done();
 	head->set(false);
     }

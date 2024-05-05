@@ -55,7 +55,7 @@ static PicoSlave *pico;
 
 static Audio *audio = new AudioPi();
 static AudioPlayer *player = new AudioPlayer(audio);
-static Wav *claw_music;
+static AudioBuffer *claw_music;
 
 static struct {
     const char *name;
@@ -372,7 +372,7 @@ play_one_round()
     pico->writeline("game");
     release_light->on();
 
-    player->play(claw_music->to_audio_buffer());
+    player->play(claw_music);
 
     while (nano_elapsed_ms_now(&start) < ROUND_MS) {
 	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
@@ -493,7 +493,7 @@ int main(int argc, char **argv)
 	open_duet();
     }
 
-    claw_music = new Wav(new BufferFile("claw-music.wav"));
+    claw_music = wav_open("claw-music.wav");
     if (! claw_music) exit(1);
 
     duet_cmd("M201 X20000.00 Y20000.00 Z20000.00");

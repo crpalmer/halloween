@@ -7,7 +7,7 @@
 #include "audio.h"
 #include "audio-player.h"
 #include "pi-gpio.h"
-#include "random-wavs.h"
+#include "random-audio.h"
 #include "random-utils.h"
 #include "wb.h"
 
@@ -86,10 +86,10 @@ protected:
 
         nano_gettime(&start);
 
-	if (random_wavs->is_empty()) {
+	if (random_audio->is_empty()) {
 	    attack_without_audio(up, down);
 	} else {
-	    random_wavs->play_random(player);
+	    random_audio->play_random(player);
 	    attack_with_audio(up, down);
 	}
 
@@ -110,7 +110,7 @@ private:
     Input *button;
     Output *pin;
     char *cmd;
-    RandomWavs *random_wavs = new RandomWavs();
+    RandomAudio *random_audio = new RandomAudio();
 };
 
 class MandM : public Button {

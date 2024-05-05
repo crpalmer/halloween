@@ -7,7 +7,7 @@
 #include "audio.h"
 #include "audio-player.h"
 #include "pi-gpio.h"
-#include "random-wavs.h"
+#include "random-audio.h"
 #include "random-utils.h"
 #include "wb.h"
 
@@ -86,17 +86,17 @@ protected:
 
         nano_gettime(&start);
 
-	if (random_wavs->is_empty()) {
+	if (random_audio->is_empty()) {
 	    attack_without_audio(up, down);
 	} else {
-	    random_wavs->play_random(player);
+	    random_audio->play_random(player);
 	    attack_with_audio(up, down);
 	}
 
 	fprintf(stderr, "total time: %d ms\n", nano_elapsed_ms_now(&start));
     }
 
-    RandomWavs *random_wavs = new RandomWavs();
+    RandomAudio *random_audio = new RandomAudio();
 
 private:
     unsigned up_ms(double up) {
@@ -119,10 +119,10 @@ public:
     CandyCorn() : Button(wb_get_output(1, 1), wb_get_input(1)) {
 	set_pin(wb_get_output(2, 1));
 	set_cmd("candy corn");
-	random_wavs->add("candy corn 1.wav");
-	random_wavs->add("candy corn 2.wav");
-	random_wavs->add("candy corn 3.wav");
-	random_wavs->add("candy corn 4.wav");
+	random_audio->add("candy corn 1.wav");
+	random_audio->add("candy corn 2.wav");
+	random_audio->add("candy corn 3.wav");
+	random_audio->add("candy corn 4.wav");
     }
 
     void act(void) {
@@ -136,9 +136,9 @@ public:
     PopTots() : Button(wb_get_output(1, 2), wb_get_input(2)) {
 	set_pin(wb_get_output(2, 2));
 	set_cmd("pop tots");
-	random_wavs->add("pop tot 1.wav");
-	random_wavs->add("pop tot 2.wav");
-	random_wavs->add("pop tot 3.wav");
+	random_audio->add("pop tot 1.wav");
+	random_audio->add("pop tot 2.wav");
+	random_audio->add("pop tot 3.wav");
     }
 
     void act() {
@@ -152,9 +152,9 @@ public:
     Twizzler() : Button(wb_get_output(1, 3), wb_get_input(3)) {
 	set_pin(wb_get_output(2, 3));
 	set_cmd("twizzler");
-	random_wavs->add("twizzler 1.wav");
-	random_wavs->add("twizzler 2.wav");
-	random_wavs->add("twizzler 3.wav");
+	random_audio->add("twizzler 1.wav");
+	random_audio->add("twizzler 2.wav");
+	random_audio->add("twizzler 3.wav");
     }
 
     void act() {
@@ -168,10 +168,10 @@ public:
     KitKat() : Button(wb_get_output(1, 4), wb_get_input(4)) {
 	set_pin(wb_get_output(2, 4));
 	set_cmd("kit kat");
-	random_wavs->add("kit kat 1.wav");
-	random_wavs->add("kit kat 2.wav");
-	random_wavs->add("kit kat 3.wav");
-	random_wavs->add("kit kat 4.wav");
+	random_audio->add("kit kat 1.wav");
+	random_audio->add("kit kat 2.wav");
+	random_audio->add("kit kat 3.wav");
+	random_audio->add("kit kat 4.wav");
     }
 
     void act() {

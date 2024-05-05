@@ -26,10 +26,10 @@ static double speed = 0;
 
 static earth_invaders_io_t *io;
 
-static Wav *game_over_track;
-static Wav *hit_track[2];
-static Wav *start_track;
-static Wav *winner_track;
+static AudioBuffer *game_over_track;
+static AudioBuffer *hit_track[2];
+static AudioBuffer *start_track;
+static AudioBuffer *winner_track;
 static bool game_active;
 static int high_score;
 static int scores[2];
@@ -98,7 +98,7 @@ public:
 	    while (game_active) {
 		int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
 		if (nano_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
-		    player->play(hit_track[p]->to_audio_buffer());
+		    player->play(hit_track[p]);
 		    scores[p] += SCORE_INC;
 		    io->score[p]->set(scores[p]);
 		    need_new_target = true;
@@ -127,7 +127,7 @@ start_pushed(void)
     io->score[0]->set(0);
     io->score[1]->set(0);
 
-    player->play_sync(start_track->to_audio_buffer());
+    player->play_sync(start_track);
 
     motor_start();
     io->laser->on();
@@ -145,9 +145,9 @@ start_pushed(void)
 
     if (high_score > old_high_score) {
 	io->high_score->set(high_score);
-	player->play_sync(winner_track->to_audio_buffer());
+	player->play_sync(winner_track);
     } else {
-	player->play_sync(game_over_track->to_audio_buffer());
+	player->play_sync(game_over_track);
     }
 }
 
@@ -198,11 +198,11 @@ int main(int argc, char **argv)
 
 if (argc > 1) return(0);
 
-    game_over_track = new Wav(new BufferFile("game-over.wav"));
-    hit_track[0] = new Wav(new BufferFile("hit1.wav"));
-    hit_track[1] = new Wav(new BufferFile("hit2.wav"));
-    start_track = new Wav(new BufferFile("ready-set-go.wav"));
-    winner_track = new Wav(new BufferFile("high-score.wav"));
+    game_over_track = wav_open("game-over.wav");
+    hit_track[0] = wav_open("hit1.wav");
+    hit_track[1] = wav_open("hit2.wav");
+    start_track = wav_open("ready-set-go.wav");
+    winner_track = wav_open("high-score.wav");
 
     new MotorThread("motor");
     new PlayerThread("player 1", 1);
