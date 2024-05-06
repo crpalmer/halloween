@@ -6,7 +6,6 @@
 #include "animation-station.h"
 #include "audio.h"
 #include "audio-player.h"
-#include "pi-gpio.h"
 #include "random-audio.h"
 #include "random-utils.h"
 #include "wb.h"

@@ -7,7 +7,6 @@
 #include "audio-player.h"
 #include "l298n.h"
 #include "mcp23017.h"
-#include "pi-gpio.h"
 #include "random-utils.h"
 #include "wav.h"
 #include "wb.h"
