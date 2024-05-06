@@ -1,0 +1,2 @@
+python import freertos_gdb
+target extended-remote :3333
