@@ -44,14 +44,15 @@
 
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
-#define SONG_WAV	"pour-some-sugar-30.wav"
-#define VOCALS_WAV	"pour-some-sugar-vocals-30.wav"
-#ifdef PLATFORM_pi
+#if 0
+#define SONG_WAV	"pour-some-sugar.wav"
+#define VOCALS_WAV	"pour-some-sugar-vocals.wav"
 #define DRUM_WAV	"pour-some-sugar-drums.wav"
 #define GUITAR_WAV	"pour-some-sugar-guitar.wav"
 #define KEYBOARD_WAV	"pour-some-sugar-vocals.wav"
 #else
-// Running out of memory...
+#define SONG_WAV	"pour-some-sugar-30.wav"
+#define VOCALS_WAV	"pour-some-sugar-vocals-30.wav"
 #define DRUM_WAV	"pour-some-sugar-drums-30.wav"
 #define GUITAR_WAV	"pour-some-sugar-guitar-30.wav"
 #define KEYBOARD_WAV	"pour-some-sugar-vocals-30.wav"
@@ -110,7 +111,7 @@ class BandTalkingSkull : public TalkingSkull, public Servos {
 public:
     BandTalkingSkull(const char *wav_fname, const char *name = "band-ts") : TalkingSkull(name, TALKING_SKULL_BYTES_PER_OP) {
 	TalkingSkullOps *ops = TalkingSkullAudioOps::open_wav(wav_fname);
-        this->set_ops(ops);
+        set_ops(ops);
 	delete ops;
     }
 
@@ -306,12 +307,14 @@ static void threads_main(int argc, char **argv)
         lights->set(1);
 
         vocals->play();
-        //drum->play();
-        //guitar->play();
-        //keyboard->play();
+        drum->play();
+        guitar->play();
+        keyboard->play();
 
+	consoles_printf("Playing %s\n", SONG_WAV);
         player->play(song);
 	player->wait_done();
+	consoles_printf("Done playing\n");
 
         lights->set(0);
 
