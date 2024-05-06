@@ -38,8 +38,8 @@ public:
     }
 
     void set_cmd(const char *cmd) {
-	if (this->cmd) free(this->cmd);
-	this->cmd = strdup(cmd);
+	if (this->cmd) fatal_free(this->cmd);
+	this->cmd = fatal_strdup(cmd);
     }
 
     Output *get_light() override { return light; }
@@ -50,7 +50,7 @@ public:
     virtual char *handle_remote_cmd(const char *cmd, Lights *lights) {
 	if (this->cmd && strcmp(cmd, this->cmd) == 0) {
 	    act(lights);
-	    return strdup("ok");
+	    return fatal_strdup("ok");
 	}
 	return NULL;
     }

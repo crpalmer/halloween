@@ -148,7 +148,7 @@ remote_event(void *unused, const char *cmd, struct sockaddr_in *addr, size_t siz
 {
     if (strcmp(cmd, "play") == 0) {
 	force = true;
-	return strdup("ok");
+	return fatal_strdup("ok");
     }
     return NULL;
 }

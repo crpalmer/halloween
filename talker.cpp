@@ -188,7 +188,7 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
     int ip = addr->sin_addr.s_addr>>24 % (N_AUTO_GAIN);
 
     if (strncmp(command, "play ", 5) != 0) {
-	return strdup("Invalid command");
+	return fatal_strdup("Invalid command");
     }
 
     /* Expect sample rate 16000 mono and playing 48000 stereo */
@@ -205,8 +205,8 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
 	    case 'r': data[j++] = '\r'; break;
 	    case '0': data[j++] = '\0'; break;
 	    default:
-		free(data);
-		return strdup("corrupt data");
+		fatal_free(data);
+		return fatal_strdup("corrupt data");
 	    }
 	} else {
 	    data[j++] = command[i];
@@ -230,12 +230,12 @@ remote_event(void *args_as_vp, const char *command, struct sockaddr_in *addr, si
 	while (j < size) data[j++] = 0;
 	produce(pc, ip, args->remote_vol, data);
     } else {
-	free(data);
+	fatal_free(data);
     }
 
     speak_lock->unlock();
 
-    return strdup(SERVER_OK);
+    return fatal_strdup(SERVER_OK);
 }
 
 #endif
@@ -345,7 +345,7 @@ talker_main(void *args_as_vp)
 
     audio_destroy(in);
     audio_destroy(out);
-    free(buffer);
+    fatal_free(buffer);
 }
 
 void

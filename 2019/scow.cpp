@@ -140,7 +140,7 @@ public:
         printf("cmd: [%s]\n", cmd);
         if (strcmp(cmd, "scow") == 0) {
 	    scow->scow();
-	    return strdup("ok scow done\n");
+	    return fatal_strdup("ok scow done\n");
         }
         printf("cmd not recognized\n");
         return NULL;

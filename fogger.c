@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include "pi.h"
+#include "mem.h"
 #include "pi-threads.h"
 #include "server.h"
 #include "time-utils.h"
@@ -82,7 +84,7 @@ return_duty(void)
     char foo[1000];
 
     sprintf(foo, "ok duty is now %f\n", duty);
-    return strdup(foo);
+    return fatal_strdup(foo);
 }
 
 static char *
@@ -105,15 +107,15 @@ remote_event(void *unused, const char *command, struct sockaddr_in *addr, size_t
 	return return_duty();
     } else if (strcmp(command, "fog") == 0) {
         if (pi_mutex_trylock(fog_lock) != 0) {
-	    return strdup("prop is busy");
+	    return fatal_strdup("prop is busy");
 	}
 	do_fog(FOG_BURST_MS);
 	pi_mutex_unlock(fog_lock);
     } else {
-        return strdup("invalid command");
+        return fatal_strdup("invalid command");
     }
 
-    return strdup("ok");
+    return fatal_strdup("ok");
 }
 
 static void

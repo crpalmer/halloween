@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pi.h"
+#include "mem.h"
 #include "pi-threads.h"
 #include "server.h"
 #include "time-utils.h"
@@ -134,8 +136,8 @@ AnimationStationController::remote_event(void *this_as_vp, const char *cmd, stru
 	char *response = (*it)->handle_remote_cmd(cmd, busy);
 	if (response != NULL) return response;
     }
-    if (busy) return strdup("prop is currently busy");
-    else return strdup("Invalid command");
+    if (busy) return fatal_strdup("prop is currently busy");
+    else return fatal_strdup("Invalid command");
 }
     
 void
