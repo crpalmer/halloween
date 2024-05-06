@@ -25,13 +25,14 @@ main(int argc, char **argv)
     Output *output;
 
     gpioInitialise();
-    wb_init();
 
-    input = wb_get_input(1);
+    WeenBoard *wb = new WeenBoard();
+
+    input = wb->get_input(1);
     input->set_pullup_down();
     input->set_debounce(100);
 
-    output = wb_get_output(1);
+    output = wb->get_output(1, 1);
     output->on();
 
     AudioBuffer *wav = wav_open("extra-extra-read-all-about-it.wav");

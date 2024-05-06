@@ -13,6 +13,7 @@
 
 static Audio *audio;
 static AudioPlayer *player;
+static WeenBoard *wb;
 
 static bool
 file_exists(const char *fname)
@@ -116,8 +117,8 @@ private:
 
 class Mosquito : public Button {
 public:
-    Mosquito() : Button(wb_get_output(1, 1), wb_get_input(1)) {
-	set_pin(wb_get_output(2, 1));
+    Mosquito() : Button(wb->get_output(1, 1), wb->get_input(1)) {
+	set_pin(wb->get_output(2, 1));
 	set_cmd("mosquito");
     }
 
@@ -129,8 +130,8 @@ public:
 
 class Gater : public Button {
 public:
-    Gater() : Button(wb_get_output(1, 2), wb_get_input(2)) {
-	set_pin(wb_get_output(2, 2));
+    Gater() : Button(wb->get_output(1, 2), wb->get_input(2)) {
+	set_pin(wb->get_output(2, 2));
 	set_cmd("gater");
     }
 
@@ -142,8 +143,8 @@ public:
 
 class Question : public Button {
 public:
-    Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
-	head = wb_get_output(2, 3);
+    Question() : Button(wb->get_output(1, 3), wb->get_input(3)) {
+	head = wb->get_output(2, 3);
 	random_audio->add("laugh.wav");
 	set_cmd("question");
     }
@@ -164,8 +165,8 @@ private:
 
 class Spider : public Button {
 public:
-    Spider() : Button(wb_get_output(1, 4), wb_get_input(4)) {
-	set_pin(wb_get_output(2, 4));
+    Spider() : Button(wb->get_output(1, 4), wb->get_input(4)) {
+	set_pin(wb->get_output(2, 4));
 	set_cmd("spider");
     }
 
@@ -177,8 +178,8 @@ public:
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(1, 5), wb_get_input(5)) {
-	set_pin(wb_get_output(2, 5));
+    Snake() : Button(wb->get_output(1, 5), wb->get_input(5)) {
+	set_pin(wb->get_output(2, 5));
 	set_cmd("snake");
     }
 
@@ -193,7 +194,7 @@ main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
-    wb_init();
+    wb = new WeenBoard();
 
     audio = new AudioPi();
     player = new AudioPlayer(audio);

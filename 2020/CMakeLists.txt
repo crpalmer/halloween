@@ -8,7 +8,8 @@ project(halloween-${YEAR})
 
 if("${PLATFORM}" STREQUAL pi)
   ween_executable(animation animation.cpp)
-  ween_executable(fogger fogger.c)
-  ween_executable(hynopops hypnopops.c)
+  ween_executable(hynopops hypnopops.cpp)
   ween_executable(witch witch.cpp)
 endif()
+
+ween_executable(fogger fogger.cpp)

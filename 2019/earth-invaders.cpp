@@ -24,7 +24,7 @@ static Audio *audio = new AudioPi();
 static AudioPlayer *player = new AudioPlayer(audio);
 static double speed = 0;
 
-static earth_invaders_io_t *io;
+static EarthInvadersIO *io;
 
 static AudioBuffer *game_over_track;
 static AudioBuffer *hit_track[2];
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
     gpioInitialise();
     seed_random();
 
-    io = new earth_invaders_io_t();
+    io = new EarthInvadersIO();
 
     io->motor->speed(0);
     io->motor->direction(true);

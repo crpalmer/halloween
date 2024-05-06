@@ -13,7 +13,10 @@ static ween_time_constraint_t wt[] = {
 int main(int argc, char **argv)
 {
      int is_valid = -1;
-     wb_init();
+
+     WeenBoard *wb = new WeenBoard();
+     Output *out1 = wb->get_output(2, 4);
+     Output *out2 = wb->get_output(2, 1);
 
      while (1) {
 	int new_valid = ween_time_is_valid(wt, WT_SIZE) || ween2020_is_ignored();
@@ -21,9 +24,9 @@ int main(int argc, char **argv)
 	if (new_valid != is_valid) {
 	    printf("switching from %d to %d\n", is_valid, new_valid);
 	    is_valid = new_valid;
-	    wb_set(2, 4, is_valid);
+	    out1->set(is_valid);
 	    ms_sleep(100);
-	    wb_set(2, 1, is_valid);
+	    out2->set(is_valid);
 	}
 	ms_sleep(1*1000);
      }

@@ -14,6 +14,10 @@
 #include "wb.h"
 #include "ween-hours.h"
 
+static WeenBoard *wb;
+static Output *light;
+static Output *lid;
+
 #define LIGHT_PIN	2, 1
 #define LID_PIN		2, 8
 
@@ -49,7 +53,7 @@ static void blink_lights_for(bool *is_lit, int ms)
 	int light_time = random_number_in_range(LIGHT_LOW, LIGHT_HIGH);
 
 	*is_lit = !(*is_lit);
-	wb_set(LIGHT_PIN, *is_lit);
+	light->set(*is_lit);
 	ms_sleep(light_time);
 	nano_gettime(&now);
     } while (nano_elapsed_ms(&now, &start) < ms);
@@ -63,10 +67,9 @@ main(int argc, char **argv)
     seed_random();
     pi_usb_init();
 
-    if (wb_init() < 0) {
-	perror("wb_init");
-	exit(1);
-    }
+    wb = new WeenBoard();
+    light = wb->get_output(LIGHT_PIN);
+    lid  = wb->get_output(LID_PIN);
 
     if ((servo = maestro_new()) == NULL) {
 	fprintf(stderr, "Could not initialize maestro\n");
@@ -76,8 +79,8 @@ main(int argc, char **argv)
     AudioBuffer *wav = wav_open("coffin-dog.wav");
     //audio->set_volume(50);
 
-    wb_set(LIGHT_PIN, 1);
-    wb_set(LID_PIN, 0);
+    light->set(1);
+    lid->set(0);
 
     while (true) {
 	bool is_lit = true;
@@ -99,9 +102,9 @@ main(int argc, char **argv)
 	    }
 
 	    if (ween_time_is_trick_or_treating() || ween_hours_is_ignored()) {
-		wb_set(LID_PIN, 1);
+		lid->set(1);
 		blink_lights_for(&is_lit, open_time);
-		wb_set(LID_PIN, 0);
+		lid->set(0);
 		blink_lights_for(&is_lit, closed_time);
 	    } else {
 		ms_sleep(open_time + closed_time);
@@ -110,8 +113,8 @@ main(int argc, char **argv)
 	    it++;
 	}
 	
-	wb_set(LIGHT_PIN, 1);
-	wb_set(LID_PIN, 0);
+	light->set(1);
+	lid->set(0);
 
 	maestro_set_servo_speed(servo, HEAD, HEAD_FORWARD_SPEED);
 	maestro_set_servo_pos(servo, HEAD, HEAD_FORWARD);

@@ -263,12 +263,12 @@ public:
 
 static void platform_setup() {
 #ifdef PLATFORM_pi
-    wb_init();
+    WeenBoard *wb = new WeenBoard();
     pi_usb_init();
     servo_factory = new Maestro();
     audio = new AudioPi();
-    vocals_eyes = wb_get_output(EYES_BANK, VOCALS_EYES_PI_PIN);
-    lights = wb_get_output(LIGHTS_PI_PIN);
+    vocals_eyes = wb->get_output(EYES_BANK, VOCALS_EYES_PI_PIN);
+    lights = wb->get_output(LIGHTS_PI_PIN);
 #else
     wifi_init();
 

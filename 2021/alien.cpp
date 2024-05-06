@@ -10,7 +10,8 @@
 #include "wb.h"
 #include "ween-hours.h"
 
-maestro_t *m;
+static maestro_t *m;
+static WeenBoard *wb;
 
 #define UPPER "upper"
 #define LOWER "lower"
@@ -53,7 +54,7 @@ do_lights(void *unused)
     for (int bank = 0; bank < 2; bank++) {
 	l[bank] = new Lights();
 	for (unsigned i = 0; i < 5; i++) {
-	    l[bank]->add(wb_get_output(bank+1, i+1));
+	    l[bank]->add(wb->get_output(bank+1, i+1));
 	}
     }
 
@@ -80,7 +81,7 @@ do_lights(void *unused)
 
 int main(int argc, char **argv)
 {
-    wb_init();
+    wb = new WeenBoard();
     pi_usb_init();
 
     if ((m = maestro_new()) == NULL) {

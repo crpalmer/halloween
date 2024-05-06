@@ -29,9 +29,10 @@
 #define TO_MOTOR	1
 #define TO_IDLER	0
 
-class earth_invaders_io_t {
+class EarthInvadersIO {
 public:
-     earth_invaders_io_t() {
+     EarthInvadersIO() {
+	wb = new WeenBoard();
 	mcp = new MCP23017();
 	pca = new PCA9685();
 
@@ -41,7 +42,7 @@ public:
 	triggers[0] = mcp->get_input(1, 3);
 	triggers[1] = mcp->get_input(1, 4);
 
-	start_light = wb_get_output(1, 8);
+	start_light = wb->get_output(1, 8);
 	start_button = mcp->get_input(1, 2);
 
 	endstop_motor = mcp->get_input(1, 0);
@@ -54,15 +55,16 @@ public:
 	}
 
 	for (int light = 0; light < 6; light++) {
-	    lights[light / 3][light % 3] = wb_get_output(1, light+1);
+	    lights[light / 3][light % 3] = wb->get_output(1, light+1);
         }
 
-	high_score = new digital_counter_t(pca->get_output(3), NULL, pca->get_output(2));
-	score[0] = new digital_counter_t(pca->get_output(5), NULL, pca->get_output(4));
-
-	score[1] = new digital_counter_t(pca->get_output(1), NULL, pca->get_output(0));
-	score[0]->set_pause(20, 500, 750);
+	high_score = new DigitalCounter(pca->get_output(3), NULL, pca->get_output(2));
 	high_score->set_pause(20, 500, 750);
+
+	score[0] = new DigitalCounter(pca->get_output(5), NULL, pca->get_output(4));
+	score[0]->set_pause(20, 500, 750);
+
+	score[1] = new DigitalCounter(pca->get_output(1), NULL, pca->get_output(0));
 	score[1]->set_pause(20, 1000, 1000);
 
 	triggers[0]->set_pullup_up();
@@ -95,10 +97,11 @@ public:
      Output   *lights[3][3];
      Input	*targets[3][3];
 
-     digital_counter_t *score[2];
-     digital_counter_t *high_score;
+     DigitalCounter *score[2];
+     DigitalCounter *high_score;
 
 private:
+     WeenBoard  *wb;
      MCP23017	*mcp;
      PCA9685	*pca;
 };

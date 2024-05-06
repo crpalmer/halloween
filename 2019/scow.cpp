@@ -14,6 +14,7 @@
 
 static Audio *audio = new AudioPi();
 static AudioPlayer *player = new AudioPlayer(audio);
+static WeenBoard *wb;
 
 static L298N *motor;
 static MCP23017 *mcp;
@@ -83,7 +84,7 @@ test_motor_es()
 static Input *
 get_es(int i)
 {
-    Input *es = wb_get_input(i);
+    Input *es = wb->get_input(i);
 
     es->set_pullup_down();
     es->set_debounce(10);
@@ -94,8 +95,8 @@ get_es(int i)
 class Button : public AnimationStationAction {
 public:
     Button() {
-	light = wb_get_output(2, 8);
-	button = wb_get_input(5);
+	light = wb->get_output(2, 8);
+	button = wb->get_input(5);
 	button->set_pullup_down();
 	button->set_debounce(10);
 
@@ -155,7 +156,8 @@ main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
-    wb_init_v2();
+    
+    wb = new WeenBoard(2);
 
     low_es = get_es(1);
     high_es = get_es(2);

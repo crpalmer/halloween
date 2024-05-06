@@ -26,7 +26,7 @@ endif()
 
 add_library(halloween STATIC
   animation-station.cpp
-  fogger.c
+  fogger.cpp
   ween-time.c
   ${LIB_OBJS}
 )

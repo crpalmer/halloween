@@ -13,6 +13,7 @@
 
 static Audio *audio = new AudioPi();
 static AudioPlayer *player = new AudioPlayer(audio);
+static WeenBoard *wb;
 
 static bool
 file_exists(const char *fname)
@@ -115,8 +116,8 @@ private:
 
 class MandM : public Button {
 public:
-    MandM() : Button(wb_get_output(2, 1), wb_get_input(4)) {
-	set_pin(wb_get_output(1, 1));
+    MandM() : Button(wb->get_output(2, 1), wb->get_input(4)) {
+	set_pin(wb->get_output(1, 1));
 	set_cmd("M&M");
     }
 
@@ -128,8 +129,8 @@ public:
 
 class Bunny : public Button {
 public:
-    Bunny() : Button(wb_get_output(2, 2), wb_get_input(3)) {
-	set_pin(wb_get_output(1, 2));
+    Bunny() : Button(wb->get_output(2, 2), wb->get_input(3)) {
+	set_pin(wb->get_output(1, 2));
 	set_cmd("bunny");
     }
 
@@ -141,8 +142,8 @@ public:
 
 class Demono : public Button {
 public:
-    Demono() : Button(wb_get_output(2, 3), wb_get_input(2)) {
-	set_pin(wb_get_output(1, 3));
+    Demono() : Button(wb->get_output(2, 3), wb->get_input(2)) {
+	set_pin(wb->get_output(1, 3));
 	set_cmd("demono");
     }
 
@@ -154,8 +155,8 @@ public:
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(2, 4), wb_get_input(1)) {
-	set_pin(wb_get_output(1, 4));
+    Snake() : Button(wb->get_output(2, 4), wb->get_input(1)) {
+	set_pin(wb->get_output(1, 4));
 	set_cmd("snake");
     }
 
@@ -170,7 +171,8 @@ main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
-    wb_init();
+
+    wb = new WeenBoard();
 
     AnimationStation *as = new AnimationStation();
     as->set_blink_ms(500);

@@ -13,6 +13,7 @@
 
 static Audio *audio = new AudioPi();
 static AudioPlayer *player = new AudioPlayer(audio);
+static WeenBoard *wb;
 
 static bool
 file_exists(const char *fname)
@@ -116,8 +117,8 @@ private:
 
 class CandyCorn : public Button {
 public:
-    CandyCorn() : Button(wb_get_output(1, 1), wb_get_input(1)) {
-	set_pin(wb_get_output(2, 1));
+    CandyCorn() : Button(wb->get_output(1, 1), wb->get_input(1)) {
+	set_pin(wb->get_output(2, 1));
 	set_cmd("candy corn");
 	random_audio->add("candy corn 1.wav");
 	random_audio->add("candy corn 2.wav");
@@ -133,8 +134,8 @@ public:
 
 class PopTots : public Button {
 public:
-    PopTots() : Button(wb_get_output(1, 2), wb_get_input(2)) {
-	set_pin(wb_get_output(2, 2));
+    PopTots() : Button(wb->get_output(1, 2), wb->get_input(2)) {
+	set_pin(wb->get_output(2, 2));
 	set_cmd("pop tots");
 	random_audio->add("pop tot 1.wav");
 	random_audio->add("pop tot 2.wav");
@@ -149,8 +150,8 @@ public:
 
 class Twizzler : public Button {
 public:
-    Twizzler() : Button(wb_get_output(1, 3), wb_get_input(3)) {
-	set_pin(wb_get_output(2, 3));
+    Twizzler() : Button(wb->get_output(1, 3), wb->get_input(3)) {
+	set_pin(wb->get_output(2, 3));
 	set_cmd("twizzler");
 	random_audio->add("twizzler 1.wav");
 	random_audio->add("twizzler 2.wav");
@@ -165,8 +166,8 @@ public:
 
 class KitKat : public Button {
 public:
-    KitKat() : Button(wb_get_output(1, 4), wb_get_input(4)) {
-	set_pin(wb_get_output(2, 4));
+    KitKat() : Button(wb->get_output(1, 4), wb->get_input(4)) {
+	set_pin(wb->get_output(2, 4));
 	set_cmd("kit kat");
 	random_audio->add("kit kat 1.wav");
 	random_audio->add("kit kat 2.wav");
@@ -185,7 +186,8 @@ main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
-    wb_init();
+
+    wb = new WeenBoard();
 
     AnimationStation *as = new AnimationStation();
     as->set_blink_ms(500);

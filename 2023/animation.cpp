@@ -13,6 +13,7 @@
 
 static Audio *audio;
 static AudioPlayer *audio_player;
+static WeenBoard *wb;
 
 static bool
 file_exists(const char *fname)
@@ -85,8 +86,8 @@ private:
 
 class Bunny : public Button {
 public:
-    Bunny() : Button(wb_get_output(1, 1), wb_get_input(1)) {
-	set_pin(wb_get_output(2, 1));
+    Bunny() : Button(wb->get_output(1, 1), wb->get_input(1)) {
+	set_pin(wb->get_output(2, 1));
 	set_cmd("bunny");
     }
 
@@ -98,8 +99,8 @@ public:
 
 class Gater : public Button {
 public:
-    Gater() : Button(wb_get_output(1, 2), wb_get_input(2)) {
-	set_pin(wb_get_output(2, 2));
+    Gater() : Button(wb->get_output(1, 2), wb->get_input(2)) {
+	set_pin(wb->get_output(2, 2));
 	set_cmd("gater");
     }
 
@@ -111,8 +112,8 @@ public:
 
 class Question : public Button {
 public:
-    Question() : Button(wb_get_output(1, 3), wb_get_input(3)) {
-	head = wb_get_output(2, 3);
+    Question() : Button(wb->get_output(1, 3), wb->get_input(3)) {
+	head = wb->get_output(2, 3);
 	audio_buffer = wav_open("question.wav");
 	set_cmd("question");
     }
@@ -133,8 +134,8 @@ private:
 
 class Pillar : public Button {
 public:
-    Pillar() : Button(wb_get_output(1, 4), wb_get_input(4)) {
-	set_pin(wb_get_output(2, 4));
+    Pillar() : Button(wb->get_output(1, 4), wb->get_input(4)) {
+	set_pin(wb->get_output(2, 4));
 	set_cmd("pillar");
     }
 
@@ -146,8 +147,8 @@ public:
 
 class Snake : public Button {
 public:
-    Snake() : Button(wb_get_output(1, 5), wb_get_input(5)) {
-	set_pin(wb_get_output(2, 5));
+    Snake() : Button(wb->get_output(1, 5), wb->get_input(5)) {
+	set_pin(wb->get_output(2, 5));
 	set_cmd("snake");
     }
 
@@ -176,12 +177,15 @@ main_thread(void *arg_unused)
 void threads_main(int argc, char **argv) {
     gpioInitialise();
     seed_random();
-    wb_init();
 
 #ifdef PLATFORM_pico
     audio = new AudioPico();
+    int inputs[8] = {2, 3, 4, 5, 6, -1, -1, -1 };
+    int outputs[2][8] = { { 7, 8, 9, 10, 11, -1, -1, -1 }, {11, 12, 13, 14, 15, -1, -1, -1 }};
+    wb = new WeenBoard(inputs, outputs);
 #else
     audio = new AudioPi();
+    wb = new WeenBoard(1);
 #endif
     audio_player = new AudioPlayer(audio);
 
