@@ -6,7 +6,6 @@
 #include "pi.h"
 #include "file.h"
 #include "mem.h"
-#include "server.h"
 #include "time-utils.h"
 #include "wb.h"
 
