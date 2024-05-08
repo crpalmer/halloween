@@ -1,7 +1,3 @@
-*.hex
-*.src
-*.d
-*.o
 *.sw?
 animation
 baxter
