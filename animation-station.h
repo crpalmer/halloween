@@ -60,6 +60,8 @@ private:
 class AnimationStationPopper : public AnimationStationAction {
 public:
     AnimationStationPopper(AnimationStation *station, Lights *lights, Input *button, Output *light, const char *remote_cmd = NULL) : AnimationStationAction(station, button, remote_cmd ? remote_cmd : "as-popper"), lights(lights), light(light), remote_cmd(remote_cmd) { 
+	lights->add(light);
+	lights->chase();
 	random_audio = new RandomAudio();
     }
 
