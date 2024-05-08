@@ -8,19 +8,25 @@
 #include "earth-invaders-io.h"
 #include "l298n.h"
 #include "mcp23017.h"
+#include "mem.h"
+#include "net-listener.h"
 #include "pca9685.h"
 #include "pi-threads.h"
 #include "time-utils.h"
 #include "random-utils.h"
+#include "server.h"
 #include "wav.h"
-#include "animation-station.h"
 
 #define SCORE_INC	10
 
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
 
+#ifdef PLATFORM_pi
 static Audio *audio = new AudioPi();
+#else
+static Audio *audio = new AudioPico();
+#endif
 static AudioPlayer *player = new AudioPlayer(audio);
 static double speed = 0;
 
@@ -151,39 +157,33 @@ start_pushed(void)
     }
 }
 
-class StartButton : public AnimationStationAction {
-    Output *get_light() override { return io->start_light; }
-    bool is_triggered() override { return io->start_button->get() == BUTTON_PUSHED; }
-    void act(Lights *lights) override {
-	start_pushed();
-    }
-};
+class EarthInvadersConnection : public ServerConnection {
+public:
+    EarthInvadersConnection(NetReader *r, NetWriter *w) : ServerConnection(r, w) { start(); }
 
-class ResetHighScore : public AnimationStationAction {
-    char *handle_remote_cmd(const char *cmd) override {
+    char *process_cmd(const char *cmd) override {
 	if (strcmp(cmd, "reset-high-score") == 0) {
 	     io->high_score->set(0);
 	     high_score = 0;
 	     return fatal_strdup("ok high score reset");
-	}
-	return NULL;
-    }
-};
-
-class MeanMode : public AnimationStationAction {
-    char *handle_remote_cmd(const char *cmd) override {
-	printf("cmd: [%s]\n", cmd);
-	if (strcmp(cmd, "mean-mode 1") == 0 || strcmp(cmd, "mean-mode red") == 0) {
+	} else if (strcmp(cmd, "mean-mode 1") == 0 || strcmp(cmd, "mean-mode red") == 0) {
 	     //mean_mode[PLAYER_1] = true;
 	     return fatal_strdup("ok mean mode active for player 1");
 	} else if (strcmp(cmd, "mean-mode 2") == 0 || strcmp(cmd, "mean-mode green") == 0) {
 	     //mean_mode[PLAYER_2] = true;
 	     return fatal_strdup("ok mean mode active for player 2");
 	}
-	printf("cmd not recognized\n");
-	return NULL;
+	return fatal_strdup("error cmd not recognized\n");
     }
-    bool needs_exclusivity() override { printf("needs excl\n"); return false; }
+};
+
+class EarthInvadersListener : public NetListener {
+public:
+    EarthInvadersListener() { start(); }
+
+    void accepted(int fd) {
+	new EarthInvadersConnection(new NetReader(fd), new NetWriter(fd));
+    }
 };
 
 int main(int argc, char **argv)
@@ -208,11 +208,23 @@ if (argc > 1) return(0);
     new PlayerThread("player 1", 1);
     new PlayerThread("player 2", 2);
 
-    AnimationStation *as = new AnimationStation();
-    as->add_action(new StartButton());
-    as->add_action(new ResetHighScore());
-    as->add_action(new MeanMode());
-    AnimationStationController *asc = new AnimationStationController();
-    asc->add_station(as);
-    asc->main();
+    new EarthInvadersListener();
+
+    while (1) {
+	const int flash_ms = 500;
+	int flash_ms_left = 0;
+	bool light = false;
+
+	while (io->start_button->get() != BUTTON_PUSHED) { 
+	    if (flash_ms_left <= 0) {
+		flash_ms_left = flash_ms;
+		light = !light;
+		io->start_light->set(light);
+	    }
+	    ms_sleep(10);
+	    flash_ms_left -= 10;
+	}
+	io->start_light->set(false);
+	start_pushed();
+    }
 }

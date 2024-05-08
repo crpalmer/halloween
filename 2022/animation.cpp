@@ -6,6 +6,7 @@
 #include "animation-station.h"
 #include "audio.h"
 #include "audio-player.h"
+#include "file.h"
 #include "random-audio.h"
 #include "random-utils.h"
 #include "wb.h"
@@ -13,14 +14,6 @@
 static Audio *audio;
 static AudioPlayer *player;
 static WeenBoard *wb;
-
-static bool
-file_exists(const char *fname)
-{
-    struct stat s;
-
-    return stat(fname, &s) >= 0;
-}
 
 class Button : public AnimationStationAction {
 public:
