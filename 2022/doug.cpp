@@ -9,7 +9,7 @@
 #define HIGH	0.60
 
 static Servo *head;
-static GPInput *button;
+static Input *button;
 
 static enum { FREQUENT, RARE } mode = RARE;
 

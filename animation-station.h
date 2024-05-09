@@ -38,17 +38,19 @@ private:
     AnimationStation *station;
 };
 
-class AnimationStationAction : public PiThread{
+class AnimationStationAction : public PiThread, public InputNotifier {
 public:
     /* Note: You must call start() when you are ready for it to start */
     AnimationStationAction(AnimationStation *station, Input *button, const char *name = "as-action");
 
     char *run_cmd(int argc, char **argv, void *blob, size_t n_block);
+    virtual const char *get_cmd() { return NULL; }
+
+    void on_change() override;
     virtual bool triggered();
 
     virtual void act() = 0;
     virtual bool is_cmd(const char *cmd) = 0;
-    virtual const char *get_cmd() { return NULL; }
 
     void main() override;
 

@@ -155,7 +155,6 @@ void threads_main(int argc, char **argv) {
 
 #ifdef PLATFORM_pi
     audio = new AudioPi();
-    WeenBoard *wb = new WeenBoard(1);
 #else
     i2c_init_bus(1, 400*1000);
     i2c_config_gpios(2, 3);
@@ -174,11 +173,22 @@ void threads_main(int argc, char **argv) {
     lights->set_blink_ms(500);
 
 #ifdef PLATFORM_pi
+#if WEEN_BOARD
+    WeenBoard *wb = new WeenBoard(1);
     station->add(new Bunny(station, lights, wb->get_input(1), wb->get_output(1, 1), wb->get_output(2, 1)));
     station->add(new Gater(station, lights, wb->get_input(2), wb->get_output(1, 2), wb->get_output(2, 2)));
     station->add(new Question(station, lights, wb->get_input(3), wb->get_output(1, 3), wb->get_output(2, 3)));
     station->add(new Pillar(station, lights, wb->get_input(4), wb->get_output(1, 4), wb->get_output(2, 4)));
     station->add(new Snake(station, lights, wb->get_input(5), wb->get_output(1, 5), wb->get_output(2, 5)));
+#else
+    /* This is just for testing on pi5, just make everything use a single output for lights & actions */
+    GPOutput *output = new GPOutput(9);
+    station->add(new Bunny(station, lights, new GPInput(4), output, output));
+    station->add(new Gater(station, lights, new GPInput(5), output, output));
+    station->add(new Question(station, lights, new GPInput(6), output, output));
+    station->add(new Pillar(station, lights, new GPInput(7), output, output));
+    station->add(new Snake(station, lights, new GPInput(8), output, output));
+#endif
 #else
     station->add(new Bunny(station, lights, new GPInput(4), mcp->get_output(0, 0), mcp->get_output(1, 0)));
     station->add(new Gater(station, lights, new GPInput(5), mcp->get_output(0, 1), mcp->get_output(1, 1)));

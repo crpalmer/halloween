@@ -46,6 +46,7 @@ void AnimationStation::usage(Writer *w) {
 AnimationStationAction::AnimationStationAction(AnimationStation *station, Input *button, const char *name) : PiThread(name), station(station), button(button) {
     button->set_pullup_down();
     button->set_debounce(1);
+    button->set_notifier(this);
 }
 
 bool AnimationStationAction::triggered() {
@@ -63,13 +64,18 @@ char *AnimationStationAction::run_cmd(int argc, char **argv, void *blob, size_t 
 void AnimationStationAction::main() {
     bool old_state = button->get();
     while (1) {
+	pause();
+
 	bool new_state = button->get();
 	if (old_state != new_state && new_state) {
 	    triggered();
 	}
-	old_state = new_state;
-	ms_sleep(10);
+	old_state = button->get();	// It may have changed while we were running
     }
+}
+
+void AnimationStationAction::on_change() {
+     resume_from_isr();
 }
 
 void AnimationStationPopper::act() {
