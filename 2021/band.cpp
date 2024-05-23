@@ -44,7 +44,7 @@
 
 #define BETWEEN_SONG_MS	(ween_hours_is_trick_or_treating() ? 5000 : 30000)
 
-#if 0
+#if 1
 #define SONG_WAV	"pour-some-sugar.wav"
 #define VOCALS_WAV	"pour-some-sugar-vocals.wav"
 #define DRUM_WAV	"pour-some-sugar-drums.wav"
