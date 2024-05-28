@@ -312,8 +312,9 @@ static void threads_main(int argc, char **argv)
         keyboard->play();
 
 	consoles_printf("Playing %s\n", SONG_WAV);
-        player->play(song);
-	player->wait_done();
+	if (! player->play_sync(song)) {
+	    consoles_fatal_printf("fatal: Audio player didn't complete playing the song.\n");
+	}
 	consoles_printf("Done playing\n");
 
         lights->set(0);
