@@ -33,8 +33,4 @@ add_library(halloween STATIC
 
 target_include_directories(halloween PUBLIC .)
 
-target_link_libraries(halloween
-  pi-audio
-  pi-core
-  pi-threads
-)
+target_link_libraries(halloween PUBLIC lib-pi)

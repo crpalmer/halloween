@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pico/bootrom.h>
-#include <tusb.h>
 #include "neopixel-pico.h"
 #include "pi.h"
 #include "time-utils.h"
