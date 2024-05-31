@@ -1,15 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pico/multicore.h"
+#include "pi-threads.h"
 #include "neopixel-pico.h"
 #include "pi.h"
 #include "time-utils.h"
 
 static char line[100*1024];
 
+#if 1
+#define NEO_PIXEL_GPIO 0
 #define N_LEDS_PER_SIDE	18
 #define N_LEDS (N_LEDS_PER_SIDE*4)
+#else
+#define NEO_PIXEL_GPIO 4
+#define N_LEDS_PER_SIDE	5
+#define N_LEDS (N_LEDS_PER_SIDE*2)
+#endif
 
 #define STRNCMP(a, b) strncmp(a, b, strlen(b))
 
@@ -19,7 +26,7 @@ typedef enum {
 } pico_mode_t;
 
 static pico_mode_t requested_mode = off_mode;
-static critical_section_t cs;
+static PiMutex *mutex;
 
 static void inc(NeoPixelPico *neo, int *at)
 {
@@ -94,93 +101,94 @@ static void time_low_step(NeoPixelPico *neo)
 #define GAME_OVER_COLOR	252, 2, 2
 #define DROP_COLOR	13, 12, 229
 
-static void lights_main(void)
-{
-    NeoPixelPico *neo = new NeoPixelPico(0);
-    pico_mode_t mode = off_mode;
+class LightsThread : public PiThread {
+public:
+    LightsThread() : PiThread("lights-main") { start(); }
+    void main(void) override {
+	NeoPixelPico *neo = new NeoPixelPico(NEO_PIXEL_GPIO);
+	pico_mode_t mode = off_mode;
 
-    neo->set_n_leds(N_LEDS);
-    neo->set_all(0, 0, 0);
-    neo->show();
+	neo->set_n_leds(N_LEDS);
+	neo->set_all(0, 0, 0);
+	neo->show();
 
-    for (;;) {
-	pico_mode_t new_mode;
+	for (;;) {
+	    pico_mode_t new_mode;
+	    
+	    mutex->lock();
+	    new_mode = requested_mode;
+	    mutex->unlock();
 
-	critical_section_enter_blocking(&cs);
-	new_mode = requested_mode;
-	critical_section_exit(&cs);
-
-	if (new_mode != mode) {
-	    mode = new_mode;
-	    neo->set_all(0, 0, 0);
-	    switch(mode) {
-	    case off_mode:
-		neo->show();
-		break;
-	    case insert_coin_mode:
-		neo->set_all(INSERT_COIN_COLOR);
-		insert_coin_at = 0;
-		break;
-	    case hit_start_mode:
-		neo->set_all(HIT_START_COLOR);
-		hit_start_pct = 1;
-		hit_start_dir = -1;
-		break;
-	    case game_mode:
-		neo->set_all(GAME_COLOR);
-		neo->show();
-		break;
-	    case time_a_bit_low_mode:
-	    case time_really_low_mode:
-	    case time_low_mode:
-		for (int led = 0; led < N_LEDS; led++) {
-		    if (led % 2 == 0) neo->set_led(led, TIME_LOW_COLOR_1);
-		    else              neo->set_led(led, TIME_LOW_COLOR_2);
+	    if (new_mode != mode) {
+		mode = new_mode;
+		neo->set_all(0, 0, 0);
+		switch(mode) {
+		case off_mode:
+		    neo->show();
+		    break;
+		case insert_coin_mode:
+		    neo->set_all(INSERT_COIN_COLOR);
+		    insert_coin_at = 0;
+		    break;
+		case hit_start_mode:
+		    neo->set_all(HIT_START_COLOR);
+		    hit_start_pct = 1;
+		    hit_start_dir = -1;
+		    break;
+		case game_mode:
+		    neo->set_all(GAME_COLOR);
+		    neo->show();
+		    break;
+		case time_a_bit_low_mode:
+		case time_really_low_mode:
+		case time_low_mode:
+		    for (int led = 0; led < N_LEDS; led++) {
+			if (led % 2 == 0) neo->set_led(led, TIME_LOW_COLOR_1);
+			else              neo->set_led(led, TIME_LOW_COLOR_2);
+		    }
+		    time_low_pct = 1;
+		    time_low_sleep = (mode == time_low_mode) ? TIME_LOW_SLEEP : TIME_REALLY_LOW_SLEEP;
+		    if (mode == time_a_bit_low_mode) neo->show();
+		    break;
+		case game_over_mode:
+		    neo->set_all(GAME_OVER_COLOR);
+		    neo->show();
+		    break;
+		case drop_mode:
+		    neo->set_all(DROP_COLOR);
+		    neo->show();
+		    break;
 		}
-		time_low_pct = 1;
-		time_low_sleep = (mode == time_low_mode) ? TIME_LOW_SLEEP : TIME_REALLY_LOW_SLEEP;
-		if (mode == time_a_bit_low_mode) neo->show();
-		break;
-	    case game_over_mode:
-		neo->set_all(GAME_OVER_COLOR);
-		neo->show();
-		break;
-	    case drop_mode:
-		neo->set_all(DROP_COLOR);
-		neo->show();
-		break;
+	    }
+
+	    switch(mode) {
+	    case drop_mode: break;
+	    case off_mode: break;
+	    case insert_coin_mode: insert_coin_step(neo); break;
+	    case hit_start_mode: hit_start_step(neo); break;
+	    case game_mode: break;
+	    case time_a_bit_low_mode: break;
+	    case time_really_low_mode: time_low_step(neo); break;
+	    case time_low_mode: time_low_step(neo); break;
+	    case game_over_mode: break;
 	    }
 	}
-	switch(mode) {
-	case drop_mode: break;
-	case off_mode: break;
-	case insert_coin_mode: insert_coin_step(neo); break;
-	case hit_start_mode: hit_start_step(neo); break;
-	case game_mode: break;
-	case time_a_bit_low_mode: break;
-	case time_really_low_mode: time_low_step(neo); break;
-	case time_low_mode: time_low_step(neo); break;
-	case game_over_mode: break;
-	}
     }
-}
+};
 
 static void
 set_new_mode(pico_mode_t new_mode)
 {
-    critical_section_enter_blocking(&cs);
+    mutex->lock();
     requested_mode = new_mode;
-    critical_section_exit(&cs);
+    mutex->unlock();
 }
 
-int
-main()
-{
-    pi_init_no_reboot();
+static void threads_main(int argc, char **argv) {
+    mutex = new PiMutex();
+    new LightsThread();
 
-    critical_section_init(&cs);
-
-    multicore_launch_core1(lights_main);
+printf("starting\n");
 
     for (;;) {
 	pi_readline(line, sizeof(line));
@@ -211,4 +219,10 @@ main()
 	    set_new_mode(drop_mode);
 	}
     }
+}
+
+int
+main(int argc, char **argv)
+{
+    pi_init_with_threads(threads_main, argc, argv);
 }
