@@ -270,7 +270,7 @@ static void platform_setup() {
     vocals_eyes = wb->get_output(EYES_BANK, VOCALS_EYES_PI_PIN);
     lights = wb->get_output(LIGHTS_PI_PIN);
 #else
-    wifi_init();
+    wifi_init("band");
 
     int pins[] = { 22, 2, 3, 4, 5, 6 };
     servo_factory = new GpioServoFactory(pins, sizeof(pins) / sizeof(pins[0]));

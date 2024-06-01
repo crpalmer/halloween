@@ -151,7 +151,7 @@ private:
 void threads_main(int argc, char **argv) {
     gpioInitialise();
     seed_random();
-    wifi_init();
+    wifi_init("animation");
 
 #ifdef PLATFORM_pi
     audio = new AudioPi();
