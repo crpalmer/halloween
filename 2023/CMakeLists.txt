@@ -15,3 +15,4 @@ else()
 endif()
 
 ween_executable(animation animation.cpp)
+ween_executable_libraries(animation animation-station)

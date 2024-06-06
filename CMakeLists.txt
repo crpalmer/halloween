@@ -9,6 +9,7 @@ project(halloween)
 include(lib/platform.cmake)
 
 add_subdirectory(lib)
+add_subdirectory(animation-station)
 
 add_subdirectory(claw)
 add_subdirectory(2023)
@@ -25,7 +26,6 @@ if("${PLATFORM}" STREQUAL "pi")
 endif()
 
 add_library(halloween STATIC
-  animation-station.cpp
   fogger.cpp
   ween-time.c
   ${LIB_OBJS}
