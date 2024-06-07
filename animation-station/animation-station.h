@@ -2,100 +2,92 @@
 #define __ANIMATION_STATION_H__
 
 #include <list>
+#include <map>
 #include "audio-player.h"
 #include "lights.h"
 #include "io.h"
 #include "random-audio.h"
-#include "server.h"
-#include "writer.h"
+#include "time-utils.h"
 
 class AnimationStationAction;
 
-class AnimationStation {
+class AnimationStationAction {
 public:
-    AnimationStation();
-
-    void add(AnimationStationAction *action);
-
-    bool try_to_acquire();
-    void release();
-
-    char *process_cmd(const char *cmd);
-    bool is_cmd(const char *cmd);
-    void usage(Writer *w);
-
-private:
-    PiMutex *lock;
-    std::list<AnimationStationAction *> actions;
-};
-
-class AnimationStationServerConnection : public ServerConnection {
-public:
-    AnimationStationServerConnection(AnimationStation *station, NetReader *r, NetWriter *w, const char *name = "as-client") : ServerConnection(r, w, name), station(station) { }
-    char *process_cmd(const char *cmd) override { return station->process_cmd(cmd); }
-	
-private:
-    AnimationStation *station;
-};
-
-class AnimationStationAction : public PiThread, public InputNotifier {
-public:
-    /* Note: You must call start() when you are ready for it to start */
-    AnimationStationAction(AnimationStation *station, Input *button, const char *name = "as-action");
-
-    char *run_cmd(int argc, char **argv, void *blob, size_t n_block);
-    virtual const char *get_cmd() { return NULL; }
-
-    void on_change() override;
-    virtual bool triggered();
-
-    virtual void act() = 0;
-    virtual bool is_cmd(const char *cmd) = 0;
-
-    void main() override;
-
-private:
-    AnimationStation *station;
-    Input *button;
+    virtual bool triggered() = 0;
 };
 
 class AnimationStationPopper : public AnimationStationAction {
 public:
-    AnimationStationPopper(AnimationStation *station, Lights *lights, Input *button, Output *light, const char *remote_cmd = NULL) : AnimationStationAction(station, button, remote_cmd ? remote_cmd : "as-popper"), lights(lights), light(light), remote_cmd(remote_cmd) { 
-	lights->add(light);
-	lights->chase();
-	random_audio = new RandomAudio();
+    AnimationStationPopper(Output *output, AudioPlayer *player = NULL) : output(output), player(player) {
     }
 
-    ~AnimationStationPopper() {
-	delete random_audio;
-    }
+    bool add_wav(std::string wav);
 
-    void act() override;
-    virtual void act_stage2() = 0;
+    bool triggered() override;
 
-    void add_wav(const char *wav) {
-	random_audio->add(wav);
-    }
+    virtual double up_ms_target() { return 1.0; }
+    int up_ms() { return (500 + random_number_in_range(0, 250) - 125)*up_ms_target(); }
 
-    bool is_cmd(const char *cmd) override { return strcmp(cmd, remote_cmd) == 0; }
-    const char *get_cmd() override { return remote_cmd; }
-
-protected:
-    void attack(Output *output, double up, double down, AudioPlayer *audio_player = NULL);
-    virtual void attack_one(Output *output, double up, double down);
-
-    Lights *lights;
-    Output *light;
-
-    unsigned up_ms(double up);
-    unsigned down_ms(double down);
-    void attack_without_audio(Output *output, double up, double down);
-    void attack_with_audio(Output *output, AudioPlayer *audio_player, double up, double down);
+    virtual double down_ms_target() { return 2.5; }
+    int down_ms() { return (200 + random_number_in_range(0, 100) - 50)*down_ms_target(); }
 
 private:
-    const char *remote_cmd;
-    RandomAudio *random_audio;
+    void attack_once();
+
+private:
+    Output *output;
+    AudioPlayer *player;
+    RandomAudio random_audio;
+};
+
+class AnimationStationButton : public PiThread, public InputNotifier, public Light {
+public:
+    AnimationStationButton(AnimationStationAction *action, Input *button, Light *light) : action(action), button(button), light(light) {
+    }
+
+    virtual bool triggered();
+
+    void off() { light->off(); }
+    void on() { light->on(); }
+    void set(bool on) { light->set(on); }
+
+    void main() override;
+    void on_change() override;
+
+private:
+    AnimationStationAction *action;
+    Input *button;
+    Light *light;
+};
+
+class AnimationStation {
+public:
+    static AnimationStation *get() {
+	static AnimationStation instance;
+	return &instance;
+    }
+
+    void blink() { lights->blink_all(); }
+
+    void add(std::string name, AnimationStationAction *action);
+    void add(std::string name, AnimationStationButton *button);
+
+    bool trigger(std::string name);
+    bool try_to_trigger();
+    void trigger_done();
+
+    std::string to_string();
+
+private:
+    AnimationStation();
+
+private:
+    struct timespec start_time;
+    Lights *lights;
+    PiMutex *lock;
+    std::map<std::string, bool> disabled;
+    std::map<std::string, AnimationStationAction *> actions;
+    std::map<std::string, AnimationStationButton *> buttons;
 };
 
 #endif

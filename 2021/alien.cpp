@@ -54,7 +54,7 @@ do_lights(void *unused)
     for (int bank = 0; bank < 2; bank++) {
 	l[bank] = new Lights();
 	for (unsigned i = 0; i < 5; i++) {
-	    l[bank]->add(wb->get_output(bank+1, i+1));
+	    l[bank]->add(new Light(wb->get_output(bank+1, i+1)));
 	}
     }
 

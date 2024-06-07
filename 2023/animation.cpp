@@ -7,13 +7,10 @@
 #include "audio.h"
 #include "audio-player.h"
 #include "file.h"
+#include "httpd-server.h"
 #include "i2c.h"
 #include "mcp23017.h"
-#include "net-listener.h"
-#include "stdin-reader.h"
-#include "stdout-writer.h"
 #include "random-utils.h"
-#include "threads-console.h"
 #include "wav.h"
 #include "wb.h"
 #include "wifi.h"
@@ -23,135 +20,71 @@ static AudioPlayer *audio_player;
 
 class Bunny : public AnimationStationPopper {
 public:
-    Bunny(AnimationStation *station, Lights *lights, Input *button, Output *light, Output *output) : AnimationStationPopper(station, lights, button, light, "bunny"), output(output) { start(); }
-
-    void act_stage2() override {
-	fprintf(stderr, "%s\n", get_cmd());
-	if (! file_exists("disable-bunny")) attack(output, 1.0, 2.5);
+    Bunny(Output *output) : AnimationStationPopper(output) {
     }
-
-private:
-    Output *output;
 };
 
 class Gater : public AnimationStationPopper {
 public:
-    Gater(AnimationStation *station, Lights *lights, Input *button, Output *light, Output *output) : AnimationStationPopper(station, lights, button, light, "gater"), output(output) { start(); }
-
-    void act_stage2() override {
-	fprintf(stderr, "%s\n", get_cmd());
-	if (! file_exists("disable-gater")) attack(output, 2, 2);
+    Gater(Output *output) : AnimationStationPopper(output) {
     }
 
-private:
-    Output *output;
+    double up_ms_targer() { return 2; }
+    double down_ms_target() { return 2; }
 };
 
 class Question : public AnimationStationPopper {
 public:
-    Question(AnimationStation *station, Lights *lights, Input *button, Output *light, Output *output) : AnimationStationPopper(station, lights, button, light, "question"), output(output) {
+    Question(Output *output) : AnimationStationPopper(output) {
 	add_wav("laugh.wav");
-	start();
     }
 
-    void act_stage2() override {
-	fprintf(stderr, "%s\n", get_cmd());
-	if (! file_exists("disable-question")) {
-	    output->set(true);
-	    lights->blink_all();
-	    attack_with_audio(output, audio_player, 1.0, 2.5);
-	    output->set(false);
-	}
+    bool triggered() override {
+	AnimationStation::get()->blink();
+	return AnimationStationPopper::triggered();
     }
-
-    void attack_one(Output *output, double up, double down) override {}
-
-private:
-    Output *output;
 };
 
 class Pillar : public AnimationStationPopper {
 public:
-    Pillar(AnimationStation *station, Lights *lights, Input *button, Output *light, Output *output) : AnimationStationPopper(station, lights, button, light, "pillar"), output(output) { start(); }
-
-    void act_stage2() override {
-	fprintf(stderr, "%s\n", get_cmd());
-	if (! file_exists("disable-pillar")) attack(output, 1, 0.75);
+    Pillar(Output *output) : AnimationStationPopper(output) {
     }
 
-private:
-    Output *output;
+    double up_ms_targer() { return 1; }
+    double down_ms_target() { return 0.75; }
 };
 
 class Snake : public AnimationStationPopper {
 public:
-    Snake(AnimationStation *station, Lights *lights, Input *button, Output *light, Output *output) : AnimationStationPopper(station, lights, button, light, "snake"), output(output) { start(); }
-
-    void act_stage2() override {
-	fprintf(stderr, "%s\n", get_cmd());
-	if (! file_exists("disable-snake")) attack(output, 1.0, 3.0);
+    Snake(Output *output) : AnimationStationPopper(output) {
     }
 
-private:
-    Output *output;
+    double up_ms_targer() { return 1; }
+    double down_ms_target() { return 3; }
 };
 
-class AnimationServerListener : public NetListener {
+class DebugHandler : public HttpdDebugHandler {
 public:
-    AnimationServerListener(AnimationStation *station) : NetListener(5555, "server"), station(station) { start(); }
-
-    void accepted(int fd) override {
-	PiThread *thread = new AnimationStationServerConnection(station, new NetReader(fd), new NetWriter(fd), "server-con");
-	thread->start();
+    virtual HttpdResponse *open(std::string path) {
+	if (path == "") return new HttpdResponse(AnimationStation::get()->to_string());
+	return HttpdDebugHandler::open(path);
     }
-
-private:
-    AnimationStation *station;
 };
 
-    Lights *lights;
-class AnimationConsole : public ThreadsConsole, public PiThread {
+class TriggerHandler : public HttpdPrefixHandler {
 public:
-    AnimationConsole(AnimationStation *station, Reader *r, Writer *w) : ThreadsConsole(r, w), PiThread("console"), station(station) { start(); }
-
-    void process_cmd(const char *cmd) override {
-	if (station->is_cmd(cmd)) {
-	    if (! station->process_cmd(cmd)) printf("busy\n");
-	    else printf("ok\n");
-} else if (is_command(cmd, "mem")) {
-for (int i = 0; i < 10000; i++) lights->chase();
-	} else {
-	    ThreadsConsole::process_cmd(cmd);
-	}
+    TriggerHandler() : HttpdPrefixHandler() { }
+    HttpdResponse *open(std::string path) {
+	AnimationStation *station = AnimationStation::get();
+	bool res = station->trigger(path);
+	return new HttpdResponse(std::to_string(res) + " " + path);
     }
-
-    void main() override { ThreadsConsole::main(); }
-
-    void usage() override {
-	ThreadsConsole::usage();
-	station->usage(this);
-    }
-
-private:
-    AnimationStation *station;
-};
-    
-
-class AnimationConsoleListener : public NetListener {
-public:
-    AnimationConsoleListener(AnimationStation *station) : NetListener(4567, "net-consoles"), station(station) { start(); }
-    void accepted(int fd) override {
-	new AnimationConsole(station, new NetReader(fd), new NetWriter(fd));
-    }
-
-private:
-    AnimationStation *station;
 };
 
 void threads_main(int argc, char **argv) {
     gpioInitialise();
     seed_random();
-    wifi_init("animation");
+    wifi_init(NULL);
 
 #ifdef PLATFORM_pi
     audio = new AudioPi();
@@ -159,49 +92,76 @@ void threads_main(int argc, char **argv) {
     i2c_init_bus(1, 400*1000);
     i2c_config_gpios(2, 3);
     audio = new AudioPico();
-    MCP23017 *mcp = new MCP23017();
 #endif
     audio_player = new AudioPlayer(audio);
 
-    printf("Initializing station\n");
-    AnimationStation *station = new AnimationStation();
-
-    printf("Starting console\n");
-    new AnimationConsole(station, new StdinReader(), new StdoutWriter());
-
-    lights = new Lights;
-    lights->set_blink_ms(500);
-
-#ifdef PLATFORM_pi
-#if WEEN_BOARD
+#if defined(PLATFORM_pi) && WEEN_BOARD
     WeenBoard *wb = new WeenBoard(1);
-    station->add(new Bunny(station, lights, wb->get_input(1), wb->get_output(1, 1), wb->get_output(2, 1)));
-    station->add(new Gater(station, lights, wb->get_input(2), wb->get_output(1, 2), wb->get_output(2, 2)));
-    station->add(new Question(station, lights, wb->get_input(3), wb->get_output(1, 3), wb->get_output(2, 3)));
-    station->add(new Pillar(station, lights, wb->get_input(4), wb->get_output(1, 4), wb->get_output(2, 4)));
-    station->add(new Snake(station, lights, wb->get_input(5), wb->get_output(1, 5), wb->get_output(2, 5)));
+    Input *bunny_input = wb->get_input(1);
+    Output *bunny_light = wb->get_output(1, 1);
+    Output *bunny_output = wb->get_output(2, 1);
+    Input *gater_input = wb->get_input(2);
+    Output *gater_light = wb->get_output(1, 2);
+    Output *gater_output = wb->get_output(2, 2);
+    Input *question_input = wb->get_input(3);
+    Output *question_light = wb->get_output(1, 3);
+    Output *question_output = wb->get_output(2, 3);
+    Input *pillar_input = wb->get_input(4);
+    Output *pillar_light = wb->get_output(1, 4);
+    Output *pillar_output = wb->get_output(2, 4);
+    Input *snake_input = wb->get_input(5);
+    Output *snake_light = wb->get_output(1, 5);
+    Output *snake_output = wb->get_output(2, 5);
 #else
-    /* This is just for testing on pi5, just make everything use a single output for lights & actions */
-    GPOutput *output = new GPOutput(9);
-    station->add(new Bunny(station, lights, new GPInput(4), output, output));
-    station->add(new Gater(station, lights, new GPInput(5), output, output));
-    station->add(new Question(station, lights, new GPInput(6), output, output));
-    station->add(new Pillar(station, lights, new GPInput(7), output, output));
-    station->add(new Snake(station, lights, new GPInput(8), output, output));
-#endif
+    Input *bunny_input = new GPInput(4);
+    Input *gater_input = new GPInput(5);
+    Input *question_input = new GPInput(6);
+    Input *pillar_input = new GPInput(7);
+    Input *snake_input = new GPInput(8);
+#ifdef PLATFORM_pi
+    MCP23017 *mcp = new MCP23017();
+    Output *bunny_light = mcp->get_output(1, 1);
+    Output *bunny_output = mcp->get_output(2, 1);
+    Output *gater_light = mcp->get_output(1, 2);
+    Output *gater_output = mcp->get_output(2, 2);
+    Output *question_light = mcp->get_output(1, 3);
+    Output *question_output = mcp->get_output(2, 3);
+    Output *pillar_light = mcp->get_output(1, 4);
+    Output *pillar_output = mcp->get_output(2, 4);
+    Output *snake_light = mcp->get_output(1, 5);
+    Output *snake_output = mcp->get_output(2, 5);
 #else
-    station->add(new Bunny(station, lights, new GPInput(4), mcp->get_output(0, 0), mcp->get_output(1, 0)));
-    station->add(new Gater(station, lights, new GPInput(5), mcp->get_output(0, 1), mcp->get_output(1, 1)));
-    station->add(new Question(station, lights, new GPInput(6), mcp->get_output(0, 2), mcp->get_output(1, 2)));
-    station->add(new Pillar(station, lights, new GPInput(7), mcp->get_output(0, 3), mcp->get_output(1, 3)));
-    station->add(new Snake(station, lights, new GPInput(8), mcp->get_output(0, 4), mcp->get_output(1, 4)));
-#if 0
+    Output *output = new GPOutput(9);
+    Output *bunny_light = output;
+    Output *bunny_output = output;
+    Output *gater_light = output;
+    Output *gater_output = output;
+    Output *question_light = output;
+    Output *question_output = output;
+    Output *pillar_light = output;
+    Output *pillar_output = output;
+    Output *snake_light = output;
+    Output *snake_output = output;
 #endif
 #endif
-    printf("Starting servers\n");
 
-    new AnimationConsoleListener(station);
-    new AnimationServerListener(station);
+    AnimationStationAction *bunny = new Bunny(bunny_output);
+    AnimationStationAction *gater = new Gater(gater_output);
+    AnimationStationAction *question = new Question(question_output);
+    AnimationStationAction *pillar = new Pillar(pillar_output);
+    AnimationStationAction *snake = new Snake(snake_output);
+
+    AnimationStation *station = AnimationStation::get();
+    station->add("bunny", new AnimationStationButton(bunny, bunny_input, new Light(bunny_light)));
+    station->add("gater", new AnimationStationButton(gater, gater_input, new Light(gater_light)));
+    station->add("question", new AnimationStationButton(question, question_input, new Light(question_light)));
+    station->add("pillar", new AnimationStationButton(pillar, pillar_input, new Light(pillar_light)));
+    station->add("snake", new AnimationStationButton(snake, snake_input, new Light(snake_light)));
+
+    HttpdServer &httpd = HttpdServer::get();
+    httpd.add_prefix_handler("/debug", new DebugHandler());
+    httpd.add_prefix_handler("/trigger", new TriggerHandler());
+    httpd.start(5555);
 }
 
 int
