@@ -14,6 +14,20 @@ class AnimationStationAction;
 class AnimationStationAction {
 public:
     virtual bool act() = 0;
+
+    int get_n_acts() { return n_acts; }
+    bool is_disabled() { return disabled; }
+
+protected:
+    int n_acts = 0;
+    bool disabled = false;
+
+    void deserialize_state(const char *serialized);
+    std::string serialize_state();
+    void disable() { disabled = true; }
+    void enable() { disabled = false; }
+
+    friend class AnimationStation;
 };
 
 class AnimationStationPopper : public AnimationStationAction {
@@ -48,10 +62,30 @@ public:
     }
     virtual ~AnimationStation() { }
 
+    bool load_state();
+
     void add(std::string name, AnimationStationAction *action);
 
     bool trigger_async(std::string name);
     bool trigger(std::string name);
+
+    bool disable(std::string name) {
+	bool ret = (actions[name] != NULL);
+	if (ret) {
+	    actions[name]->disable();
+	    save_state();
+	}
+	return ret;
+    }
+
+    bool enable(std::string name) {
+	bool ret = (actions[name] != NULL);
+	if (ret) {
+	    actions[name]->enable();
+	    save_state();
+	}
+	return ret;
+    }
 
     std::string to_string();
 
@@ -64,9 +98,21 @@ public:
 
 private:
     AnimationStation();
+    bool trigger_common();
+    bool save_state();
 
 private:
     struct timespec start_time;
+    struct timespec last_save;
+
+    bool save_dirty = false;
+    const int save_version = 0;
+#ifdef PLATFORM_pico
+    const int save_every_ms = 60*1000;
+#else
+    const int save_every_ms = 0;
+#endif
+    const char *save_filename = "animation.sav";
 
     PiMutex *lock;
     PiCond *cond;

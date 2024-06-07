@@ -15,6 +15,7 @@ public:
 private:
     std::string root;
 
+    HttpdResponse *trigger(std::string prop);
     std::string start_html();
     std::string try_to_trigger(std::string path);
     void add_props(std::string &html);

@@ -3,12 +3,36 @@
 #include "animation-ui.h"
 
 HttpdResponse *AnimationStationUI::open(std::string path) {
+    int slash = (int) path.find_first_of("/");
+    std::string prop = path;
+    std::string action = "status";
+
+    if (slash >= 0) {
+	prop = path.substr(0, slash);
+	action = path.substr(slash+1);
+    }
+    
+    if (action == "status" || action == "trigger") {
+	return trigger(prop);
+    } else {
+	std::string text = "failed to " + action + " " + prop;
+	auto station = AnimationStation::get();
+
+        if (action == "disable" && station->disable(prop)) text = "disabled " + prop;
+	else if (action == "enable" && station->enable(prop)) text = "enabled " + prop;
+
+	return new HttpdResponse(text);
+    }
+}
+
+HttpdResponse *AnimationStationUI::trigger(std::string prop) {
     int status = 200;
+    std::string action = "trigger";
 
     std::string trigger_html;
-    if (path != "") {
+    if (prop != "") {
 	// If we trigger it, give it a little time to start
-	trigger_html = try_to_trigger(path);
+	trigger_html = try_to_trigger(prop);
     }
 
     std::string html = start_html();
@@ -46,10 +70,17 @@ void AnimationStationUI::add_props(std::string &html) {
     auto station = AnimationStation::get();
     auto active_prop = station->get_active_prop();
 
-    html += "<table><tr><th>Prop</th><th>Status</th></tr>\n";
+    html += "<table><tr><th>Prop</th><th>Status</th><th># Times</th></tr>\n";
     for (auto action : station->get_actions()) {
-	auto status = action.first == active_prop ? "active" : "ready";
-	html += "<tr><td><a href=\"" + action.first + "\">" + action.first + "</a></td><td>" + status + "</td></tr>";
+	auto name = action.first;
+	auto a = action.second;
+	std::string status;
+
+	if (a->is_disabled()) status = "disabled";
+	else if (name == active_prop) status = "ACTIVE";
+	else status = "ready";
+
+	html += "<tr><td><a href=\"" + action.first + "\">" + action.first + "</a></td><td>" + status + "</td><td align='right'>" + std::to_string(a->get_n_acts()) + "</td></tr>";
     }
     html += "</table>";
 }

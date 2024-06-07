@@ -189,6 +189,9 @@ void threads_main(int argc, char **argv) {
     new Pillar(pillar_input, pillar_output, new Light(pillar_light));
     new Snake(snake_input, snake_output, new Light(snake_light));
 
+    auto station = AnimationStation::get();
+    station->load_state();
+
     lights->chase();
 
     auto httpd = HttpdServer::get();

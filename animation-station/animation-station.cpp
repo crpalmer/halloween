@@ -4,6 +4,16 @@
 #include "random-utils.h"
 #include "animation-station.h"
 
+std::string AnimationStationAction::serialize_state() {
+    return std::to_string(n_acts) + " " + std::to_string(disabled);
+}
+
+void AnimationStationAction::deserialize_state(const char *buf) {
+    n_acts = atoi(buf);
+    while (*buf && *buf != ' ') buf++;
+    disabled = atoi(buf);
+}
+
 bool AnimationStationPopper::add_wav(std::string wav) {
     return random_audio.add(wav.c_str());
 }
@@ -55,6 +65,84 @@ AnimationStation::AnimationStation() : PiThread("animation-station") {
     start();
 }
 
+bool AnimationStation::load_state() {
+    file_t *f;
+    bool ret = false;
+    int version;
+
+    if ((f = file_open(save_filename, "r")) == NULL) return false;
+
+    const int n_buf = 1024;
+    char *buf = (char *) fatal_malloc(1024);
+
+    if (! file_gets(f, buf, n_buf)) goto done;
+    version = atoi(buf);
+    if (version != save_version) {
+	consoles_printf("Saved version is %d but current version is %d\n", version, save_version);
+	goto done;
+    }
+ 
+    while (file_gets(f, buf, n_buf)) {
+	char *serialized = buf;
+	int len = atoi(buf);
+
+	while (*serialized && *serialized != ' ') serialized++;
+	if (*serialized) serialized++;
+	char *name = serialized;
+	for (int i = 0; i < len && *serialized; i++, serialized++) {}
+	if (*serialized) *serialized++ = '\0';
+
+	if (actions[name]) actions[name]->deserialize_state(serialized);
+    }
+
+    ret = true;
+    save_dirty = false;
+    nano_gettime(&last_save);
+
+done:
+    fatal_free(buf);
+    file_close(f);
+    return ret;
+}
+
+bool AnimationStation::save_state() {
+    bool ret = false;
+    file_t *f;
+    if ((f = file_open(save_filename, "w")) == NULL) {
+	consoles_printf("Failed to open %s\n", save_filename);
+    } else {
+	file_printf(f, "%d (version)\n", save_version);
+	for (auto a : actions) {
+	    file_printf(f, "%d %s %s\n", (int) a.first.length(), a.first.c_str(), a.second->serialize_state().c_str());
+	}
+	file_close(f);
+	ret = true;
+    }
+    nano_gettime(&last_save);
+    save_dirty = false;
+    return ret;
+}
+
+bool AnimationStation::trigger_common() {
+    assert(actions[active_prop]);
+
+    bool ret = actions[active_prop]->act();
+
+    lock->lock();
+
+    actions[active_prop]->n_acts++;
+    save_dirty = true;
+    active_prop = "";
+
+    if (save_dirty && nano_elapsed_ms_now(&last_save) >= save_every_ms) {
+	save_state();
+    }
+
+    lock->unlock();
+
+    return ret;
+}
+    
 void AnimationStation::main() {
     while (true) {
 	lock->lock();
@@ -63,25 +151,15 @@ void AnimationStation::main() {
 	triggered_prop = "";
 	lock->unlock();
 
-	assert(actions[active_prop]);
-	actions[active_prop]->act();
+	trigger_common();
 
-	lock->lock();
-	active_prop = "";
-	lock->unlock();
     }
-}
-
-void AnimationStation::add(std::string name, AnimationStationAction *action) {
-    lock->lock();
-    actions[name] = action;
-    lock->unlock();
 }
 
 bool AnimationStation::trigger_async(std::string prop) {
     bool ret = false;
 
-    if (actions[prop] && lock->trylock()) {
+    if (actions[prop] && ! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    triggered_prop = prop;
 	    cond->signal();
@@ -94,17 +172,24 @@ bool AnimationStation::trigger_async(std::string prop) {
 
 bool AnimationStation::trigger(std::string prop) {
     bool ret = false;
-    if (lock->trylock()) {
+    if (! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    active_prop = prop;
-	    ret = actions[prop]->act();
-	    active_prop = "";
+	    lock->unlock();
+ 	    ret = trigger_common();
+	} else {
+	    lock->unlock();
+	    ret = false;
 	}
-	lock->unlock();
     }
     return ret;
 }
 
+void AnimationStation::add(std::string name, AnimationStationAction *action) {
+    lock->lock();
+    actions[name] = action;
+    lock->unlock();
+}
 
 std::string AnimationStation::to_string() {
     std::string s = "Actions:\n------";
