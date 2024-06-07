@@ -35,6 +35,7 @@ public:
 	lights->off();
 	light->on();
 	bool ret = AnimationStationPopper::act();
+	lights->off();
 	lights->chase();
 	return ret;
     }
@@ -71,6 +72,7 @@ public:
     bool act() override {
 	lights->blink_all();
 	bool ret = AnimationStationPopper::act();
+	lights->off();
 	lights->chase();
 	return ret;
     }
@@ -179,6 +181,7 @@ void threads_main(int argc, char **argv) {
 #endif
 
     lights = new Lights();
+    lights->set_blink_ms(500);
 
     new Bunny(bunny_input, bunny_output, new Light(bunny_light));
     new Gater(gater_input, gater_output, new Light(gater_light));
