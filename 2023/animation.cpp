@@ -4,11 +4,13 @@
 #include <sys/stat.h>
 #include "pi.h"
 #include "animation-station.h"
+#include "animation-ui.h"
 #include "audio.h"
 #include "audio-player.h"
 #include "file.h"
 #include "httpd-server.h"
 #include "i2c.h"
+#include "lights.h"
 #include "mcp23017.h"
 #include "random-utils.h"
 #include "wav.h"
@@ -17,46 +19,77 @@
 
 static Audio *audio;
 static AudioPlayer *audio_player;
+static Lights *lights;
 
-class Bunny : public AnimationStationPopper {
+class Button : public AnimationStationButton, public AnimationStationPopper {
 public:
-    Bunny(Output *output) : AnimationStationPopper(output) {
+    Button(std::string name, Input *button, Output *output, Light *light) :
+	AnimationStationButton(name, button),
+	AnimationStationPopper(output),
+	name(name), light(light) {
+	lights->add(light);
+	AnimationStation::get()->add(name, this);
+    }
+
+    bool act() override {
+	lights->off();
+	light->on();
+	bool ret = AnimationStationPopper::act();
+	lights->chase();
+	return ret;
+    }
+
+protected:
+    std::string name;
+    Light *light = light;
+};
+
+class Bunny : public Button {
+public:
+    Bunny(Input *button, Output *output, Light *light) : Button("bunny", button, output, light) {
+	start();
     }
 };
 
-class Gater : public AnimationStationPopper {
+class Gater : public Button {
 public:
-    Gater(Output *output) : AnimationStationPopper(output) {
+    Gater(Input *button, Output *output, Light *light) : Button("gater", button, output, light) {
+	start();
     }
 
     double up_ms_targer() { return 2; }
     double down_ms_target() { return 2; }
 };
 
-class Question : public AnimationStationPopper {
+class Question : public Button {
 public:
-    Question(Output *output) : AnimationStationPopper(output) {
+    Question(Input *button, Output *output, Light *light) : Button("question", button, output, light) {
 	add_wav("laugh.wav");
+	start();
     }
 
-    bool triggered() override {
-	AnimationStation::get()->blink();
-	return AnimationStationPopper::triggered();
+    bool act() override {
+	lights->blink_all();
+	bool ret = AnimationStationPopper::act();
+	lights->chase();
+	return ret;
     }
 };
 
-class Pillar : public AnimationStationPopper {
+class Pillar : public Button {
 public:
-    Pillar(Output *output) : AnimationStationPopper(output) {
+    Pillar(Input *button, Output *output, Light *light) : Button("pillar", button, output, light) {
+	start();
     }
 
     double up_ms_targer() { return 1; }
     double down_ms_target() { return 0.75; }
 };
 
-class Snake : public AnimationStationPopper {
+class Snake : public Button {
 public:
-    Snake(Output *output) : AnimationStationPopper(output) {
+    Snake(Input *button, Output *output, Light *light) : Button("snake", button, output, light) {
+	start();
     }
 
     double up_ms_targer() { return 1; }
@@ -145,23 +178,21 @@ void threads_main(int argc, char **argv) {
 #endif
 #endif
 
-    AnimationStationAction *bunny = new Bunny(bunny_output);
-    AnimationStationAction *gater = new Gater(gater_output);
-    AnimationStationAction *question = new Question(question_output);
-    AnimationStationAction *pillar = new Pillar(pillar_output);
-    AnimationStationAction *snake = new Snake(snake_output);
+    lights = new Lights();
 
-    AnimationStation *station = AnimationStation::get();
-    station->add("bunny", new AnimationStationButton(bunny, bunny_input, new Light(bunny_light)));
-    station->add("gater", new AnimationStationButton(gater, gater_input, new Light(gater_light)));
-    station->add("question", new AnimationStationButton(question, question_input, new Light(question_light)));
-    station->add("pillar", new AnimationStationButton(pillar, pillar_input, new Light(pillar_light)));
-    station->add("snake", new AnimationStationButton(snake, snake_input, new Light(snake_light)));
+    new Bunny(bunny_input, bunny_output, new Light(bunny_light));
+    new Gater(gater_input, gater_output, new Light(gater_light));
+    new Question(question_input, question_output, new Light(question_light));
+    new Pillar(pillar_input, pillar_output, new Light(pillar_light));
+    new Snake(snake_input, snake_output, new Light(snake_light));
 
-    HttpdServer &httpd = HttpdServer::get();
-    httpd.add_prefix_handler("/debug", new DebugHandler());
-    httpd.add_prefix_handler("/trigger", new TriggerHandler());
-    httpd.start(5555);
+    lights->chase();
+
+    auto httpd = HttpdServer::get();
+    new AnimationStationUI();
+    httpd->add_prefix_handler("/debug", new DebugHandler());
+    httpd->add_prefix_handler("/trigger", new TriggerHandler());
+    httpd->start(5555);
 }
 
 int

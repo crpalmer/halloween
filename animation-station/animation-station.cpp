@@ -8,7 +8,7 @@ bool AnimationStationPopper::add_wav(std::string wav) {
     return random_audio.add(wav.c_str());
 }
 
-bool AnimationStationPopper::triggered() {
+bool AnimationStationPopper::act() {
     if (random_audio.is_empty()) {
 	for (int i = 0; i < 3; i++) attack_once();
     } else {
@@ -25,17 +25,6 @@ void AnimationStationPopper::attack_once() {
     ms_sleep(down_ms());
 }
 
-bool AnimationStationButton::triggered() {
-    AnimationStation *station = AnimationStation::get();
-
-    if  (! station->try_to_trigger()) return false;
-    on();
-    bool ret = action->triggered();
-    off();
-    station->trigger_done();
-    return ret;
-}
-
 void AnimationStationButton::main() {
     bool old_state = button->get();
     while (1) {
@@ -43,7 +32,7 @@ void AnimationStationButton::main() {
 
 	bool new_state = button->get();
 	if (old_state != new_state && new_state) {
-	    action->triggered();
+	    pressed();
 	}
 	old_state = button->get();	// It may have changed while we were running
     }
@@ -60,46 +49,23 @@ AnimationStation::AnimationStation() {
 
 void AnimationStation::add(std::string name, AnimationStationAction *action) {
     lock->lock();
-    if (! lights) lights = new Lights();
     actions[name] = action;
     lock->unlock();
 }
 
-void AnimationStation::add(std::string name, AnimationStationButton *button) {
-    lock->lock();
-    if (! lights) lights = new Lights();
-    buttons[name] = button;
-    lock->unlock();
-}
-
 bool AnimationStation::trigger(std::string prop) {
-    if (actions[prop]) return actions[prop]->triggered();
-    if (buttons[prop]) return buttons[prop]->triggered();
-    return false;
-}
-
-bool AnimationStation::try_to_trigger() {
-    if (lock->trylock()) {
-        lights->off();
+    if (actions[prop] && lock->trylock()) {
+	actions[prop]->act();
+	lock->unlock();
 	return true;
-    } else {
-	return false;
     }
-}
-
-void AnimationStation::trigger_done() {
-    lock->unlock();
-    lights->chase();
+    return false;
 }
 
 std::string AnimationStation::to_string() {
     std::string s = "Actions:\n------";
     for (auto kv : actions) {
 	s += "\n" + kv.first;
-    }
-    s += "\n\nButtons:\n------";
-    for (auto kv : buttons) {
-	s += "\n " + kv.first;
     }
     s += "\n\nUptime: " + std::to_string(nano_elapsed_ms_now(&start_time)/1000.0) + " secs\n";
     return s;

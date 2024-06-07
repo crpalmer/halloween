@@ -12,6 +12,7 @@ target_include_directories(animation-station PUBLIC
 
 target_sources(animation-station PRIVATE
   animation-station.cpp
+  animation-ui.cpp
 )
 
 target_link_libraries(animation-station PUBLIC

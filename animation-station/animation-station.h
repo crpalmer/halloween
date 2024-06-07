@@ -3,8 +3,8 @@
 
 #include <list>
 #include <map>
+#include <algorithm>
 #include "audio-player.h"
-#include "lights.h"
 #include "io.h"
 #include "random-audio.h"
 #include "time-utils.h"
@@ -13,7 +13,7 @@ class AnimationStationAction;
 
 class AnimationStationAction {
 public:
-    virtual bool triggered() = 0;
+    virtual bool act() = 0;
 };
 
 class AnimationStationPopper : public AnimationStationAction {
@@ -23,7 +23,7 @@ public:
 
     bool add_wav(std::string wav);
 
-    bool triggered() override;
+    bool act() override;
 
     virtual double up_ms_target() { return 1.0; }
     int up_ms() { return (500 + random_number_in_range(0, 250) - 125)*up_ms_target(); }
@@ -40,26 +40,6 @@ private:
     RandomAudio random_audio;
 };
 
-class AnimationStationButton : public PiThread, public InputNotifier, public Light {
-public:
-    AnimationStationButton(AnimationStationAction *action, Input *button, Light *light) : action(action), button(button), light(light) {
-    }
-
-    virtual bool triggered();
-
-    void off() { light->off(); }
-    void on() { light->on(); }
-    void set(bool on) { light->set(on); }
-
-    void main() override;
-    void on_change() override;
-
-private:
-    AnimationStationAction *action;
-    Input *button;
-    Light *light;
-};
-
 class AnimationStation {
 public:
     static AnimationStation *get() {
@@ -67,27 +47,37 @@ public:
 	return &instance;
     }
 
-    void blink() { lights->blink_all(); }
-
     void add(std::string name, AnimationStationAction *action);
-    void add(std::string name, AnimationStationButton *button);
 
     bool trigger(std::string name);
-    bool try_to_trigger();
-    void trigger_done();
 
     std::string to_string();
+
+    // TODO:: Figure out an iterator
+    auto get_actions() { return actions; }
 
 private:
     AnimationStation();
 
 private:
     struct timespec start_time;
-    Lights *lights;
     PiMutex *lock;
-    std::map<std::string, bool> disabled;
     std::map<std::string, AnimationStationAction *> actions;
-    std::map<std::string, AnimationStationButton *> buttons;
+};
+
+class AnimationStationButton : public PiThread, public InputNotifier {
+public:
+    AnimationStationButton(std::string action, Input *button) : PiThread(action.c_str()), action(action), button(button) {
+    }
+
+    virtual bool pressed() { return AnimationStation::get()->trigger(action); }
+
+    void main() override;
+    void on_change() override;
+
+private:
+    std::string action;
+    Input *button;
 };
 
 #endif
