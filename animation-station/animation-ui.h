@@ -16,7 +16,7 @@ private:
     std::string root;
 
     std::string start_html();
-    bool try_to_trigger(std::string path, std::string &html);
+    std::string try_to_trigger(std::string path);
     void add_props(std::string &html);
     void finish(std::string html);
 };

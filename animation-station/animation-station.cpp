@@ -82,7 +82,7 @@ bool AnimationStation::trigger_async(std::string prop) {
     bool ret = false;
 
     if (actions[prop] && lock->trylock()) {
-	if (triggered_prop == "") {
+	if (active_prop == "" && triggered_prop == "") {
 	    triggered_prop = prop;
 	    cond->signal();
 	    ret = true;

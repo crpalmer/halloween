@@ -55,7 +55,7 @@ public:
 
     std::string to_string();
 
-    auto get_active_prop() { return active_prop; }
+    auto get_active_prop() { return active_prop != "" ? active_prop : triggered_prop; }
 
     // TODO:: Figure out an iterator
     auto get_actions() { return actions; }
