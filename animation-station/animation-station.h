@@ -40,28 +40,39 @@ private:
     RandomAudio random_audio;
 };
 
-class AnimationStation {
+class AnimationStation : PiThread {
 public:
     static AnimationStation *get() {
 	static AnimationStation instance;
 	return &instance;
     }
+    virtual ~AnimationStation() { }
 
     void add(std::string name, AnimationStationAction *action);
 
+    bool trigger_async(std::string name);
     bool trigger(std::string name);
 
     std::string to_string();
 
+    auto get_active_prop() { return active_prop; }
+
     // TODO:: Figure out an iterator
     auto get_actions() { return actions; }
+
+    void main() override;
 
 private:
     AnimationStation();
 
 private:
     struct timespec start_time;
+
     PiMutex *lock;
+    PiCond *cond;
+    std::string active_prop;
+    std::string triggered_prop;
+
     std::map<std::string, AnimationStationAction *> actions;
 };
 

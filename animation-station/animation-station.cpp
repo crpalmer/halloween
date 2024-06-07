@@ -42,9 +42,28 @@ void AnimationStationButton::on_change() {
     resume_from_isr();
 }
 
-AnimationStation::AnimationStation() {
+AnimationStation::AnimationStation() : PiThread("animation-station") {
     lock = new PiMutex();
+    cond = new PiCond();
     nano_gettime(&start_time);
+    start();
+}
+
+void AnimationStation::main() {
+    while (true) {
+	lock->lock();
+	while (! (active_prop == "" && triggered_prop != "")) cond->wait(lock);
+	active_prop = triggered_prop;
+	triggered_prop = "";
+	lock->unlock();
+
+	assert(actions[active_prop]);
+	actions[active_prop]->act();
+
+	lock->lock();
+	active_prop = "";
+	lock->unlock();
+    }
 }
 
 void AnimationStation::add(std::string name, AnimationStationAction *action) {
@@ -53,14 +72,32 @@ void AnimationStation::add(std::string name, AnimationStationAction *action) {
     lock->unlock();
 }
 
-bool AnimationStation::trigger(std::string prop) {
+bool AnimationStation::trigger_async(std::string prop) {
+    bool ret = false;
+
     if (actions[prop] && lock->trylock()) {
-	actions[prop]->act();
-	lock->unlock();
-	return true;
+	if (triggered_prop == "") {
+	    triggered_prop = prop;
+	    cond->signal();
+	    ret = true;
+	}
+        lock->unlock();
     }
-    return false;
+    return ret;
 }
+
+bool AnimationStation::trigger(std::string prop) {
+    bool ret = false;
+    if (lock->trylock()) {
+	if (active_prop == "" && triggered_prop == "") {
+	    active_prop = prop;
+	    ret = actions[prop]->act();
+	}
+	lock->unlock();
+    }
+    return ret;
+}
+
 
 std::string AnimationStation::to_string() {
     std::string s = "Actions:\n------";
