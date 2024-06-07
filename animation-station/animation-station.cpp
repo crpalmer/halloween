@@ -92,7 +92,7 @@ bool AnimationStation::load_state() {
 	for (int i = 0; i < len && *serialized; i++, serialized++) {}
 	if (*serialized) *serialized++ = '\0';
 
-	if (actions[name]) actions[name]->deserialize_state(serialized);
+	if (actions.count(name)) actions[name]->deserialize_state(serialized);
     }
 
     ret = true;
@@ -159,7 +159,7 @@ void AnimationStation::main() {
 bool AnimationStation::trigger_async(std::string prop) {
     bool ret = false;
 
-    if (actions[prop] && ! actions[prop]->is_disabled() && lock->trylock()) {
+    if (actions.count(prop) && ! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    triggered_prop = prop;
 	    cond->signal();
@@ -172,7 +172,7 @@ bool AnimationStation::trigger_async(std::string prop) {
 
 bool AnimationStation::trigger(std::string prop) {
     bool ret = false;
-    if (! actions[prop]->is_disabled() && lock->trylock()) {
+    if (actions.count(prop) && ! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    active_prop = prop;
 	    lock->unlock();

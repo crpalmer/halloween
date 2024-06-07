@@ -70,7 +70,7 @@ public:
     bool trigger(std::string name);
 
     bool disable(std::string name) {
-	bool ret = (actions[name] != NULL);
+	bool ret = (actions.count(name));
 	if (ret) {
 	    actions[name]->disable();
 	    save_state();
@@ -79,7 +79,7 @@ public:
     }
 
     bool enable(std::string name) {
-	bool ret = (actions[name] != NULL);
+	bool ret = (actions.count(name));
 	if (ret) {
 	    actions[name]->enable();
 	    save_state();
