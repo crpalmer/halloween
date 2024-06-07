@@ -78,8 +78,7 @@ private:
 
 class AnimationStationButton : public PiThread, public InputNotifier {
 public:
-    AnimationStationButton(std::string action, Input *button) : PiThread(action.c_str()), action(action), button(button) {
-    }
+    AnimationStationButton(std::string action, Input *button);
 
     virtual bool pressed() { return AnimationStation::get()->trigger(action); }
 

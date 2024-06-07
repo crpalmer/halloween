@@ -25,7 +25,7 @@ class Button : public AnimationStationButton, public AnimationStationPopper {
 public:
     Button(std::string name, Input *button, Output *output, Light *light) :
 	AnimationStationButton(name, button),
-	AnimationStationPopper(output),
+	AnimationStationPopper(output, audio_player),
 	name(name), light(light) {
 	lights->add(light);
 	AnimationStation::get()->add(name, this);

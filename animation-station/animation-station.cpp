@@ -9,7 +9,7 @@ bool AnimationStationPopper::add_wav(std::string wav) {
 }
 
 bool AnimationStationPopper::act() {
-    if (random_audio.is_empty()) {
+    if (! player || random_audio.is_empty()) {
 	for (int i = 0; i < 3; i++) attack_once();
     } else {
         random_audio.play_random(player);
@@ -23,6 +23,12 @@ void AnimationStationPopper::attack_once() {
     ms_sleep(up_ms());
     output->set(false);
     ms_sleep(down_ms());
+}
+
+AnimationStationButton::AnimationStationButton(std::string action, Input *button) : PiThread(action.c_str()), action(action), button(button) {
+    button->set_pullup_down();
+    button->set_debounce(1);
+    button->set_notifier(this);
 }
 
 void AnimationStationButton::main() {
@@ -92,6 +98,7 @@ bool AnimationStation::trigger(std::string prop) {
 	if (active_prop == "" && triggered_prop == "") {
 	    active_prop = prop;
 	    ret = actions[prop]->act();
+	    active_prop = "";
 	}
 	lock->unlock();
     }
