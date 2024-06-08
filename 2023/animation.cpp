@@ -101,7 +101,6 @@ public:
 class DebugHandler : public HttpdDebugHandler {
 public:
     virtual HttpdResponse *open(std::string path) {
-	if (path == "") return new HttpdResponse(AnimationStation::get()->to_string());
 	return HttpdDebugHandler::open(path);
     }
 };

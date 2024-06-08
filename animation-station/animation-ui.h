@@ -20,6 +20,7 @@ private:
     std::string try_to_trigger(std::string path);
     void add_props(std::string &html);
     void finish(std::string html);
+    void header(std::string name, std::string &html);
 };
 
 #endif

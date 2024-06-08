@@ -5,12 +5,16 @@
 #include "animation-station.h"
 
 std::string AnimationStationAction::serialize_state() {
-    return std::to_string(n_acts) + " " + std::to_string(disabled);
+    return std::to_string(n_acts) + " " + std::to_string(n_acts_async) + " " + std::to_string(disabled);
 }
 
 void AnimationStationAction::deserialize_state(const char *buf) {
     n_acts = atoi(buf);
     while (*buf && *buf != ' ') buf++;
+    if (*buf) buf++;
+    n_acts_async = atoi(buf);
+    while (*buf && *buf != ' ') buf++;
+    if (*buf) buf++;
     disabled = atoi(buf);
 }
 
@@ -130,7 +134,6 @@ bool AnimationStation::trigger_common() {
 
     lock->lock();
 
-    actions[active_prop]->n_acts++;
     save_dirty = true;
     active_prop = "";
 
@@ -162,6 +165,7 @@ bool AnimationStation::trigger_async(std::string prop) {
     if (actions.count(prop) && ! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    triggered_prop = prop;
+	    actions[prop]->n_acts_async++;
 	    cond->signal();
 	    ret = true;
 	}
@@ -175,6 +179,7 @@ bool AnimationStation::trigger(std::string prop) {
     if (actions.count(prop) && ! actions[prop]->is_disabled() && lock->trylock()) {
 	if (active_prop == "" && triggered_prop == "") {
 	    active_prop = prop;
+	    actions[prop]->n_acts++;
 	    lock->unlock();
  	    ret = trigger_common();
 	} else {
@@ -189,13 +194,4 @@ void AnimationStation::add(std::string name, AnimationStationAction *action) {
     lock->lock();
     actions[name] = action;
     lock->unlock();
-}
-
-std::string AnimationStation::to_string() {
-    std::string s = "Actions:\n------";
-    for (auto kv : actions) {
-	s += "\n" + kv.first;
-    }
-    s += "\n\nUptime: " + std::to_string(nano_elapsed_ms_now(&start_time)/1000.0) + " secs\n";
-    return s;
 }

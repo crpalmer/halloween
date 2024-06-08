@@ -66,11 +66,21 @@ std::string AnimationStationUI::try_to_trigger(std::string prop) {
     }
 }
 
+void AnimationStationUI::header(std::string name, std::string &html) {
+    html += "<div class='header'><div class='header-" + name + "'></div></div>";
+}
+
 void AnimationStationUI::add_props(std::string &html) {
     auto station = AnimationStation::get();
     auto active_prop = station->get_active_prop();
 
-    html += "<div class='status-table'><div class='header-row'><div class='header'><div class='header-prop'></div></div><div class='header'><div class='header-status'></div></div><div class='header'><div class='header-times'></div></div></div>\n";
+    html += "<div class='status-table'><div class='header-row'>";
+    header("prop", html);
+    header("status", html);
+    header("times-async", html);
+    header("times", html);
+    html += "</div>\n";
+
     for (auto action : station->get_actions()) {
 	auto name = action.first;
 	auto a = action.second;
@@ -85,9 +95,12 @@ void AnimationStationUI::add_props(std::string &html) {
 	} else {
 	    html += "<div class='status-row'><div class='prop'><a href=\"" + name + "\">" + name + "</a></div>";
 	}
-	html += "<div class='status'><div class='status-" + status + "''></div></div><div class='n-acts'>" + std::to_string(a->get_n_acts()) + "</div></div>";
+	html += "<div class='status'><div class='status-" + status + "''></div></div>";
+	html += "<div class='n-acts-async'>" + std::to_string(a->get_n_acts_async()) + "</div>";
+	html += "<div class='n-acts'>" + std::to_string(a->get_n_acts()) + "</div>";
+	html += "</div>";
     }
-    html += "</table>";
+    html += "</div>";
 }
 
 void AnimationStationUI::finish(std::string html) {

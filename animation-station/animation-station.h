@@ -16,10 +16,12 @@ public:
     virtual bool act() = 0;
 
     int get_n_acts() { return n_acts; }
+    int get_n_acts_async() { return n_acts_async; }
     bool is_disabled() { return disabled; }
 
 protected:
     int n_acts = 0;
+    int n_acts_async = 0;
     bool disabled = false;
 
     void deserialize_state(const char *serialized);
@@ -86,8 +88,6 @@ public:
 	}
 	return ret;
     }
-
-    std::string to_string();
 
     auto get_active_prop() { return active_prop != "" ? active_prop : triggered_prop; }
 
