@@ -196,6 +196,7 @@ void threads_main(int argc, char **argv) {
 
     auto httpd = HttpdServer::get();
     new AnimationStationUI();
+    httpd->add_file_handler("/station/ui.css", new HttpdFileHandler(ANIMATION_STATION_CSS_FILENAME));
     httpd->add_prefix_handler("/debug", new DebugHandler());
     httpd->add_prefix_handler("/trigger", new TriggerHandler());
     httpd->start(5555);

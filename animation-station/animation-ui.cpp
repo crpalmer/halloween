@@ -53,16 +53,16 @@ std::string AnimationStationUI::start_html() {
     auto station = AnimationStation::get();
     auto active_prop = station->get_active_prop();
 
-    return "<html><header><title>Animation Station</title><meta http-equiv=\"refresh\" content=\"" + std::string(active_prop != "" ? "5" : "30") + "; URL='" + root.c_str() + "/'\"></header><body>";
+    return "<html><header><title>Animation Station</title><meta http-equiv=\"refresh\" content=\"" + std::string(active_prop != "" ? "5" : "30") + "; URL='" + root.c_str() + "/'\"></header><body><link rel='stylesheet' href='ui.css'>";
 }
 
 std::string AnimationStationUI::try_to_trigger(std::string prop) {
     AnimationStation *station = AnimationStation::get();
 
     if (station->trigger_async(prop)) {
-	return "<h2>Triggered: " + prop + " </h2>";
+	return "<div class='triggered'`>Triggered: " + prop + " </div>";
     } else {
-	return "<h2>Failed: " + prop + "</h2>";
+	return "<div class='trigger-failed'`>Failed: " + prop + "</div>";
     }
 }
 
@@ -70,7 +70,7 @@ void AnimationStationUI::add_props(std::string &html) {
     auto station = AnimationStation::get();
     auto active_prop = station->get_active_prop();
 
-    html += "<table><tr><th>Prop</th><th>Status</th><th># Times</th></tr>\n";
+    html += "<div class='status-table'><div class='header-row'><div class='header'><div class='header-prop'></div></div><div class='header'><div class='header-status'></div></div><div class='header'><div class='header-times'></div></div></div>\n";
     for (auto action : station->get_actions()) {
 	auto name = action.first;
 	auto a = action.second;
@@ -80,7 +80,12 @@ void AnimationStationUI::add_props(std::string &html) {
 	else if (name == active_prop) status = "ACTIVE";
 	else status = "ready";
 
-	html += "<tr><td><a href=\"" + action.first + "\">" + action.first + "</a></td><td>" + status + "</td><td align='right'>" + std::to_string(a->get_n_acts()) + "</td></tr>";
+	if (a->is_disabled()) {
+	    html += "<div class='status-row-disabled'><div class='prop'>" + name + "</div>";
+	} else {
+	    html += "<div class='status-row'><div class='prop'><a href=\"" + name + "\">" + name + "</a></div>";
+	}
+	html += "<div class='status'><div class='status-" + status + "''></div></div><div class='n-acts'>" + std::to_string(a->get_n_acts()) + "</div></div>";
     }
     html += "</table>";
 }
