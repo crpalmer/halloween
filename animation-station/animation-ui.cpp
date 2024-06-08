@@ -36,9 +36,8 @@ HttpdResponse *AnimationStationUI::trigger(std::string prop) {
     }
 
     std::string html = start_html();
-    html += trigger_html;
-
     add_props(html);
+    html += trigger_html;
     finish(html);
 
     auto response = new HttpdResponse(html);
@@ -53,7 +52,13 @@ std::string AnimationStationUI::start_html() {
     auto station = AnimationStation::get();
     auto active_prop = station->get_active_prop();
 
-    return "<html><header><title>Animation Station</title><meta http-equiv=\"refresh\" content=\"" + std::string(active_prop != "" ? "5" : "30") + "; URL='" + root.c_str() + "/'\"></header><body><link rel='stylesheet' href='ui.css'>";
+    std::string html = "<html><header><title>Animation Station</title>";
+    //html += "<meta http-equiv=\"refresh\" content=\"" + std::string(active_prop != "" ? "5" : "5") + "; URL='" + root.c_str() + "/'\">";
+    html += "<script>setTimeout(function() { window.location.replace('" + root + "/'); }, 5000);</script>";
+    html += "</header><body>";
+    html += "<link rel='stylesheet' href='ui.css'>";
+
+    return html;
 }
 
 std::string AnimationStationUI::try_to_trigger(std::string prop) {
