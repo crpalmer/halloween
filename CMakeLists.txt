@@ -12,6 +12,7 @@ add_subdirectory(lib)
 add_subdirectory(animation-station)
 
 add_subdirectory(claw)
+add_subdirectory(2024)
 add_subdirectory(2023)
 add_subdirectory(2022)
 add_subdirectory(2021)
