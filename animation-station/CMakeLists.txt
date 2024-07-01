@@ -8,6 +8,7 @@ add_library(animation-station STATIC)
 
 target_include_directories(animation-station PUBLIC
   .
+  ..
 )
 
 target_sources(animation-station PRIVATE

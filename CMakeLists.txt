@@ -32,6 +32,4 @@ add_library(halloween STATIC
   ${LIB_OBJS}
 )
 
-target_include_directories(halloween PUBLIC .)
-
 target_link_libraries(halloween PUBLIC lib-pi)
