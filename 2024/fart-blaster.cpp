@@ -5,9 +5,16 @@
 #include "gp-output.h"
 #include "string-utils.h"
 #include "neopixel-pico.h"
+#include "net-listener.h"
+#include "net-reader.h"
+#include "net-writer.h"
 #include "pi-threads.h"
 #include "random-audio.h"
+#include "stdin-reader.h"
+#include "stdout-writer.h"
+#include "threads-console.h"
 #include "time-utils.h"
+#include "wifi.h"
 
 static const int neo_gpio = 4;
 static const int n_main_leds = 35;
@@ -133,7 +140,45 @@ static void light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main
     if (dirty) neo->show();
 }
 
+class FartConsole : public ThreadsConsole, public PiThread {
+public:
+    FartConsole(const char *name, Reader *r, Writer *w) : ThreadsConsole(r, w), PiThread(name) {
+	start();
+    }
+
+    void main() {
+	Console::main();
+    }
+
+    void process_cmd(const char *cmd) override {
+	if (is_command(cmd, "fart")) {
+	} else {
+	    ThreadsConsole::process_cmd(cmd);
+	}
+    }
+
+    void usage() override {
+	ThreadsConsole::usage();
+    }
+};
+
+class FartListener : public NetListener {
+public:
+    FartListener() : NetListener() {
+	start();
+    }
+
+    void accepted(int fd) override {
+	new FartConsole("net-console", new NetReader(fd), new NetWriter(fd));
+    }
+};
+
 static void threads_main(int argc, char **argv) {
+    new FartConsole("console", new StdinReader(), new StdoutWriter());
+
+    wifi_init("fart");
+    new FartListener();
+
     Audio *audio = new AudioPico();
     AudioPlayer *player = new AudioPlayer(audio);
     RandomAudio *random_audio = new RandomAudio();
