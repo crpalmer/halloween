@@ -1,9 +1,15 @@
 #include "pi.h"
+#include "audio.h"
+#include "audio-player.h"
+#include "gp-input.h"
+#include "gp-output.h"
+#include "string-utils.h"
 #include "neopixel-pico.h"
 #include "pi-threads.h"
+#include "random-audio.h"
 #include "time-utils.h"
 
-static const int neo_gpio = 28;
+static const int neo_gpio = 4;
 static const int n_main_leds = 35;
 static const int n_bubble_leds = 7;
 static const int total_n_leds = n_main_leds + n_bubble_leds;
@@ -39,7 +45,7 @@ protected:
     void set_all(int colour) { set_all(colour, colour, colour); }
 
     void set_led(int led, int r, int g, int b) {
-	neo->set_led(led + first_led, r, g, b);
+	neo->set_led((led % n_leds) + first_led, r, g, b);
     }
 
     void set_led(int led, int colour) { set_led(led, colour, colour, colour); }
@@ -56,7 +62,7 @@ private:
 
 class LightVortex : public LightAction {
 public:
-    LightVortex(NeoPixelPico *neo, int first_led, int n_leds, int n_active = 1) : LightAction(neo, first_led, n_leds), n_active(n_active) {
+    LightVortex(NeoPixelPico *neo, int first_led, int n_leds, int rotation_ms = VORTEX_ROTATION_MS, int n_active = 1) : LightAction(neo, first_led, n_leds), n_active(n_active) {
     }
 
     void step() override {
@@ -65,15 +71,16 @@ public:
 	set_all(0);
 	set_led(0, ON_VALUE);
 	for (int i = it; i < it + n_active; i++) {
-	    set_led(i % n_leds, ON_VALUE);
+	    set_led(i, ON_VALUE);
 	}
-	schedule_in(VORTEX_ROTATION_MS / n_leds);	// To do accelerate
+	schedule_in((rotation_ms + n_leds/2) / n_leds);	// To do accelerate
 	if (++it >= n_leds) it = 1;
     }
 
 private:
     int it = 1;
     int n_active;
+    int rotation_ms;
 };
 
 class PulsingLight : public LightAction {
@@ -86,7 +93,6 @@ public:
 	for (int i = cur_group; i < get_n_leds(); i += n_groups) {
 	    set_led(i, colour);
 	}
-	//cur_group = (cur_group + 1) % n_groups;
 
 	if (is_entering) {
 	    colour += FADE_INC;
@@ -111,46 +117,68 @@ private:
     int cur_group = 0;
 };
 
-#define A 0
+static void light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main) {
+    bool dirty = false;
+
+    if (bubble->is_ready()) {
+	bubble->step();
+	dirty = true;
+    }
+
+    if (main->is_ready()) {
+	main->step();
+	dirty = true;
+    }
+
+    if (dirty) neo->show();
+}
+
 static void threads_main(int argc, char **argv) {
+    Audio *audio = new AudioPico();
+    AudioPlayer *player = new AudioPlayer(audio);
+    RandomAudio *random_audio = new RandomAudio();
+    
+    bool exists = true;
+    for (int i = 0; exists; i++) {
+	char *fname = maprintf("fart-%d.wav", i);
+	exists = random_audio->add(fname);
+	printf("%s %s\n", fname, exists ? "exists" : "doesn't exist, stopping");
+	free(fname);
+    }
+
+    GPInput *go = new GPInput(9);
+    go->set_pullup_up();
+    GPOutput *ready = new GPOutput(10);
+
     NeoPixelPico *neo = new NeoPixelPico(neo_gpio);
     neo->set_n_leds(total_n_leds);
 
-    LightAction *bubble_vortex = new LightVortex(neo, n_main_leds, n_bubble_leds);
+    LightAction *bubble_vortex = new LightVortex(neo, n_main_leds, n_bubble_leds, 125);
+    LightAction *bubble_vortex_fast = new LightVortex(neo, n_main_leds, n_bubble_leds, 80);
     LightAction *bubble_pulse = new PulsingLight(neo, n_main_leds, n_bubble_leds);
-    LightAction *main_vortex = new LightVortex(neo, 0, n_main_leds, 5);
+    LightAction *main_vortex = new LightVortex(neo, 0, n_main_leds, 91, 5);
+    LightAction *main_vortex_fast = new LightVortex(neo, 0, n_main_leds, 80, 5);
     LightAction *main_pulse = new PulsingLight(neo, 0, n_main_leds, 4);
 
-    int steps = 0;
-    LightAction *bubble = bubble_pulse;
-    LightAction *main = main_vortex;
-
     while (1) {
-	bool dirty = false;
-
-	if (bubble->is_ready()) {
-	    bubble->step();
-	    dirty = true;
+	ready->on();
+	while (! go->get()) {
+	    light_step(neo, bubble_pulse, main_pulse);
+	    ms_sleep(1);
 	}
 
-	if (main->is_ready()) {
-	    main->step();
-	    dirty = true;
+	ready->off();
+
+	for (int i = 0; i < 2000; i++) {
+	    light_step(neo, bubble_vortex, main_vortex);
+	    ms_sleep(1);
 	}
 
-	if (dirty) neo->show();
+	random_audio->play_random(player);
 
-	ms_sleep(1);
-	steps++;
-
-	if (steps % 5000 == 0) {
-	    if (bubble == bubble_pulse) bubble = bubble_vortex;
-	    else bubble = bubble_pulse;
-	}
-
-	if (steps % 3456 == 0) {
-	    if (main == main_pulse) main = main_vortex;
-	    else main = main_pulse;
+	while (player->is_active()) {
+	    light_step(neo, bubble_vortex_fast, main_vortex_fast);
+	    ms_sleep(1);
 	}
     }
 }
