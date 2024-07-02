@@ -2,6 +2,7 @@
 #define __RANDOM_AUDIO_H__
 
 #include "audio-player.h"
+#include "consoles.h"
 #include "random-utils.h"
 #include "wav.h"
 
@@ -33,6 +34,13 @@ public:
     }
 
     bool is_empty() { return n_audio == 0; }
+
+    void dump() {
+	consoles_printf("random-audio: %d tracks, last played %d\n", n_audio, last_audio);
+	for (int i = 0; i < n_audio; i++) {
+	    consoles_printf("  %3d : %s\n", i, audios[i]->get_fname());
+	}
+    }
 
 private:
     AudioBuffer *audios[MAX_RANDOM_AUDIO];
