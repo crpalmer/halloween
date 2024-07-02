@@ -1,0 +1,17 @@
+fart-blaster:
+-------------
+
+- new led ring is 72mm outer diamer and 54mm inner diameter
+- does the main led ring want to elevated a little bit so it
+  is less bulb-like?
+- improve the logic of the rotation timing?  right now I feel like
+  the rounding to the ms is really arbitrary and I don't understand
+  what it's doing
+
+general:
+--------
+
+- audio-config: make a concrete version of the object that lets you
+  do "new AudioConfig(AudioConfig *c)" and/or audio_config.copy(audio_config)
+  and use that all over instead of having other object keep their own local
+  variables and update them?
