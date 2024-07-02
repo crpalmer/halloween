@@ -16,7 +16,7 @@
 #include "time-utils.h"
 #include "wifi.h"
 
-static const int neo_gpio = 4;
+static const int neo_gpio = 28;
 static const int n_main_leds = 35;
 static const int n_bubble_leds = 7;
 static const int total_n_leds = n_main_leds + n_bubble_leds;
@@ -26,6 +26,8 @@ static const int total_n_leds = n_main_leds + n_bubble_leds;
 #define VORTEX_ROTATION_MS 100
 #define ON_VALUE	254
 #define OFF_VALUE	50
+
+static class Fart *fart;
 
 class LightAction {
 public:
@@ -44,6 +46,13 @@ public:
 	nano_add_ms(&next, ms);
     }
 
+    struct timespec *soonest_next(struct timespec *current_next = NULL) {
+	if (! current_next || nano_later_than(current_next, &next)) {
+	    return &next;
+	}
+	return current_next;
+    }
+
 protected:
     void set_all(int r, int g, int b) {
 	for (int i = 0; i < n_leds; i++) set_led(i, r, g, b);
@@ -52,7 +61,7 @@ protected:
     void set_all(int colour) { set_all(colour, colour, colour); }
 
     void set_led(int led, int r, int g, int b) {
-	neo->set_led((led % n_leds) + first_led, r, g, b);
+	if (led >= 0 && led < n_leds) neo->set_led(led + first_led, r, g, b);
     }
 
     void set_led(int led, int colour) { set_led(led, colour, colour, colour); }
@@ -69,7 +78,7 @@ private:
 
 class LightVortex : public LightAction {
 public:
-    LightVortex(NeoPixelPico *neo, int first_led, int n_leds, int rotation_ms = VORTEX_ROTATION_MS, int n_active = 1) : LightAction(neo, first_led, n_leds), n_active(n_active) {
+    LightVortex(NeoPixelPico *neo, int first_led, int n_leds, int rotation_ms = VORTEX_ROTATION_MS, int n_active = 1) : LightAction(neo, first_led, n_leds), rotation_ms(rotation_ms), n_active(n_active) {
     }
 
     void step() override {
@@ -78,16 +87,16 @@ public:
 	set_all(0);
 	set_led(0, ON_VALUE);
 	for (int i = it; i < it + n_active; i++) {
-	    set_led(i, ON_VALUE);
+	    set_led((i % n_leds), ON_VALUE);
 	}
-	schedule_in((rotation_ms + n_leds/2) / n_leds);	// To do accelerate
+	schedule_in((rotation_ms + n_leds/2) / n_leds);
 	if (++it >= n_leds) it = 1;
     }
 
 private:
     int it = 1;
-    int n_active;
     int rotation_ms;
+    int n_active;
 };
 
 class PulsingLight : public LightAction {
@@ -124,7 +133,7 @@ private:
     int cur_group = 0;
 };
 
-static void light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main) {
+static int light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main) {
     bool dirty = false;
 
     if (bubble->is_ready()) {
@@ -138,7 +147,117 @@ static void light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main
     }
 
     if (dirty) neo->show();
+
+    struct timespec *next = bubble->soonest_next(main->soonest_next());
+    int ms = - nano_elapsed_ms_now(next);
+    if (ms < 1) ms = 1;
+    return ms;
 }
+
+class Fart : public PiThread {
+public:
+    Fart() : PiThread("fart") {
+	audio = new AudioPico();
+	player = new AudioPlayer(audio);
+	random_audio = new RandomAudio();
+
+	bool exists = true;
+	for (int i = 0; exists; i++) {
+	    char *fname = maprintf("fart-%d.wav", i);
+	    exists = random_audio->add(fname);
+	    consoles_printf("%s %s\n", fname, exists ? "exists" : "doesn't exist, stopping");
+	    free(fname);
+	}
+
+	ready = new GPOutput(10);
+
+	neo = new NeoPixelPico(neo_gpio);
+	neo->set_n_leds(total_n_leds);
+	neo->set_all(0, 0, 0);
+	neo->show();
+
+	bubble_vortex = new LightVortex(neo, n_main_leds, n_bubble_leds, 125);
+	bubble_vortex_fast = new LightVortex(neo, n_main_leds, n_bubble_leds, 80);
+	bubble_pulse = new PulsingLight(neo, n_main_leds, n_bubble_leds);
+
+	main_vortex = new LightVortex(neo, 0, n_main_leds, 91, 5);
+	main_vortex_fast = new LightVortex(neo, 0, n_main_leds, 80, 5);
+	main_pulse = new PulsingLight(neo, 0, n_main_leds, 4);
+
+	lock = new PiMutex();
+
+	start();
+    }
+
+    void main() override {
+	ready->on();
+	while (1) {
+	    lock->lock();
+	    bool fart_now = is_fart;
+	    lock->unlock();
+
+	    if (! fart_now) {
+	        int ms = light_step(neo, bubble_pulse, main_pulse);
+	        lock->unlock();
+	        ms_sleep(ms);
+	    } else {
+		lock->unlock();
+
+		consoles_printf("Fart loading\n");
+		ready->off();
+
+		for (int i = 0; i < 2000; ) {
+		    int ms = light_step(neo, bubble_vortex, main_vortex);
+		    ms_sleep(ms);
+		    i += ms;
+		}
+
+		consoles_printf("Farting\n");
+		random_audio->play_random(player);
+
+		while (player->is_active()) {
+		    int ms = light_step(neo, bubble_vortex_fast, main_vortex_fast);
+		    ms_sleep(ms);
+		}
+
+		consoles_printf("Fart complete\n");
+		ready->on();
+
+		lock->lock();
+		is_fart = false;
+		lock->unlock();
+	    }
+	}
+    }
+
+    void dump_audio() {
+	random_audio->dump();
+    }
+
+    void fart() {
+	lock->lock();
+	is_fart = true;
+	lock->unlock();
+    }
+
+private:
+    Audio *audio;
+    AudioPlayer *player;
+    RandomAudio *random_audio;
+
+    NeoPixelPico *neo;
+    GPOutput *ready;
+
+    LightAction *bubble_vortex;
+    LightAction *bubble_vortex_fast;
+    LightAction *bubble_pulse;
+    LightAction *main_vortex;
+    LightAction *main_vortex_fast;
+    LightAction *main_pulse;
+
+    PiMutex *lock;
+    bool is_fart = false;
+};
 
 class FartConsole : public ThreadsConsole, public PiThread {
 public:
@@ -151,7 +270,10 @@ public:
     }
 
     void process_cmd(const char *cmd) override {
-	if (is_command(cmd, "fart")) {
+	if (is_command(cmd, "audio")) {
+	    fart->dump_audio();
+	} else if (is_command(cmd, "fart")) {
+	    fart->fart();
 	} else {
 	    ThreadsConsole::process_cmd(cmd);
 	}
@@ -159,6 +281,8 @@ public:
 
     void usage() override {
 	ThreadsConsole::usage();
+	consoles_printf("audio - dump the list of audio tracks\n");
+	consoles_printf("fart - trigger a fart\n");
     }
 };
 
@@ -179,52 +303,14 @@ static void threads_main(int argc, char **argv) {
     wifi_init("fart");
     new FartListener();
 
-    Audio *audio = new AudioPico();
-    AudioPlayer *player = new AudioPlayer(audio);
-    RandomAudio *random_audio = new RandomAudio();
-    
-    bool exists = true;
-    for (int i = 0; exists; i++) {
-	char *fname = maprintf("fart-%d.wav", i);
-	exists = random_audio->add(fname);
-	printf("%s %s\n", fname, exists ? "exists" : "doesn't exist, stopping");
-	free(fname);
-    }
+    fart = new Fart();
 
     GPInput *go = new GPInput(9);
     go->set_pullup_up();
-    GPOutput *ready = new GPOutput(10);
-
-    NeoPixelPico *neo = new NeoPixelPico(neo_gpio);
-    neo->set_n_leds(total_n_leds);
-
-    LightAction *bubble_vortex = new LightVortex(neo, n_main_leds, n_bubble_leds, 125);
-    LightAction *bubble_vortex_fast = new LightVortex(neo, n_main_leds, n_bubble_leds, 80);
-    LightAction *bubble_pulse = new PulsingLight(neo, n_main_leds, n_bubble_leds);
-    LightAction *main_vortex = new LightVortex(neo, 0, n_main_leds, 91, 5);
-    LightAction *main_vortex_fast = new LightVortex(neo, 0, n_main_leds, 80, 5);
-    LightAction *main_pulse = new PulsingLight(neo, 0, n_main_leds, 4);
 
     while (1) {
-	ready->on();
-	while (! go->get()) {
-	    light_step(neo, bubble_pulse, main_pulse);
-	    ms_sleep(1);
-	}
-
-	ready->off();
-
-	for (int i = 0; i < 2000; i++) {
-	    light_step(neo, bubble_vortex, main_vortex);
-	    ms_sleep(1);
-	}
-
-	random_audio->play_random(player);
-
-	while (player->is_active()) {
-	    light_step(neo, bubble_vortex_fast, main_vortex_fast);
-	    ms_sleep(1);
-	}
+	while (! go->get()) ms_sleep(1);
+	fart->fart();
     }
 }
 
