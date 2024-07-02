@@ -19,15 +19,15 @@
 #include "wav.h"
 #include "ween-hours.h"
 
-#ifdef PLATFORM_pi
-#include "maestro.h"
-#include "pi-usb.h"
-#include "wb.h"
-#else
+#ifdef PLATFORM_pico
 #include "gp-input.h"
 #include "gp-output.h"
 #include "servo-gpio.h"
 #include "wifi.h"
+#else
+#include "maestro.h"
+#include "pi-usb.h"
+#include "wb.h"
 #endif
 
 #define EYES_BANK		2
@@ -58,10 +58,10 @@
 #define KEYBOARD_WAV	"pour-some-sugar-vocals-30.wav"
 #endif
 
-#ifdef PLATFORM_pi
-#define TALKING_SKULL_BYTES_PER_OP 2
-#else
+#ifdef PLATFORM_pico
 #define TALKING_SKULL_BYTES_PER_OP 1
+#else
+#define TALKING_SKULL_BYTES_PER_OP 2
 #endif
 
 #define GUITAR_UP_STATE_MS	300
@@ -262,21 +262,24 @@ public:
 };
 
 static void platform_setup() {
-#ifdef PLATFORM_pi
+#if WEEN_BOARD
     WeenBoard *wb = new WeenBoard();
-    pi_usb_init();
-    servo_factory = new Maestro();
-    audio = new AudioPi();
     vocals_eyes = wb->get_output(EYES_BANK, VOCALS_EYES_PI_PIN);
     lights = wb->get_output(LIGHTS_PI_PIN);
 #else
-    wifi_init("band");
+    vocals_eyes = new GPOutput(VOCALS_EYES_PICO_PIN);
+    lights = new GPOutput(LIGHTS_PICO_PIN);
+#endif
 
+#ifdef PLATFORM_pico
+    wifi_init("band");
     int pins[] = { 22, 2, 3, 4, 5, 6 };
     servo_factory = new GpioServoFactory(pins, sizeof(pins) / sizeof(pins[0]));
     audio = new AudioPico();
-    vocals_eyes = new GPOutput(VOCALS_EYES_PICO_PIN);
-    lights = new GPOutput(LIGHTS_PICO_PIN);
+#else
+    pi_usb_init();
+    servo_factory = new Maestro();
+    audio = new AudioPi();
 #endif
     player = new AudioPlayer(audio);
 }

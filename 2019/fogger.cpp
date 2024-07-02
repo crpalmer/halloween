@@ -22,7 +22,7 @@ private:
 };
 
 static void threads_main(int argc, char **argv) {
-#ifdef PLATFORM_pi
+#if WEEN_BOARD
     WeenBoard *wb = new WeenBoard();
     Output *output = wb->get_output(2, 1);
 #else

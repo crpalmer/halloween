@@ -22,10 +22,10 @@
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
 
-#ifdef PLATFORM_pi
-static Audio *audio = new AudioPi();
-#else
+#ifdef PLATFORM_pico
 static Audio *audio = new AudioPico();
+#else
+static Audio *audio = new AudioPi();
 #endif
 static AudioPlayer *player = new AudioPlayer(audio);
 static double speed = 0;

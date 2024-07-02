@@ -120,16 +120,16 @@ void threads_main(int argc, char **argv) {
     seed_random();
     wifi_init(NULL);
 
-#ifdef PLATFORM_pi
-    audio = new AudioPi();
-#else
+#ifdef PLATFORM_pico
     i2c_init_bus(1, 400*1000);
     i2c_config_gpios(2, 3);
     audio = new AudioPico();
+#else
+    audio = new AudioPi();
 #endif
     audio_player = new AudioPlayer(audio);
 
-#if defined(PLATFORM_pi) && WEEN_BOARD
+#if WEEN_BOARD
     WeenBoard *wb = new WeenBoard(1);
     Input *bunny_input = wb->get_input(1);
     Output *bunny_light = wb->get_output(1, 1);

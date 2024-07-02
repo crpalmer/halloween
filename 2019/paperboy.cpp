@@ -14,10 +14,10 @@ static ween_time_constraint_t halloween_day   = { 0, 7, 0, 5+12, 0 };
 #define NIGHT_DELAY	30
 #define DAY_DELAY	(5*60)
 
-#ifdef PLATFORM_pi
-static Audio *audio = new AudioPi();
-#else
+#ifdef PLATFORM_pico
 static Audio *audio = new AudioPico();
+#else
+static Audio *audio = new AudioPi();
 #endif
 static AudioPlayer *player = new AudioPlayer(audio);
 
