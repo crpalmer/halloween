@@ -4,10 +4,13 @@
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
+#include "gp-input.h"
+#include "gp-output.h"
 #include "net-listener.h"
 #include "net-reader.h"
 #include "net-writer.h"
 #include "pi-threads.h"
+#include "servo-gpio.h"
 #include "servos.h"
 #include "sntp.h"
 #include "stdin-reader.h"
@@ -17,17 +20,13 @@
 #include "threads-console.h"
 #include "time-utils.h"
 #include "wav.h"
+#include "wb.h"
 #include "ween-hours.h"
-
-#ifdef PLATFORM_pico
-#include "gp-input.h"
-#include "gp-output.h"
-#include "servo-gpio.h"
 #include "wifi.h"
-#else
+
+#ifndef PLATFORM_pico
 #include "maestro.h"
 #include "pi-usb.h"
-#include "wb.h"
 #endif
 
 #define EYES_BANK		2
@@ -56,12 +55,6 @@
 #define DRUM_WAV	"pour-some-sugar-drums-30.wav"
 #define GUITAR_WAV	"pour-some-sugar-guitar-30.wav"
 #define KEYBOARD_WAV	"pour-some-sugar-vocals-30.wav"
-#endif
-
-#ifdef PLATFORM_pico
-#define TALKING_SKULL_BYTES_PER_OP 1
-#else
-#define TALKING_SKULL_BYTES_PER_OP 2
 #endif
 
 #define GUITAR_UP_STATE_MS	300
@@ -109,7 +102,7 @@ private:
 
 class BandTalkingSkull : public TalkingSkull, public Servos {
 public:
-    BandTalkingSkull(const char *wav_fname, const char *name = "band-ts") : TalkingSkull(name, TALKING_SKULL_BYTES_PER_OP) {
+    BandTalkingSkull(const char *wav_fname, const char *name = "band-ts") : TalkingSkull(name) {
 	TalkingSkullOps *ops = TalkingSkullAudioOps::open_wav(wav_fname);
         set_ops(ops);
 	delete ops;
@@ -272,13 +265,13 @@ static void platform_setup() {
 #endif
 
 #ifdef PLATFORM_pico
-    wifi_init("band");
     int pins[] = { 22, 2, 3, 4, 5, 6 };
     servo_factory = new GpioServoFactory(pins, sizeof(pins) / sizeof(pins[0]));
 #else
     pi_usb_init();
     servo_factory = new Maestro();
 #endif
+    wifi_init("band");
     audio = Audio::create_instance();
     player = new AudioPlayer(audio);
 }
