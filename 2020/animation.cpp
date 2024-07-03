@@ -11,7 +11,7 @@
 #include "random-utils.h"
 #include "wb.h"
 
-static Audio *audio = new AudioPi();
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 static WeenBoard *wb;
 

@@ -53,7 +53,7 @@ static maestro_t *m;
 
 static PicoSlave *pico;
 
-static Audio *audio = new AudioPi();
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 static AudioBuffer *claw_music;
 

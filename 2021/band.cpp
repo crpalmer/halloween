@@ -275,12 +275,11 @@ static void platform_setup() {
     wifi_init("band");
     int pins[] = { 22, 2, 3, 4, 5, 6 };
     servo_factory = new GpioServoFactory(pins, sizeof(pins) / sizeof(pins[0]));
-    audio = new AudioPico();
 #else
     pi_usb_init();
     servo_factory = new Maestro();
-    audio = new AudioPi();
 #endif
+    audio = Audio::create_instance();
     player = new AudioPlayer(audio);
 }
 

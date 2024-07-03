@@ -20,7 +20,7 @@
 
 #define VOLUME 85
 
-static Audio *audio = new AudioPi();
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 
 static void

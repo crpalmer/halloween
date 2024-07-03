@@ -22,11 +22,7 @@
 #define GAME_PLAY_MS	(15*1000)
 #define SPEED	1
 
-#ifdef PLATFORM_pico
-static Audio *audio = new AudioPico();
-#else
-static Audio *audio = new AudioPi();
-#endif
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 static double speed = 0;
 

@@ -188,7 +188,7 @@ main(int argc, char **argv)
     seed_random();
     wb = new WeenBoard();
 
-    audio = new AudioPi();
+    audio = Audio::create_instance();
     player = new AudioPlayer(audio);
 
     AnimationStation *as = new AnimationStation();

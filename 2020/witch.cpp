@@ -12,7 +12,7 @@ static unsigned int range[2][2] = {
     { 30*1000, 1*60*1000 }
 };
 
-static Audio *audio = new AudioPi();
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 
 int main(int argc, char **argv)

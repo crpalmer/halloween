@@ -157,7 +157,7 @@ static int light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main)
 class Fart : public PiThread {
 public:
     Fart() : PiThread("fart") {
-	audio = new AudioPico();
+	audio = Audio::create_instance();
 	player = new AudioPlayer(audio);
 	random_audio = new RandomAudio();
 

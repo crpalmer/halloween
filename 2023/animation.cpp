@@ -123,10 +123,8 @@ void threads_main(int argc, char **argv) {
 #ifdef PLATFORM_pico
     i2c_init_bus(1, 400*1000);
     i2c_config_gpios(2, 3);
-    audio = new AudioPico();
-#else
-    audio = new AudioPi();
 #endif
+    audio = Audio::create_instance();
     audio_player = new AudioPlayer(audio);
 
 #if WEEN_BOARD

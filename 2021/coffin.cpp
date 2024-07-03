@@ -40,7 +40,7 @@ static Output *lid;
 #define HEAD_SIDE	70
 #define HEAD_SIDE_SPEED	1000
 
-static Audio *audio = new AudioPi();
+static Audio *audio = Audio::create_instance();
 static AudioPlayer *player = new AudioPlayer(audio);
 
 static void blink_lights_for(bool *is_lit, int ms)
