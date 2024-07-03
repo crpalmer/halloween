@@ -16,5 +16,5 @@ else()
   add_compile_definitions("ANIMATION_STATION_CSS_FILENAME=\"${CMAKE_CURRENT_LIST_DIR}/ui.css\"")
 endif()
 
-ween_executable(animation animation.cpp)
+ween_executable(animation animation.cpp ${PLATFORM_DIR}-setup.cpp)
 ween_executable_libraries(animation animation-station)
