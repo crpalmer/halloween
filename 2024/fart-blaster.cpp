@@ -16,7 +16,12 @@
 #include "time-utils.h"
 #include "wifi.h"
 
+static const int fogger_gpio = 0;
+static const int fan_gpio = 1;
+static const int go_gpio = 9;
+static const int ready_gpio = 10;
 static const int neo_gpio = 28;
+
 static const int n_main_leds = 24;
 static const int n_bubble_leds = 7;
 static const int total_n_leds = n_main_leds + n_bubble_leds;
@@ -172,7 +177,9 @@ public:
 	    free(fname);
 	}
 
-	ready = new GPOutput(10);
+	fogger = new GPOutput(fogger_gpio);
+	fan = new GPOutput(fan_gpio);
+	ready = new GPOutput(ready_gpio);
 
 	neo = new NeoPixelPico(neo_gpio);
 	neo->set_n_leds(total_n_leds);
@@ -208,21 +215,29 @@ public:
 
 		consoles_printf("Fart loading\n");
 		ready->off();
+		fan->on();
 
-		for (int i = 0; i < 2000; ) {
+		int i = 0;
+		while (i < 2000) {
 		    int ms = light_step(neo, bubble_vortex, main_vortex);
 		    ms_sleep(ms);
+		    if (i < 1500 && i + ms >= 1500) fogger->on();
+		    if (i < 1600 && i + ms >= 1600) fogger->off();
 		    i += ms;
 		}
+
+		fogger->off();		// Just in case
 
 		consoles_printf("Farting\n");
 		random_audio->play_random(player);
 
 		while (player->is_active()) {
 		    int ms = light_step(neo, bubble_vortex_fast, main_vortex_fast);
+		    if (i < 2500 && i + ms >= 2500) fan->off();
 		    ms_sleep(ms);
 		}
 
+		fan->off();		// Just to be on the safe side (really short fart?)
 		consoles_printf("Fart complete\n");
 		ready->on();
 
@@ -249,7 +264,9 @@ private:
     RandomAudio *random_audio;
 
     NeoPixelPico *neo;
-    GPOutput *ready;
+    Output *fogger;
+    Output *fan;
+    Output *ready;
 
     LightAction *bubble_vortex;
     LightAction *bubble_vortex_fast;
@@ -308,7 +325,7 @@ static void threads_main(int argc, char **argv) {
 
     fart = new Fart();
 
-    GPInput *go = new GPInput(9);
+    GPInput *go = new GPInput(go_gpio);
     go->set_pullup_up();
 
     while (1) {
