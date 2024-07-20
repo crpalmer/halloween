@@ -17,15 +17,17 @@
 #include "wifi.h"
 
 static const int neo_gpio = 28;
-static const int n_main_leds = 35;
+static const int n_main_leds = 24;
 static const int n_bubble_leds = 7;
 static const int total_n_leds = n_main_leds + n_bubble_leds;
 
-#define FADE_INC	2
-#define FADE_SLEEP_MS	7
 #define VORTEX_ROTATION_MS 100
-#define ON_VALUE	254
-#define OFF_VALUE	50
+#define VORTEX_ON_VALUE	255
+
+#define PULSE_INC	1
+#define PULSE_SLEEP_MS	7
+#define PULSE_ON_VALUE	200
+#define PULSE_OFF_VALUE	30
 
 static class Fart *fart;
 
@@ -85,12 +87,12 @@ public:
 	int n_leds = get_n_leds();
 
 	set_all(0);
-	set_led(0, ON_VALUE);
+	//set_led(0, VORTEX_ON_VALUE);
 	for (int i = it; i < it + n_active; i++) {
-	    set_led((i % n_leds), ON_VALUE);
+	    set_led((i % n_leds), VORTEX_ON_VALUE);
 	}
 	schedule_in((rotation_ms + n_leds/2) / n_leds);
-	if (++it >= n_leds) it = 1;
+	if (++it >= n_leds) it = 0;
     }
 
 private:
@@ -102,33 +104,34 @@ private:
 class PulsingLight : public LightAction {
 public:
     PulsingLight(NeoPixelPico *neo, int first_led, int n_leds, int n_groups = 1) : LightAction(neo, first_led, n_leds), n_groups(n_groups) {
+	set_all(PULSE_OFF_VALUE);
     }
 
     void step() override {
-	set_all(0);
-	for (int i = cur_group; i < get_n_leds(); i += n_groups) {
+	for (int i = 0; i < get_n_leds(); i += n_groups) {
 	    set_led(i, colour);
 	}
 
 	if (is_entering) {
-	    colour += FADE_INC;
-	    if (colour > ON_VALUE) {
-		colour = ON_VALUE;
+	    colour += PULSE_INC;
+	    if (colour > PULSE_ON_VALUE) {
+		colour = PULSE_ON_VALUE;
 		is_entering = false;
 	    }
 	} else {
-	    colour -= FADE_INC;
-	    if (colour < OFF_VALUE) {
-		colour = OFF_VALUE;
+	    colour -= PULSE_INC;
+	    if (colour < PULSE_OFF_VALUE) {
+		colour = PULSE_OFF_VALUE;
 		is_entering = true;
 	    }
 	}
-	schedule_in(FADE_SLEEP_MS);
+
+	schedule_in(PULSE_SLEEP_MS);
     }
 
 private:
     bool is_entering = true;
-    int colour = OFF_VALUE;
+    int colour = PULSE_OFF_VALUE;
     int n_groups;
     int cur_group = 0;
 };
@@ -180,9 +183,9 @@ public:
 	bubble_vortex_fast = new LightVortex(neo, n_main_leds, n_bubble_leds, 80);
 	bubble_pulse = new PulsingLight(neo, n_main_leds, n_bubble_leds);
 
-	main_vortex = new LightVortex(neo, 0, n_main_leds, 91, 5);
-	main_vortex_fast = new LightVortex(neo, 0, n_main_leds, 80, 5);
-	main_pulse = new PulsingLight(neo, 0, n_main_leds, 4);
+	main_vortex = new LightVortex(neo, 0, n_main_leds, 91, 3);
+	main_vortex_fast = new LightVortex(neo, 0, n_main_leds, 80, 3);
+	main_pulse = new PulsingLight(neo, 0, n_main_leds, 1);
 
 	lock = new PiMutex();
 
