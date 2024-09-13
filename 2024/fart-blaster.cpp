@@ -208,11 +208,8 @@ public:
 
 	    if (! fart_now) {
 	        int ms = light_step(neo, bubble_pulse, main_pulse);
-	        lock->unlock();
 	        ms_sleep(ms);
 	    } else {
-		lock->unlock();
-
 		consoles_printf("Fart loading\n");
 		ready->off();
 		fan->on();
