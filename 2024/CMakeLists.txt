@@ -9,6 +9,8 @@ project(halloween-${YEAR})
 
 if("${PLATFORM}" STREQUAL pico)
   ween_executable(fart-blaster fart-blaster.cpp)
+else()
+  ween_executable(fart-blaster-trigger fart-blaster-trigger.cpp)
 endif()
 
 #ween_executable(animation animation.cpp)
