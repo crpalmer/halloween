@@ -32,7 +32,7 @@ static const int total_n_leds = n_main_leds + n_bubble_leds;
 #define PULSE_INC	1
 #define PULSE_SLEEP_MS	7
 #define PULSE_ON_VALUE	200
-#define PULSE_OFF_VALUE	30
+#define PULSE_OFF_VALUE	50
 
 static class Fart *fart;
 
