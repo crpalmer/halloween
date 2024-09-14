@@ -19,7 +19,7 @@
 static const int fogger_gpio = 0;
 static const int fan_gpio = 1;
 static const int go_gpio = 9;
-static const int ready_gpio = 10;
+static const int active_gpio = 10;
 static const int neo_gpio = 28;
 
 static const int n_main_leds = 24;
@@ -179,7 +179,8 @@ public:
 
 	fogger = new GPOutput(fogger_gpio);
 	fan = new GPOutput(fan_gpio);
-	ready = new GPOutput(ready_gpio);
+	active = new GPOutput(active_gpio);
+	active->set_is_inverted();
 
 	neo = new NeoPixelPico(neo_gpio);
 	neo->set_n_leds(total_n_leds);
@@ -200,7 +201,7 @@ public:
     }
 
     void main() override {
-	ready->on();
+	active->off();
 	while (1) {
 	    lock->lock();
 	    bool fart_now = is_fart;
@@ -211,7 +212,7 @@ public:
 	        ms_sleep(ms);
 	    } else {
 		consoles_printf("Fart loading\n");
-		ready->off();
+		active->on();
 		fan->on();
 
 		int i = 0;
@@ -236,7 +237,7 @@ public:
 
 		fan->off();		// Just to be on the safe side (really short fart?)
 		consoles_printf("Fart complete\n");
-		ready->on();
+		active->off();
 
 		lock->lock();
 		is_fart = false;
@@ -263,7 +264,7 @@ private:
     NeoPixelPico *neo;
     Output *fogger;
     Output *fan;
-    Output *ready;
+    Output *active;
 
     LightAction *bubble_vortex;
     LightAction *bubble_vortex_fast;
@@ -324,6 +325,7 @@ static void threads_main(int argc, char **argv) {
 
     GPInput *go = new GPInput(go_gpio);
     go->set_pullup_up();
+    go->set_is_inverted();
 
     while (1) {
 	while (! go->get()) ms_sleep(1);
