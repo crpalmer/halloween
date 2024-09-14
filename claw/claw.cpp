@@ -156,10 +156,10 @@ init_joysticks()
     left->set_pullup_up();
     right->set_pullup_up();
 
-    forward->set_inverted();
-    backward->set_inverted();
-    left->set_inverted();
-    right->set_inverted();
+    forward->set_is_inverted();
+    backward->set_is_inverted();
+    left->set_is_inverted();
+    right->set_is_inverted();
 
     forward->set_debounce(1);
     backward->set_debounce(1);
@@ -173,7 +173,7 @@ init_buttons()
     for (int i = 0; i < 3; i++) {
 	dip[i] = mcp->get_input(1, i);
 	dip[i]->set_pullup_up();
-	dip[i]->set_inverted();
+	dip[i]->set_is_inverted();
 	dip[i]->set_debounce(5);
     }
 
@@ -185,8 +185,8 @@ init_buttons()
     start_button->set_pullup_up();
     release_button->set_pullup_up();
 
-    start_button->set_inverted();
-    release_button->set_inverted();
+    start_button->set_is_inverted();
+    release_button->set_is_inverted();
 
     start_button->set_debounce(50);
     release_button->set_debounce(10);
