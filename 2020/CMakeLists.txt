@@ -12,4 +12,6 @@ if("${PLATFORM}" STREQUAL pi)
   ween_executable(witch witch.cpp)
 endif()
 
-ween_executable(fogger fogger.cpp)
+if(HAVE_NETWORKING)
+  ween_executable(fogger fogger.cpp)
+endif()

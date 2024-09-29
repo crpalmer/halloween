@@ -14,4 +14,6 @@ if("${PLATFORM}" STREQUAL pi)
   # ween_executable(talker-and-fogger talker-and-fogger.cpp) - talker needs to be updated but I don't know if we want it anymore...
 endif()
 
-ween_executable(band band.cpp)
+if(HAVE_NETWORKING)
+  ween_executable(band band.cpp)
+endif()

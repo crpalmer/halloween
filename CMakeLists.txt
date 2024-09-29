@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 
 if("${PLATFORM}" STREQUAL "pico")
+  if (NOT DEFINED PICO_BOARD)
+    set(PICO_BOARD pico_w)
+  endif()
   include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
@@ -9,7 +12,9 @@ project(halloween)
 include(lib/platform.cmake)
 
 add_subdirectory(lib)
-add_subdirectory(animation-station)
+if (HAVE_NETWORKING)
+  add_subdirectory(animation-station)
+endif()
 
 add_subdirectory(claw)
 add_subdirectory(2024)
