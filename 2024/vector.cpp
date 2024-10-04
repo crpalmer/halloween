@@ -17,11 +17,11 @@ NeoPixelPico *neo;
 
 void setup_display() {
     i2c_init_bus(1, 2, 3, 400*1000);
-    SSD1306 *display = new SSD1306(1);
+    Display *display = new SSD1306(1);
     Canvas *canvas = display->create_canvas();
 
     for (int i = 0; vector_display[i]; i++) {
-	canvas->set_pixel(i%128, i/128, vector_display[i] != ' ');
+	canvas->set_pixel24(i%128, i/128, vector_display[i] != ' ' ? WHITE : BLACK);
     }
 
     display->paint(canvas);
@@ -39,7 +39,7 @@ static void set(int step) {
 int main(int argc, char **argv) {
     pi_init();
 
-    //setup_display();
+    setup_display();
 
     neo = new NeoPixelPico(4);
     neo->set_n_leds(N_LEDS);
