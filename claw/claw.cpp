@@ -53,8 +53,8 @@ static maestro_t *m;
 
 static PicoSlave *pico;
 
-static Audio *audio = Audio::create_instance();
-static AudioPlayer *player = new AudioPlayer(audio);
+static Audio *audio;
+static AudioPlayer *player;
 static AudioBuffer *claw_music;
 
 static struct {
@@ -468,13 +468,17 @@ go_to_start_position(int z = START_Z)
     duet_wait_for_moves();
 }
 
-int main(int argc, char **argv)
+static void
+threads_main(int argc, char **argv)
 {
     gpioInitialise();
     seed_random();
     nano_gettime(&start);
 
     pi_usb_init();
+
+    audio = Audio::create_instance();
+    player = new AudioPlayer(audio);
 
     mcp = new MCP23017();
 
@@ -522,4 +526,9 @@ int main(int argc, char **argv)
 	    n_rounds = 0;
 	}
     }
+}
+
+int main(int argc, char **argv)
+{
+    pi_init_with_threads(threads_main, argc, argv);
 }
