@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <pigpio.h>
+#define NO_PIGPIO_EMULATION
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
@@ -146,10 +148,10 @@ retry:
 static void
 init_joysticks()
 {
-    left = mcp->get_input(0, 0);
-    right = mcp->get_input(0, 1);
-    forward = mcp->get_input(0, 2);
-    backward = mcp->get_input(0, 3);
+    backward = mcp->get_input(0, 0);
+    forward = mcp->get_input(0, 1);
+    right = mcp->get_input(0, 2);
+    left = mcp->get_input(0, 3);
 
     forward->set_pullup_up();
     backward->set_pullup_up();
