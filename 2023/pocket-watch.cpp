@@ -70,7 +70,6 @@ int
 main()
 {
     pi_init();
-    gpioInitialise();
 
     for (int i = 0; i < N_SERVOS; i++) {
 	servo_t *s = &servos[i];

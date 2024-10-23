@@ -9,7 +9,7 @@ main(int argc, char **argv)
 {
     int state = 0;
 
-    gpioInitialise();
+    pi_init();
     seed_random();
     wb_init();
 

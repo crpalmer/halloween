@@ -187,7 +187,7 @@ test_is_enabled(int argc, char **argv, const char *test)
 
 int main(int argc, char **argv)
 {
-    gpioInitialise();;
+    pi_init();
     wb_init();
 
     io = new earth_invaders_io_t();

@@ -55,8 +55,6 @@ main()
 
     ms_sleep(1000);
 
-    gpioInitialise();
-
     head = new GpioServo(0);
     button = new GPInput(1);
     button->set_pullup_up();

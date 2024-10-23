@@ -85,7 +85,6 @@ int
 main()
 {
     pi_init();
-    gpioInitialise();
     int which = 0;
 
     ms_sleep(1000);

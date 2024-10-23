@@ -153,7 +153,7 @@ private:
 int
 main(int argc, char **argv)
 {
-    gpioInitialise();
+    pi_init();
     seed_random();
     
     wb = new WeenBoard(2);

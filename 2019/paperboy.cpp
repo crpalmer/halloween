@@ -25,7 +25,7 @@ main(int argc, char **argv)
 
 /* PICO SHOULD INIT WIFI & USE SNTP FOR THE RTC!! */
 
-    gpioInitialise();
+    pi_init();
 
     WeenBoard *wb = new WeenBoard();
 
