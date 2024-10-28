@@ -325,7 +325,7 @@ static void threads_main(int argc, char **argv) {
 
     GPInput *go = new GPInput(go_gpio);
     go->set_pullup_up();
-    go->set_is_inverted();
+    //go->set_is_inverted();
 
     while (1) {
 	while (! go->get()) ms_sleep(1);
