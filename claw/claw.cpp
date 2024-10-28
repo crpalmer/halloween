@@ -341,8 +341,9 @@ get_dip_pct()
     int inum = 
         (dip[0]->get() ? 1 : 0) |
         (dip[1]->get() ? 2 : 0) |
-        (dip[2]->get() ? 4 : 0);
-    const double dip_max = 7;
+        0 // (dip[2]->get() ? 4 : 0)
+    ;
+    const double dip_max = 3;
 
 fprintf(stderr, "dip %d: %d %d %d\n", inum, dip[0]->get(), dip[1]->get(), dip[2]->get());
     return 1.0 - inum / dip_max;
