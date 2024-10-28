@@ -217,6 +217,8 @@ printf("starting\n");
 	    set_new_mode(game_over_mode);
 	} else if (strcmp(line, "drop") == 0) {
 	    set_new_mode(drop_mode);
+	} else {
+	    printf("Usage: bootsel | off | insert-coint | hit-start | game | time-low | time-a-bit-low | time-really-low | game-over | drop\n");
 	}
     }
 }
