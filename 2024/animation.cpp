@@ -10,6 +10,7 @@
 #include "file.h"
 #include "httpd-server.h"
 #include "lights.h"
+#include "pico-slave.h"
 #include "random-utils.h"
 #include "wav.h"
 #include "wifi.h"
@@ -85,18 +86,19 @@ public:
 
 class FartBlaster : public Button {
 public:
-    FartBlaster(Input *button, Output *output, Light *light, Input *ready) : Button("Fart-Blaster", button, output, light), ready(ready) {
-	ready->set_pullup_down();
-	ready->set_is_inverted();
+    FartBlaster(Input *button, Output *output, Light *light) : Button("Fart-Blaster", button, output, light) {
+	slave = new PicoSlave();
 	start();
     }
 
     bool act() override {
 	lights->blink_all();
-	output->on();
-	ms_sleep(100);
-	printf("ready: %d\n", ready->get());
-	while (ready->get()) ms_sleep(1);
+ 	
+	slave->writeline("fart");
+	do {
+	    if (! slave->readline(buf, sizeof(buf))) return false;
+	} while (strcmp(buf, "done") != 0);
+
 	output->off();
 	lights->off();
 	lights->chase();
@@ -104,7 +106,8 @@ public:
     }
 	
 private:
-    Input *ready;
+    PicoSlave *slave;
+    char buf[1024];
 };
 
 class DebugHandler : public HttpdDebugHandler {
@@ -147,7 +150,7 @@ void threads_main(int argc, char **argv) {
     new Pollito(input[2], output[2], light[2]);
     new Question(input[3], output[3], light[3]);
     new Banana(input[4], output[4], light[4]);
-    new FartBlaster(input[5], output[5], light[5], prop_get_extra_input(5));
+    new FartBlaster(input[5], output[5], light[5]);
 
     auto station = AnimationStation::get();
     station->load_state();

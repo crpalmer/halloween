@@ -28,12 +28,6 @@ Output *prop_get_output(int prop_num) {
     return wb->get_output(2, prop_num);
 }
 
-Input *prop_get_extra_input(int prop_num) {
-    ensure_wb();
-    if (prop_num == 5) return wb->get_input(6);
-    return NULL;
-}
-
 #else
 
 #include "mcp23017.h"
