@@ -47,10 +47,9 @@ public:
     virtual double down_ms_target() { return 2.5; }
     int down_ms() { return (200 + random_number_in_range(0, 100) - 50)*down_ms_target(); }
 
-private:
+protected:
     void attack_once();
 
-private:
     Output *output;
     AudioPlayer *player;
     RandomAudio random_audio;
@@ -131,7 +130,7 @@ public:
     void main() override;
     void on_change() override;
 
-private:
+protected:
     std::string action;
     Input *button;
 };
