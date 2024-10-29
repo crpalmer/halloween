@@ -1,28 +1,29 @@
 #include <stdio.h>
+#include <string.h>
 #include "pi.h"
-#include "time-utils.h"
-#include "gp-input.h"
-#include "gp-output.h"
+#include "pico-slave.h"
 
 int
 main(int argc, char **argv) {
+    static char buf[1024];
+
     pi_init();
 
-    GPOutput *go = new GPOutput(3);
-    GPInput *ready = new GPInput(4);
-    ready->set_pullup_up();
-    ready->set_is_inverted();
+    PicoSlave *slave = new PicoSlave();
 
-    printf("Waiting for the fart blaster to be ready.\n");
-    while (! ready->get()) ms_sleep(1);
-
-    printf("Triggering fart and then waiting for the fart blaster to respond.\n");
-    go->on();
-    while (ready->get()) ms_sleep(1);
-
-    printf("Stop triggering and waiting for the fart to complete.\n");
-    go->off();
-    while (! ready->get()) ms_sleep(1);
+    while (1) {
+	printf("Hit enter to fart:");
+	if (fgets(buf, sizeof(buf), stdin) == NULL) break;
+	slave->writeline("fart");
+	do {
+	    if (! slave->readline(buf, sizeof(buf))) {
+		printf("failed to get a response from the fart blaster.\n");
+		break;
+	    }
+	    printf("pico says: %s\n", buf);
+	} while (strcmp(buf, "done") != 0);
+	printf("Ready for next fart.\n");
+    }
 
     exit(0);
 }

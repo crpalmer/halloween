@@ -8,9 +8,9 @@ include(../ween.cmake)
 project(halloween-${YEAR})
 
 if("${PLATFORM}" STREQUAL pico)
-  if (HAVE_NETWORKING)
-    ween_executable(fart-blaster fart-blaster.cpp)
-  endif()
+  ween_executable(fart-blaster fart-blaster.cpp)
+  ween_executable_libraries(fart-blaster hardware_uart)
+
   ween_executable(freeze-ray freeze-ray.cpp)
   ween_executable(ice-blast ice-blast.cpp)
   ween_executable(vector vector.cpp)

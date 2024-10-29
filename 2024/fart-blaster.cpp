@@ -14,12 +14,9 @@
 #include "stdout-writer.h"
 #include "threads-console.h"
 #include "time-utils.h"
-#include "wifi.h"
 
 static const int fogger_gpio = 0;
 static const int fan_gpio = 1;
-static const int go_gpio = 9;
-static const int active_gpio = 10;
 static const int neo_gpio = 28;
 
 static const int n_main_leds = 24;
@@ -173,14 +170,11 @@ public:
 	for (int i = 0; exists; i++) {
 	    char *fname = maprintf("fart-%d.wav", i);
 	    exists = random_audio->add(fname);
-	    consoles_printf("%s %s\n", fname, exists ? "exists" : "doesn't exist, stopping");
 	    free(fname);
 	}
 
 	fogger = new GPOutput(fogger_gpio);
 	fan = new GPOutput(fan_gpio);
-	active = new GPOutput(active_gpio);
-	active->set_is_inverted();
 
 	neo = new NeoPixelPico(neo_gpio);
 	neo->set_n_leds(total_n_leds);
@@ -201,48 +195,17 @@ public:
     }
 
     void main() override {
-	active->off();
 	while (1) {
+	    int ms = 1;
+
 	    lock->lock();
-	    bool fart_now = is_fart;
-	    lock->unlock();
 
-	    if (! fart_now) {
-	        int ms = light_step(neo, bubble_pulse, main_pulse);
-	        ms_sleep(ms);
-	    } else {
-		consoles_printf("Fart loading\n");
-		active->on();
-		fan->on();
-
-		int i = 0;
-		while (i < 2000) {
-		    int ms = light_step(neo, bubble_vortex, main_vortex);
-		    ms_sleep(ms);
-		    if (i < 1500 && i + ms >= 1500) fogger->on();
-		    if (i < 1600 && i + ms >= 1600) fogger->off();
-		    i += ms;
-		}
-
-		fogger->off();		// Just in case
-
-		consoles_printf("Farting\n");
-		random_audio->play_random(player);
-
-		while (player->is_active()) {
-		    int ms = light_step(neo, bubble_vortex_fast, main_vortex_fast);
-		    if (i < 2500 && i + ms >= 2500) fan->off();
-		    ms_sleep(ms);
-		}
-
-		fan->off();		// Just to be on the safe side (really short fart?)
-		consoles_printf("Fart complete\n");
-		active->off();
-
-		lock->lock();
-		is_fart = false;
-		lock->unlock();
+	    if (! farting) {
+	        ms = light_step(neo, bubble_pulse, main_pulse);
 	    }
+
+	    lock->unlock();
+	    ms_sleep(ms);
 	}
     }
 
@@ -252,7 +215,35 @@ public:
 
     void fart() {
 	lock->lock();
-	is_fart = true;
+	farting = true;
+	lock->unlock();
+
+	fan->on();
+	fogger->off();		// Just in case
+
+	int i = 0;
+	while (i < 2000) {
+	    int ms = light_step(neo, bubble_vortex, main_vortex);
+	    ms_sleep(ms);
+	    if (i < 1500 && i + ms >= 1500) fogger->on();
+	    if (i < 1600 && i + ms >= 1600) fogger->off();
+	    i += ms;
+	}
+
+	fogger->off();		// Just in case
+
+	random_audio->play_random(player);
+
+	while (player->is_active()) {
+	    int ms = light_step(neo, bubble_vortex_fast, main_vortex_fast);
+	    if (i < 2500 && i + ms >= 2500) fan->off();
+	    ms_sleep(ms);
+	}
+
+	fan->off();		// Just to be on the safe side (really short fart?)
+
+	lock->lock();
+	farting = false;
 	lock->unlock();
     }
 
@@ -264,7 +255,8 @@ private:
     NeoPixelPico *neo;
     Output *fogger;
     Output *fan;
-    Output *active;
+
+    bool farting = false;
 
     LightAction *bubble_vortex;
     LightAction *bubble_vortex_fast;
@@ -274,62 +266,19 @@ private:
     LightAction *main_pulse;
 
     PiMutex *lock;
-    bool is_fart = false;
-};
-
-class FartConsole : public ThreadsConsole, public PiThread {
-public:
-    FartConsole(const char *name, Reader *r, Writer *w) : ThreadsConsole(r, w), PiThread(name) {
-	start();
-    }
-
-    void main() {
-	Console::main();
-    }
-
-    void process_cmd(const char *cmd) override {
-	if (is_command(cmd, "audio")) {
-	    fart->dump_audio();
-	} else if (is_command(cmd, "fart")) {
-	    fart->fart();
-	} else {
-	    ThreadsConsole::process_cmd(cmd);
-	}
-    }
-
-    void usage() override {
-	ThreadsConsole::usage();
-	consoles_printf("audio - dump the list of audio tracks\n");
-	consoles_printf("fart - trigger a fart\n");
-    }
-};
-
-class FartListener : public NetListener {
-public:
-    FartListener() : NetListener() {
-	start();
-    }
-
-    void accepted(int fd) override {
-	new FartConsole("net-console", new NetReader(fd), new NetWriter(fd));
-    }
 };
 
 static void threads_main(int argc, char **argv) {
-    new FartConsole("console", new StdinReader(), new StdoutWriter());
-
-    wifi_init("fart");
-    new FartListener();
-
     fart = new Fart();
 
-    GPInput *go = new GPInput(go_gpio);
-    go->set_pullup_up();
-    //go->set_is_inverted();
-
     while (1) {
-	while (! go->get()) ms_sleep(1);
-	fart->fart();
+	static char cmd[1024];
+
+	pi_readline(cmd, sizeof(cmd));
+	if (strcmp(cmd, "fart") == 0) {
+	    fart->fart();
+	    printf("done\n");
+	}
     }
 }
 
