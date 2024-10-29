@@ -18,5 +18,6 @@ else()
   ween_executable(fart-blaster-trigger fart-blaster-trigger.cpp)
 endif()
 
-#ween_executable(animation animation.cpp)
-#ween_executable_libraries(animation animation-station)
+ween_executable(animation animation.cpp animation-setup.cpp)
+ween_executable_libraries(animation animation-station)
+add_compile_definitions("ANIMATION_STATION_CSS_FILENAME=\"${CMAKE_CURRENT_LIST_DIR}/ui.css\"")
