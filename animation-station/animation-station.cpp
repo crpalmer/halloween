@@ -40,7 +40,6 @@ void AnimationStationPopper::attack_once() {
 }
 
 AnimationStationButton::AnimationStationButton(std::string action, Input *button) : PiThread(action.c_str()), action(action), button(button) {
-    button->set_pullup_down();
     button->set_debounce(1);
     button->set_notifier(this);
 }

@@ -15,7 +15,9 @@ static void ensure_wb() {
 
 Input *prop_get_input(int prop_num) {
     ensure_wb();
-    return wb->get_input(prop_num);
+    Input *input = wb->get_input(prop_num);
+    input->set_pullup_down();
+    return input;
 }
 
 Output *prop_get_light(int prop_num) {
