@@ -21,9 +21,8 @@ static MCP23017 *mcp;
 
 static Input *low_es, *high_es;
 
-#define ES_HIT 1
-#define UP false
-#define DOWN true
+#define UP true
+#define DOWN false
 
 static void
 up()
@@ -40,9 +39,9 @@ down()
 static void
 test_es(const char *name, Input *es)
 {
-    if (es->get() == ES_HIT) printf("  *** %s ENDSTOP ALREADY TRIGGERED!\n", name);
+    if (es->get()) printf("  *** %s ENDSTOP ALREADY TRIGGERED!\n", name);
     printf("Trigger %s end-stop: ", name); fflush(stdout);
-    while (es->get() != ES_HIT) {}
+    while (! es->get()) {}
     printf("triggered\n");
 }
 
@@ -75,19 +74,26 @@ test_motor_es()
 {
      printf("going up\n");
      up();
-     while (high_es->get() != ES_HIT) {}
+     while (! high_es->get()) {}
      down();
      printf("going down\n");
-     while (low_es->get() != ES_HIT) {}
+     while (! low_es->get()) {}
      motor->stop();
 }
 
 class Gus : public AnimationStationButton, AnimationStationAction {
 public:
-    Gus() : AnimationStationButton("gus", mcp->get_input(1, 0)) {
-	light = new Light(mcp->get_output(0, 0));
+    Gus() : AnimationStationButton("gus", mcp->get_input(0, 7)) {
+	button->set_pullup_up();
+	button->set_is_inverted();
+	light = new Light(mcp->get_output(1, 0));
+	lights->add(light);
+	lights->chase();
 	AnimationStation::get()->add("gus", this);
+	start();
     }
+
+    bool supports_on_change() override { return false; }
 
     bool act() override {
 	struct timespec start;
@@ -99,13 +105,13 @@ public:
 
 	up();
 
-	while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
+	while (nano_elapsed_ms_now(&start) < 20*1000 && ! high_es->get()) {}
 
 	down();
 
 	player->stop();
 	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
+	while (nano_elapsed_ms_now(&start) < 20*1000 && ! low_es->get()) {}
 	motor->stop();
 
 	lights->chase();
