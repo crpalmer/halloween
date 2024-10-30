@@ -41,19 +41,21 @@ void AnimationStationPopper::attack_once() {
 
 AnimationStationButton::AnimationStationButton(std::string action, Input *button) : PiThread(action.c_str()), action(action), button(button) {
     button->set_debounce(1);
-    button->set_notifier(this);
 }
 
 void AnimationStationButton::main() {
+    bool use_on_change = supports_on_change();
+    if (use_on_change) button->set_notifier(this);
     bool old_state = button->get();
     while (1) {
-	pause();
+	if (use_on_change) pause();
+	else ms_sleep(10);
 
 	bool new_state = button->get();
 	if (old_state != new_state && new_state) {
 	    pressed();
 	}
-	old_state = button->get();	// It may have changed while we were running
+	if (use_on_change) old_state = button->get();	// It may have changed while we were running
     }
 }
 

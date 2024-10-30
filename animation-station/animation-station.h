@@ -130,6 +130,8 @@ public:
     void main() override;
     void on_change() override;
 
+    virtual bool supports_on_change() { return true; }
+
 protected:
     std::string action;
     Input *button;
