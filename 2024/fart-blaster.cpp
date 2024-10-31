@@ -14,6 +14,7 @@
 #include "stdout-writer.h"
 #include "threads-console.h"
 #include "time-utils.h"
+#include "wav.h"
 
 static const int fogger_gpio = 0;
 static const int fan_gpio = 1;
@@ -166,6 +167,8 @@ public:
 	player = new AudioPlayer(audio);
 	random_audio = new RandomAudio();
 
+	ramping = wav_open("ramping.wav");
+
 	bool exists = true;
 	for (int i = 0; exists; i++) {
 	    char *fname = maprintf("fart-%d.wav", i);
@@ -218,6 +221,8 @@ public:
 	farting = true;
 	lock->unlock();
 
+	if (ramping) player->play(ramping);
+
 	fan->on();
 	fogger->off();		// Just in case
 
@@ -251,6 +256,7 @@ private:
     Audio *audio;
     AudioPlayer *player;
     RandomAudio *random_audio;
+    AudioBuffer *ramping;
 
     NeoPixelPico *neo;
     Output *fogger;
