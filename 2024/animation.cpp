@@ -30,10 +30,10 @@ public:
 	AnimationStation::get()->add(name, this);
     }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	lights->off();
 	light->on();
-	bool ret = AnimationStationPopper::act();
+	bool ret = AnimationStationPopper::act(false);
 	lights->off();
 	lights->chase();
 	return ret;
@@ -47,6 +47,8 @@ protected:
 class Kyle : public Button {
 public:
     Kyle(Input *button, Output *output, Light *light) : Button("Kyle", button, output, light) {
+	add_wav("kyle1.wav");
+	add_wav("kyle2.wav");
 	start();
     }
 
@@ -57,6 +59,7 @@ public:
 class Pollito : public Button {
 public:
     Pollito(Input *button, Output *output, Light *light) : Button("Pollito", button, output, light) {
+	add_wav("pollito.wav");
 	start();
     }
 };
@@ -68,9 +71,9 @@ public:
 	start();
     }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	lights->blink_all();
-	bool ret = AnimationStationPopper::act();
+	bool ret = AnimationStationPopper::act(play_all_audio);
 	lights->off();
 	lights->chase();
 	return ret;
@@ -80,6 +83,7 @@ public:
 class Banana : public Button {
 public:
     Banana(Input *button, Output *output, Light *light) : Button("Banana-Pop", button, output, light) {
+	add_wav("banana.wav");
 	start();
     }
 };
@@ -91,7 +95,7 @@ public:
 	start();
     }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	lights->blink_all();
  	
 	slave->writeline("fart");

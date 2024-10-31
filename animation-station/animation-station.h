@@ -13,7 +13,7 @@ class AnimationStationAction;
 
 class AnimationStationAction {
 public:
-    virtual bool act() = 0;
+    virtual bool act(bool play_all_audio = true) = 0;
 
     int get_n_acts() { return n_acts; }
     int get_n_acts_async() { return n_acts_async; }
@@ -39,7 +39,7 @@ public:
 
     bool add_wav(std::string wav);
 
-    bool act() override;
+    bool act(bool play_all_audio) override;
 
     virtual double up_ms_target() { return 1.0; }
     int up_ms() { return (500 + random_number_in_range(0, 250) - 125)*up_ms_target(); }

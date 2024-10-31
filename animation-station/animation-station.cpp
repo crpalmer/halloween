@@ -22,13 +22,18 @@ bool AnimationStationPopper::add_wav(std::string wav) {
     return random_audio.add(wav.c_str());
 }
 
-bool AnimationStationPopper::act() {
-    if (! player || random_audio.is_empty()) {
-	for (int i = 0; i < 3; i++) attack_once();
-    } else {
-        random_audio.play_random(player);
-        while (player->is_active()) attack_once();
+bool AnimationStationPopper::act(bool play_all_audio) {
+    if (player && ! random_audio.is_empty()) {
+	random_audio.play_random(player);
+        if (play_all_audio) {
+	    while (player->is_active()) attack_once();
+	    return true;
+	}
     }
+
+    for (int i = 0; i < 3; i++) attack_once();
+    player->stop();
+
     return true;
 }
 

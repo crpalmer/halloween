@@ -29,10 +29,10 @@ public:
 	AnimationStation::get()->add(name, this);
     }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	lights->off();
 	light->on();
-	bool ret = AnimationStationPopper::act();
+	bool ret = AnimationStationPopper::act(play_all_audio);
 	lights->off();
 	lights->chase();
 	return ret;
@@ -67,9 +67,9 @@ public:
 	start();
     }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	lights->blink_all();
-	bool ret = AnimationStationPopper::act();
+	bool ret = AnimationStationPopper::act(play_all_audio);
 	lights->off();
 	lights->chase();
 	return ret;

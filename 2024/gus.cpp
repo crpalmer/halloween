@@ -98,7 +98,7 @@ public:
 
     bool supports_on_change() override { return false; }
 
-    bool act() override {
+    bool act(bool play_all_audio) override {
 	struct timespec start;
 
 	light->on();
