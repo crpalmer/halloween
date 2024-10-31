@@ -96,7 +96,8 @@ public:
     }
 
     bool act(bool play_all_audio) override {
-	lights->blink_all();
+	lights->off();
+	light->on();
  	
 	slave->writeline("fart");
 	do {
