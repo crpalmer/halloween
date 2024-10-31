@@ -86,6 +86,9 @@ public:
     Gus() : AnimationStationButton("gus", mcp->get_input(0, 7)) {
 	button->set_pullup_up();
 	button->set_is_inverted();
+
+	wav = wav_open("gus.wav");
+
 	light = new Light(mcp->get_output(1, 0));
 	lights->add(light);
 	lights->chase();
@@ -101,7 +104,7 @@ public:
 	light->on();
 
 	nano_gettime(&start);
-	//player->play(wav);
+	if (wav) player->play(wav);
 
 	up();
 
