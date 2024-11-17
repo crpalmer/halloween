@@ -230,7 +230,7 @@ public:
 	while (i < 2000) {
 	    int ms = light_step(neo, bubble_vortex, main_vortex);
 	    ms_sleep(ms);
-	    if (i < 1500 && i + ms >= 1500) fogger->on();
+	    if (i < 1400 && i + ms >= 1400) fogger->on();
 	    if (i < 1600 && i + ms >= 1600) fogger->off();
 	    i += ms;
 	}
