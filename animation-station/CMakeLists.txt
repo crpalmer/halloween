@@ -1,21 +1,17 @@
-cmake_minimum_required(VERSION 3.12)
+add_library(animation-station INTERFACE)
 
-# Pull in SDK (must be before project)
-
-project(animation-station)
-
-add_library(animation-station STATIC)
-
-target_include_directories(animation-station PUBLIC
-  .
-  ..
+target_include_directories(animation-station INTERFACE
+   ${CMAKE_CURRENT_LIST_DIR}
 )
 
-target_sources(animation-station PRIVATE
-  animation-station.cpp
-  animation-ui.cpp
+target_sources(animation-station INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/animation-station.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/animation-ui.cpp
 )
 
-target_link_libraries(animation-station PUBLIC
+target_link_libraries(animation-station INTERFACE
   lib-pi
+  lib-pi-audio
+  lib-pi-net
+  lib-pi-threads
 )

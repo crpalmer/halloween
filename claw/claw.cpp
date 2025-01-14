@@ -6,7 +6,6 @@
 #include <termios.h>
 #include <unistd.h>
 #include <pigpio.h>
-#define NO_PIGPIO_EMULATION
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"

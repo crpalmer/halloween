@@ -2,9 +2,6 @@
 cmake_minimum_required(VERSION 3.12)
 
 set(YEAR 2021)
-include(../ween.cmake)
-
-project(halloween-${YEAR})
 
 if("${PLATFORM}" STREQUAL pi)
   ween_executable(alien alien.cpp)
