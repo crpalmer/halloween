@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
-#include <pigpio.h>
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
@@ -473,7 +472,6 @@ go_to_start_position(int z = START_Z)
 static void
 threads_main(int argc, char **argv)
 {
-    gpioInitialise();
     seed_random();
     nano_gettime(&start);
 
