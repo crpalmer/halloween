@@ -56,7 +56,7 @@ Output *prop_get_output(int prop_num) {
 
 Input *prop_get_extra_input(int prop_num) {
     ensure_mcp();
-    if (prop_num == 5) return new prop_get_input(6);
+    if (prop_num == 5) return prop_get_input(6);
     return NULL;
 }
 
