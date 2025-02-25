@@ -8,7 +8,8 @@
 #include "pi.h"
 #include "audio.h"
 #include "audio-player.h"
-#include "canvas-png.h"
+#include "gp-output.h"
+#include "image-png.h"
 #include "maestro.h"
 #include "mcp23017.h"
 #include "pi-threads.h"
@@ -42,7 +43,7 @@ static Output *start_light, *release_light;
 
 static Display *display;
 static Canvas *canvas;
-static CanvasPNG *booting_png, *coin_png, *start_png;
+static ImagePNG *booting_png, *coin_png, *start_png;
 
 #define CLAW_SERVO 0
 #define CLAW_START_POS 25
@@ -92,11 +93,11 @@ const int n_inputs = sizeof(inputs) / sizeof(inputs[0]);
 #define ROUND_MS	(test_offline ? 10*1000 : 15*1000)
 
 static void
-display_image(Canvas *img)
+display_image(Image *img)
 {
     canvas->blank();
     canvas->import(img);
-    display->paint(canvas);
+    canvas->flush();
 }
 
 static void
@@ -109,12 +110,19 @@ init_lights()
 static void
 init_display()
 {
-    display = new ST7735S();
+    Output *reset = new GPOutput(27);
+    Output *bl = new GPOutput(17);
+    Output *dc = new GPOutput(22);
+
+    spi_init_bus(0, 10, -1, 11);
+    SPI *spi = new SPI(0, 9, dc);
+
+    display = new ST7735S(spi, reset, bl);
     canvas = display->create_canvas();
 
-    booting_png = new CanvasPNG("booting.png");
-    start_png = new CanvasPNG("hit-start.png");
-    coin_png = new CanvasPNG("insert-token.png");
+    booting_png = new ImagePNG("booting.png");
+    start_png = new ImagePNG("hit-start.png");
+    coin_png = new ImagePNG("insert-token.png");
 
     if (! booting_png->is_valid() || ! coin_png->is_valid() || ! start_png->is_valid()) {
 	fprintf(stderr, "Failed to load pngs\n");
@@ -394,8 +402,8 @@ play_one_round()
 	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
 	    if (time_left != last_time_shown) {
 		canvas->blank();
-		canvas->nine_segment_2(time_left);
-		display->paint(canvas);
+		canvas->nine_segment_2(time_left, COLOR_WHITE);
+		canvas->flush();
 	    }
 	}
 

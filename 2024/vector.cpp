@@ -21,10 +21,11 @@ void setup_display() {
     Canvas *canvas = display->create_canvas();
 
     for (int i = 0; vector_display[i]; i++) {
-	canvas->set_pixel24(i%128, i/128, vector_display[i] != ' ' ? WHITE : BLACK);
+	uint8_t rgb = vector_display[i] != ' ' ? 0xff : 0;
+	canvas->set_pixel(i%128, i/128, rgb, rgb, rgb);
     }
 
-    display->paint(canvas);
+    canvas->flush();
 }
 
 static void set(int step) {
