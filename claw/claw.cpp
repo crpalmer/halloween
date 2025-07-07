@@ -43,7 +43,7 @@ static Output *start_light, *release_light;
 
 static Display *display;
 static Canvas *canvas;
-static ImagePNG *booting_png, *coin_png, *start_png;
+static Image *booting_png, *coin_png, *start_png;
 
 #define CLAW_SERVO 0
 #define CLAW_START_POS 25
@@ -120,9 +120,9 @@ init_display()
     display = new ST7735S(spi, reset, bl);
     canvas = display->create_canvas();
 
-    booting_png = new ImagePNG("booting.png");
-    start_png = new ImagePNG("hit-start.png");
-    coin_png = new ImagePNG("insert-token.png");
+    booting_png = image_png_load("booting.png");
+    start_png = image_png_load("hit-start.png");
+    coin_png = image_png_load("insert-token.png");
 
     if (! booting_png->is_valid() || ! coin_png->is_valid() || ! start_png->is_valid()) {
 	fprintf(stderr, "Failed to load pngs\n");
