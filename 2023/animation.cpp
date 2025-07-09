@@ -153,16 +153,16 @@ void threads_main(int argc, char **argv) {
 
     lights->chase();
 
-    auto httpd = HttpdServer::get();
+    HttpdServer *httpd = new HttpdServer();
     const std::string station_base = "/station";
 
-    new AnimationStationUI(station_base);
+    new AnimationStationUI(httpd, station_base);
     httpd->add_file_handler("/", new HttpdRedirectHandler(station_base + "/"));
     httpd->add_file_handler("/index.html", new HttpdRedirectHandler(station_base + "/"));
     httpd->add_file_handler(station_base + "/ui.css", new HttpdFileHandler(ANIMATION_STATION_CSS_FILENAME));
     httpd->add_prefix_handler("/debug", new DebugHandler());
     httpd->add_prefix_handler("/trigger", new TriggerHandler());
-    httpd->start(80);
+    httpd->start();
 }
 
 int

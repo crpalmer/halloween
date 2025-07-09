@@ -6,8 +6,8 @@
 
 class AnimationStationUI : public HttpdPrefixHandler {
 public:
-    AnimationStationUI(std::string root = "/station") : root(root) {
-	HttpdServer::get()->add_prefix_handler(root, this);
+    AnimationStationUI(HttpdServer *httpd, std::string root = "/station") : root(root) {
+	httpd->add_prefix_handler(root, this);
     }
 
     HttpdResponse *open(std::string path) override;
