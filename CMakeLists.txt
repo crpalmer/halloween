@@ -15,6 +15,7 @@ if (HAVE_NETWORKING)
 endif()
 
 add_subdirectory(claw)
+add_subdirectory(2025)
 add_subdirectory(2024)
 add_subdirectory(2023)
 add_subdirectory(2022)
