@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.12)
 set(YEAR 2025)
 
 if("${PLATFORM}" STREQUAL pico)
+  ween_executable(fire-blast fire-blast.cpp)
   ween_executable(mushrooms mushrooms.cpp)
 else()
   #ween_executable(animation animation.cpp animation-setup.cpp)
