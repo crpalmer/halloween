@@ -14,8 +14,8 @@ const color_t red    = { 255,  15,  15 };
 static const int N_LEDS = 6;
 
 static const int FIRE_HIGH = 55;
-static const int PURPLE_PCT = 3;
-static const int RED_PCT = 12;
+static const int PURPLE_PCT = 2;
+static const int RED_PCT = 100-2-12;
 
 static const int SLEEP_LOW = 10;
 static const int SLEEP_HIGH = 100;
