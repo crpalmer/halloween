@@ -3,7 +3,9 @@
 #include "gp-output.h"
 #include "stepper.h"
 
-const int BASE_PIN[] = { 0, 2 };
+static const int STEPPER_PIN0 = 0;
+static const int ES_PIN = 2;
+
 const double STEPS_FOR_FULL_ROTATION = 360/1.8;
 const double MM_PER_FULL_ROTATION = 120;
 const double STEPS_PER_MM = STEPS_FOR_FULL_ROTATION / MM_PER_FULL_ROTATION;
@@ -31,9 +33,7 @@ private:
 void thread_main(int argc, char **argv) {
     ms_sleep(1000);
     printf("Starting\n");
-    printf("dir %d step %d steps/mm %f\n", BASE_PIN[0], BASE_PIN[1], STEPS_PER_MM);
-    new Mushroom(BASE_PIN[0]);
-    new Mushroom(BASE_PIN[1]);
+    new Mushroom(STEPPER_PIN0);
 }
 
 int main(int argc, char **argv) {
