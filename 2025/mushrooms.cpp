@@ -10,11 +10,14 @@
 static const int STEPPER_PIN0 = 0;
 static const int ES_PIN = 2;
 
-static const double STEPS_FOR_FULL_ROTATION = 360/1.8;
-static const double MM_PER_FULL_ROTATION = 120;
+static const int MICROSTEPPING = 32;
+static const double STEPS_FOR_FULL_ROTATION = 200*MICROSTEPPING;
+static const int PULLEY_TEETH = 60;
+static const double MM_PER_FULL_ROTATION = 2 * PULLEY_TEETH;
 static const double STEPS_PER_MM = STEPS_FOR_FULL_ROTATION / MM_PER_FULL_ROTATION;
-static const double DISTANCE_MM = 1900;
-static const double TIME_SEC = 3;
+static const double MM_PER_SEC = 350;
+static const int LOW_MM = 50;
+static const int HIGH_MM = 1950;
 
 static const bool TEST_MODE = true;
 
@@ -27,8 +30,8 @@ public:
 
     void main(void) {
 	while (1) {
-	    stepper->go(DISTANCE_MM-1, DISTANCE_MM/TIME_SEC);
-	    stepper->go(1, DISTANCE_MM/TIME_SEC);
+	    stepper->go(HIGH_MM, MM_PER_SEC);
+	    stepper->go(LOW_MM, MM_PER_SEC);
 	}
     }
 
@@ -42,6 +45,7 @@ public:
 	stepper = new Stepper(STEPPER_PIN0, STEPS_PER_MM);
 	endstop = new GPInput(ES_PIN);
 	endstop->set_pullup_up();
+	endstop->set_is_inverted(true);
 	start();
     }
 
