@@ -23,7 +23,7 @@ static const int HIGH_MM = 1840;
 static const int HIGH_HOME = 1890;
 
 static const int PAUSE_MS = 100;
-static const bool TEST_MODE = true;
+static const bool TEST_MODE = false;
 
 class Mushroom : public PiThread {
 public:
@@ -55,7 +55,7 @@ public:
 
 protected:
     void home() {
-	stepper->home(end_stop, HIGH_HOME, 100, 2);
+	stepper->home(end_stop, true, HIGH_HOME, 100);
     }
 
 protected:
@@ -83,6 +83,10 @@ public:
 	    stepper->go(arg, mm_sec);
 	} else if (have_arg && is_command(cmd, "set-speed")) {
 	    mm_sec = arg;
+	} else if (have_arg && is_command(cmd, "set-accel")) {
+	    stepper->set_acceleration(arg);
+	} else if (have_arg && is_command(cmd, "set-jerk")) {
+	    stepper->set_jerk(arg);
 	} else if (is_command(cmd, "status")) {
 	    printf("pos %g speed %g end_stop %s\n", pos, mm_sec, end_stop->get() ? "triggered" : "not");
 	} else if (is_command(cmd, "home")) {
@@ -94,7 +98,7 @@ public:
 
     void usage() override {
         ThreadsConsole::usage();
-	printf("home\nmove-to <mm>\nset-speed <mm/sec>\nstatus\n");
+	printf("home\nmove-to <mm>\nset-speed <mm/sec>\nset-accel <mm_per_s2>\nset-jerk <mm_per_s>\nstatus\n");
     }
 
 private:
