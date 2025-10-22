@@ -53,7 +53,7 @@ static void
 move(servo_t *s)
 {
 #if ! COORDINATED_SERVOS
-    if (s->p->done()) {
+    if (s->p->is_done()) {
 	pick_new_pos(s);
 	double v = random_double_in_range(s->min_v, s->max_v);
 	double a = v / s->accel_t;
@@ -83,7 +83,7 @@ main()
 
     while (1) {
 #if COORDINATED_SERVOS
-	if (servos[0].p->done()) {
+	if (servos[0].p->is_done()) {
 	    servo_t *s0 = &servos[0];
 	    pick_new_pos(s0);
 	    double v = random_double_in_range(s0->min_v, s0->max_v);

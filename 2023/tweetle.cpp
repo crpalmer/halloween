@@ -65,7 +65,7 @@ start_motion(servo_t *s, double pos)
 static void
 move(servo_t *s)
 {
-    if (! s->p->done()) {
+    if (! s->p->is_done()) {
 	int dir = s->pos < s->last_pos ? -1 : +1;
 	double pos = s->last_pos + dir * s->p->get_pos();
 	s->servo->move_to(pos);
@@ -76,7 +76,7 @@ static bool
 is_done()
 {
     for (int i = 0; i < N_SERVOS; i++) {
-	if (! servos[i].p->done()) return false;
+	if (! servos[i].p->is_done()) return false;
     }
     return true;
 }
