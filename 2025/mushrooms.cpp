@@ -7,7 +7,8 @@
 #include "stepper.h"
 #include "threads-console.h"
 
-static const int STEPPER_PIN0 = 0;
+static const int DIR_PIN = 0;
+static const int STEP_PIN = 1;
 static const int ES_PIN = 2;
 
 static const int MICROSTEPPING = 32;
@@ -22,15 +23,16 @@ static const int HIGH_MM = 1840;
 static const int HIGH_HOME = 1890;
 
 static const int PAUSE_MS = 100;
-static const bool TEST_MODE = false;
+static const bool TEST_MODE = true;
 
 class Mushroom : public PiThread {
 public:
     Mushroom() : PiThread("mushroom") {
-	stepper = new Stepper(STEPPER_PIN0, STEPS_PER_MM);
+	dir = new GPOutput(DIR_PIN);
+	step = new GPOutput(STEP_PIN);
+	stepper = new Stepper(dir, step, STEPS_PER_MM);
 	end_stop = new GPInput(ES_PIN);
 	end_stop->set_pullup_up();
-	stepper->set_end_stop(end_stop);
 	start();
     }
 
@@ -53,10 +55,12 @@ public:
 
 protected:
     void home() {
-	stepper->home(HIGH_HOME, 100, 2);
+	stepper->home(end_stop, HIGH_HOME, 100, 2);
     }
 
 protected:
+    Output *dir;
+    Output *step;
     Stepper *stepper;
     Input *end_stop = NULL;
 };
