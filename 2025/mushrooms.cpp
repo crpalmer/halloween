@@ -15,41 +15,58 @@ static const double STEPS_FOR_FULL_ROTATION = 200*MICROSTEPPING;
 static const int PULLEY_TEETH = 60;
 static const double MM_PER_FULL_ROTATION = 2 * PULLEY_TEETH;
 static const double STEPS_PER_MM = STEPS_FOR_FULL_ROTATION / MM_PER_FULL_ROTATION;
-static const double MM_PER_SEC = 350;
-static const int LOW_MM = 50;
-static const int HIGH_MM = 1950;
 
-static const bool TEST_MODE = true;
+static const double MM_PER_SEC = 200;
+static const int LOW_MM = 50;
+static const int HIGH_MM = 1840;
+static const int HIGH_HOME = 1890;
+
+static const int PAUSE_MS = 100;
+static const bool TEST_MODE = false;
 
 class Mushroom : public PiThread {
 public:
-    Mushroom(int base_pin) : PiThread("mushroom") {
-	stepper = new Stepper(base_pin, STEPS_PER_MM);
+    Mushroom() : PiThread("mushroom") {
+	stepper = new Stepper(STEPPER_PIN0, STEPS_PER_MM);
+	end_stop = new GPInput(ES_PIN);
+	end_stop->set_pullup_up();
+	stepper->set_end_stop(end_stop);
 	start();
     }
 
     void main(void) {
+	ms_sleep(1000);
+	printf("Homing\n");
+	home();
+	printf("pos %g speed %g end_stop %s\n", stepper->get_pos(), MM_PER_SEC, end_stop->get() ? "triggered" : "not");
+	fflush(stdout);
+	ms_sleep(PAUSE_MS);
 	while (1) {
+	    printf("Move to high end\n");
 	    stepper->go(HIGH_MM, MM_PER_SEC);
+	    ms_sleep(PAUSE_MS);
+	    printf("Move to low  end\n");
 	    stepper->go(LOW_MM, MM_PER_SEC);
+	    ms_sleep(PAUSE_MS);
 	}
     }
 
-private:
-    Stepper *stepper;
-};
-
-class ConsoleThread : public ThreadsConsole, public PiThread {
-public:
-    ConsoleThread() : ThreadsConsole(new StdinReader(), new StdoutWriter()) {
-	stepper = new Stepper(STEPPER_PIN0, STEPS_PER_MM);
-	endstop = new GPInput(ES_PIN);
-	endstop->set_pullup_up();
-	endstop->set_is_inverted(true);
-	start();
+protected:
+    void home() {
+	stepper->home(HIGH_HOME, 100, 2);
     }
 
-    void main() {
+protected:
+    Stepper *stepper;
+    Input *end_stop = NULL;
+};
+
+class ConsoleMushroom : public ThreadsConsole, public Mushroom {
+public:
+    ConsoleMushroom() : ThreadsConsole(new StdinReader(), new StdoutWriter()) {
+    }
+
+    void main() override {
 	Console::main();
     }
 
@@ -63,7 +80,9 @@ public:
 	} else if (have_arg && is_command(cmd, "set-speed")) {
 	    mm_sec = arg;
 	} else if (is_command(cmd, "status")) {
-	    printf("pos %g speed %g endstop %s\n", pos, mm_sec, endstop->get() ? "triggered" : "not");
+	    printf("pos %g speed %g end_stop %s\n", pos, mm_sec, end_stop->get() ? "triggered" : "not");
+	} else if (is_command(cmd, "home")) {
+	    home();
         } else {
             ThreadsConsole::process_cmd(cmd);
         }
@@ -71,22 +90,19 @@ public:
 
     void usage() override {
         ThreadsConsole::usage();
-	printf("move-to <mm>\nset-speed <mm/sec>\nstatus\n");
+	printf("home\nmove-to <mm>\nset-speed <mm/sec>\nstatus\n");
     }
 
 private:
-    Stepper *stepper = NULL;
-    Input *endstop = NULL;
-
     double mm_sec = 200;
     double pos = 0;
 };
 
 void thread_main(int argc, char **argv) {
-    ms_sleep(1000);
+    ms_sleep(1000);		// Make sure that the stepper is really running
     printf("Starting\n");
-    if (TEST_MODE) new ConsoleThread();
-    else new Mushroom(STEPPER_PIN0);
+    if (TEST_MODE) new ConsoleMushroom();
+    else new Mushroom();
 }
 
 int main(int argc, char **argv) {
