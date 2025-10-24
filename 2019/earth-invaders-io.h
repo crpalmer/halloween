@@ -92,7 +92,7 @@ public:
      Input	*start_button;
 
      Input	*endstop_motor, *endstop_idler;
-     motor_t	*motor;
+     Motor	*motor;
 
      Output   *lights[3][3];
      Input	*targets[3][3];
