@@ -10,7 +10,7 @@
 static WeenBoard *wb;
 
 static void ensure_wb() {
-    if (! wb) wb = new WeenBoard(1);
+    if (! wb) wb = new WeenBoard();
 }
 
 Input *prop_get_input(int prop_num) {
