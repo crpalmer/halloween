@@ -42,10 +42,10 @@ public:
     bool act(bool play_all_audio) override;
 
     virtual double up_ms_target() { return 1.0; }
-    int up_ms() { return (500 + random_number_in_range(0, 250) - 125)*up_ms_target(); }
+    virtual int up_ms() { return (500 + random_number_in_range(0, 250) - 125)*up_ms_target(); }
 
     virtual double down_ms_target() { return 2.5; }
-    int down_ms() { return (200 + random_number_in_range(0, 100) - 50)*down_ms_target(); }
+    virtual int down_ms() { return (200 + random_number_in_range(0, 100) - 50)*down_ms_target(); }
 
 protected:
     void attack_once();
