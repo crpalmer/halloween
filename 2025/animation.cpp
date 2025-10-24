@@ -90,7 +90,7 @@ public:
 class Cheep : public Button {
 public:
     Cheep(Input *button, Output *output, Light *light) : Button("Cheep", button, output, light) {
-	add_wav("bubbles.wav");
+	add_wav("bubble.wav");
 	start();
     }
 
