@@ -54,13 +54,20 @@ public:
 
 class Plant : public Button {
 public:
-    Plant(Input *button, Output *output, Light *light) : Button("Plant", button, output, light) {
+    Plant(Input *button, Output *output, Light *light) : Button("Plant", button, new DummyOutput(), light), trigger(output) {
 	add_wav("plant.wav");
 	start();
     }
 
-    int up_ms() override { return 5000; }
-    int down_ms() override { return 0; }
+    bool act(bool play_all_audio) override {
+	trigger->on();
+	bool ret = Button::act(play_all_audio);
+	trigger->off();
+	return ret;
+    }
+
+private:
+     Output *trigger;
 };
 
 class Question : public Button {
