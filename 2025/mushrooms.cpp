@@ -10,6 +10,7 @@
 static const int DIR_PIN = 0;
 static const int STEP_PIN = 1;
 static const int ES_PIN = 2;
+static const int REVERSE_PIN = 15;
 
 static const int MICROSTEPPING = 32;
 static const double STEPS_FOR_FULL_ROTATION = 200*MICROSTEPPING;
@@ -28,7 +29,10 @@ static const bool TEST_MODE = false;
 class Mushroom : public PiThread {
 public:
     Mushroom() : PiThread("mushroom") {
+	Input *reverse = new GPInput(REVERSE_PIN);
+	reverse->set_pullup_up();
 	dir = new GPOutput(DIR_PIN);
+	if (reverse->get()) dir->set_is_inverted();
 	step = new GPOutput(STEP_PIN);
 	stepper = new Stepper(dir, step, STEPS_PER_MM);
 	end_stop = new GPInput(ES_PIN);
