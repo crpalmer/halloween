@@ -1,6 +1,8 @@
 #include "pi.h"
 #include "riser-prop.h"
 
+static const bool DEBUG = true;
+
 void RiserProp::test_es(const char *name, Input *es) {
     if (es->get()) printf("  *** %s ENDSTOP ALREADY TRIGGERED!\n", name);
     printf("Trigger %s end-stop: ", name); fflush(stdout);
@@ -26,13 +28,15 @@ void RiserProp::test() {
 }
 
 void RiserProp::up() {
-    motor->change_motor(true, 1);
+    if (DEBUG) printf("UP\n");
+    motor->change_motor(true, get_speed());
     wait_for_es(high_es, maximum_up_ms());
     motor->stop();
 }
 
 void RiserProp::down() {
-    motor->change_motor(false, 1);
+    if (DEBUG) printf("DOWN\n");
+    motor->change_motor(false, get_speed());
     wait_for_es(low_es, maximum_down_ms());
     motor->stop();
 }
@@ -41,4 +45,5 @@ void RiserProp::wait_for_es(Input *es, int max_ms) {
     struct timespec start;
     nano_gettime(&start);
     while (nano_elapsed_ms_now(&start) < max_ms && ! es->get()) {}
+    if (DEBUG) printf("%d ms end-stop %s\n", nano_elapsed_ms_now(&start), es->get() ? "triggered" : "NOT TRIGGERED");
 }

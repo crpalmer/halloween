@@ -13,6 +13,7 @@ public:
 protected:
     virtual int maximum_up_ms() { return 20*1000; }
     virtual int maximum_down_ms() { return 20*1000; }
+    virtual double get_speed() { return 1; }
 
 private:
     void test_es(const char *name, Input *es);
