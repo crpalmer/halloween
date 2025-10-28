@@ -42,7 +42,7 @@ HttpdResponse *AnimationStationUI::trigger(std::string prop) {
 
     auto response = new HttpdResponse(html);
     response->set_status(status);
-    response->add_header("Location: " + root + "/\r\n");
+    response->add_header("Location: " + root + "/");
     response->set_content_type("text/html");
 
     return response;
