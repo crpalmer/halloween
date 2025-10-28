@@ -16,12 +16,18 @@ HttpdResponse *AnimationStationUI::open(std::string path) {
 	return trigger(prop);
     } else {
 	std::string text = "failed to " + action + " " + prop;
+	std::string div_class = "triggered";
 	auto station = AnimationStation::get();
 
         if (action == "disable" && station->disable(prop)) text = "disabled " + prop;
 	else if (action == "enable" && station->enable(prop)) text = "enabled " + prop;
+	else div_class = "trigger-failed";
 
-	return new HttpdResponse(text);
+	std::string html = start_html();
+	html += "<div><div class='" + div_class + "'>" + text + "</div></div>";
+	finish(html);
+
+	return create_response(200, html);
     }
 }
 
@@ -39,7 +45,10 @@ HttpdResponse *AnimationStationUI::trigger(std::string prop) {
     add_props(html);
     html += trigger_html;
     finish(html);
+    return create_response(status, html);
+}
 
+HttpdResponse *AnimationStationUI::create_response(int status, std::string html) {
     auto response = new HttpdResponse(html);
     response->set_status(status);
     response->add_header("Location: " + root + "/");
@@ -103,6 +112,8 @@ void AnimationStationUI::add_props(std::string &html) {
 	html += "<div class='status'><div class='status-" + status + "''></div></div>";
 	html += "<div class='n-acts-async'>" + std::to_string(a->get_n_acts_async()) + "</div>";
 	html += "<div class='n-acts'>" + std::to_string(a->get_n_acts()) + "</div>";
+	const char *new_state = (a->is_disabled() ? "enable" : "disable");
+	html += "<div class='status'><a href='" + name + "/" + new_state + "'>" + new_state + "</a></div>";
 	html += "</div>";
     }
     html += "</div>";
