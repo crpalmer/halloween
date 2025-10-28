@@ -24,6 +24,7 @@ HttpdResponse *AnimationStationUI::open(std::string path) {
 	else div_class = "trigger-failed";
 
 	std::string html = start_html();
+	add_props(html);
 	html += "<div><div class='" + div_class + "'>" + text + "</div></div>";
 	finish(html);
 
@@ -65,7 +66,7 @@ std::string AnimationStationUI::start_html() {
     //html += "<meta http-equiv=\"refresh\" content=\"" + std::string(active_prop != "" ? "5" : "5") + "; URL='" + root.c_str() + "/'\">";
     html += "<script>setTimeout(function() { window.location.replace('" + root + "/'); }, 5000);</script>";
     html += "</header><body>";
-    html += "<link rel='stylesheet' href='ui.css'>";
+    html += "<link rel='stylesheet' href='" + root + "/ui.css'>";
 
     return html;
 }
@@ -81,7 +82,7 @@ std::string AnimationStationUI::try_to_trigger(std::string prop) {
 }
 
 void AnimationStationUI::header(std::string name, std::string &html) {
-    html += "<div class='header'><div class='header-" + name + "'></div></div>";
+    html += "<div class='header'><div class='header-" + name + "'></div></div>\n";
 }
 
 void AnimationStationUI::add_props(std::string &html) {
@@ -114,11 +115,11 @@ void AnimationStationUI::add_props(std::string &html) {
 	html += "<div class='n-acts'>" + std::to_string(a->get_n_acts()) + "</div>";
 	const char *new_state = (a->is_disabled() ? "enable" : "disable");
 	html += "<div class='status'><a href='" + name + "/" + new_state + "'>" + new_state + "</a></div>";
-	html += "</div>";
+	html += "</div>\n";
     }
-    html += "</div>";
+    html += "</div>\n";
 }
 
 void AnimationStationUI::finish(std::string html) {
-    html += "</body>";
+    html += "</body>\n";
 }
