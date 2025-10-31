@@ -11,7 +11,7 @@ div.header {
    display: table-cell;
    padding: 0.6rem;
    text-align: center;
-   font-size: 2rem;
+   font-size: 3rem;
    font-weight: bold;
    border-bottom: 0.25rem solid black;
 }
@@ -44,7 +44,7 @@ div.status-row-disabled {
 div.prop {
    display: table-cell;
    padding: 0.6rem;
-   font-size: 2rem;
+   font-size: 3rem;
 }
 
 a:link {
@@ -61,7 +61,7 @@ div.status {
    display: table-cell;
    padding: 0.6rem;
    text-align: center;
-   font-size: 1.5rem;
+   font-size: 2.0rem;
 }
 
 div.status-ready {
@@ -92,18 +92,18 @@ div.n-acts-async {
    display: table-cell;
    padding: 0.6rem;
    text-align: right;
-   font-size: 1.5rem;
+   font-size: 2.0rem;
 }
 
 div.n-acts {
    display: table-cell;
    padding: 0.6rem;
    text-align: right;
-   font-size: 1.5rem;
+   font-size: 2.0rem;
 }
 
 div.triggered {
-    font-size: 2.5rem;
+    font-size: 3.0rem;
     color: green;
     border-style: solid;
     border-width: 0.25rem;
@@ -113,7 +113,7 @@ div.triggered {
 }
 
 div.trigger-failed {
-    font-size: 2.5rem;
+    font-size: 3.0rem;
     color: red;
     border-style: solid;
     border-width: 0.25rem;
