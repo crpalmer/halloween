@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "pi.h"
+#include <stdlib.h>
 #include "audio.h"
 #include "audio-player.h"
 #include "digital-counter.h"
@@ -36,10 +34,6 @@ static bool game_active;
 static int high_score;
 static int scores[2];
 static bool mean_mode[2];
-
-static void yield() {
-    ms_sleep(1);
-}
 
 class MotorThread : public PiThread {
 public:
@@ -88,29 +82,29 @@ public:
     PlayerThread(const char *name, int p) : PiThread(name), p(p) { }
 
     void main() {
-	struct timespec last_hit;
+	us_time_t last_hit;
 
-	nano_gettime(&last_hit);
+	us_gettime(&last_hit);
 	for (;;) {
 	    while (! game_active) yield();
 	    int active_target = random_number_in_range(0, 2);
 	    set_active_target(p, active_target);
-	    struct timespec active_at;
-	    nano_gettime(&active_at);
+	    us_time_t active_at;
+	    us_gettime(&active_at);
 	    while (game_active) {
-		int need_new_target = mean_mode[p] && nano_elapsed_ms_now(&active_at) > 1*1000;
-		if (nano_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
+		int need_new_target = mean_mode[p] && us_elapsed_ms_now(&active_at) > 1*1000;
+		if (us_elapsed_ms_now(&last_hit) > 100 && io->targets[p][active_target]->get() == TARGET_HIT) {
 		    player->play(hit_track[p]);
 		    scores[p] += SCORE_INC;
 		    io->score[p]->set(scores[p]);
 		    need_new_target = true;
-		    nano_gettime(&last_hit);
+		    us_gettime(&last_hit);
 		}
 		if (need_new_target) {
 		    int last_target = active_target;
 		    while (last_target == active_target) active_target = random_number_in_range(0, 2);
 		    set_active_target(p, active_target);
-		    nano_gettime(&active_at);
+		    us_gettime(&active_at);
 		}
 	    }
 	    io->lights[p][active_target]->off();

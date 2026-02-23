@@ -48,15 +48,15 @@ static void blink_lights_for(bool *is_lit, int ms)
     struct timespec start;
     struct timespec now;
 
-    nano_gettime(&start);
+    us_gettime(&start);
     do {
 	int light_time = random_number_in_range(LIGHT_LOW, LIGHT_HIGH);
 
 	*is_lit = !(*is_lit);
 	light->set(*is_lit);
 	ms_sleep(light_time);
-	nano_gettime(&now);
-    } while (nano_elapsed_ms(&now, &start) < ms);
+	us_gettime(&now);
+    } while (us_elapsed_ms(&now, &start) < ms);
 }
 
 int

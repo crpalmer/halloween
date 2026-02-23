@@ -77,7 +77,7 @@ protected:
 	    exit(1);
 	}
 
-        nano_gettime(&start);
+        us_gettime(&start);
 
 	if (random_audio->is_empty()) {
 	    attack_without_audio(up, down);
@@ -86,7 +86,7 @@ protected:
 	    attack_with_audio(up, down);
 	}
 
-	fprintf(stderr, "total time: %d ms\n", nano_elapsed_ms_now(&start));
+	fprintf(stderr, "total time: %d ms\n", us_elapsed_ms_now(&start));
     }
 
 private:

@@ -101,8 +101,8 @@ private:
     bool save_state();
 
 private:
-    struct timespec start_time;
-    struct timespec last_save;
+    us_time_t start_time;
+    us_time_t last_save;
 
     bool save_dirty = false;
     const int save_version = 0;

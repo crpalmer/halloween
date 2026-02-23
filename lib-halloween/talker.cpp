@@ -66,7 +66,7 @@ private:
 	} else {
 	    if (any_audio > 0) any_audio--;
 	}
-	if (any_audio > ANY_AUDIO_THRESHOLD) nano_gettime(&last_audio);
+	if (any_audio > ANY_AUDIO_THRESHOLD) us_gettime(&last_audio);
     }
 
 private:
@@ -309,14 +309,14 @@ talker_main(void *args_as_vp)
     audio_meta_init_from_config(&meta, &cfg);
     skull = talking_skull_new(&meta, servo_update, args);
 
-    nano_gettime(&last_audio);
+    us_gettime(&last_audio);
 
     talker_gain_mic.set_gain(3);
     talker_gain_mic.set_epsilon(5);
     talker_gain_mic.set_max_gain(5);
 
     while (! in || audio_capture_buffer(in, buffer)) {
-	if (auto_play_bytes_left == 0 && nano_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0 && args->is_valid()) {
+	if (auto_play_bytes_left == 0 && us_elapsed_ms_now(&last_audio) >= (int) args->idle_ms && n_idle_tracks > 0 && args->is_valid()) {
 	    auto_play_buffer = wav_get_raw_data(idle_tracks[random_number_in_range(0, n_idle_tracks-1)], &auto_play_bytes_left);
 	}
 

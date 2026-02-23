@@ -111,18 +111,18 @@ public:
     void scow() {
 	struct timespec start;
 
-	nano_gettime(&start);
+	us_gettime(&start);
 	player->play(wav);
 
 	up();
 
-	while (nano_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
+	while (us_elapsed_ms_now(&start) < 20*1000 && high_es->get() != ES_HIT) {}
 
 	down();
 
 	player->stop();
-	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
+	us_gettime(&start);
+	while (us_elapsed_ms_now(&start) < 20*1000 && low_es->get() != ES_HIT) {}
 	motor->stop();
     }
 

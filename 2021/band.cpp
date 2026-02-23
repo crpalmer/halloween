@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "pi.h"
+#include <string.h>
 #include "audio.h"
 #include "audio-player.h"
 #include "gp-input.h"
@@ -117,11 +115,11 @@ public:
 
     void update_pos(double new_pos) override {
         bool new_up = new_pos > 10;
-        struct timespec now;
+        us_time_t now;
         int ms;
 
-        nano_gettime(&now);
-        ms = nano_elapsed_ms(&now, &at);
+        us_gettime(&now);
+        ms = us_elapsed_ms(&now, &at);
 
         if (new_up != wants_up) {
 	    wants_up = new_up;
@@ -137,7 +135,7 @@ public:
 private:
     bool wants_up = false;
     bool is_up = false;
-    struct timespec at = { 0, };
+    us_time_t at = 0;
 };
 
 class KeyboardTalkingSkull : public BandTalkingSkull {

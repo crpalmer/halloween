@@ -12,12 +12,12 @@ AudioBuffer *audio_buffer;
 
 static void play(AudioBuffer *audio_buffer) {
     printf("Playing\n");
-    struct timespec start;
-    nano_gettime(&start);
+    us_time_t start;
+    us_gettime(&start);
     player->play(audio_buffer);
     player->wait_all_done();
     delete audio_buffer;
-    printf("Done: %d ms\n", nano_elapsed_ms_now(&start));
+    printf("Done: %d ms\n", us_elapsed_ms_now(&start));
 }
 
 void threads_main(int argc, char **argv) {

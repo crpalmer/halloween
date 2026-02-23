@@ -272,7 +272,7 @@ duet_cmd(const char *cmd, bool echo = true)
 
     if (duet < 0) return "no tty";
 
-    if (echo) printf("%5d %s\n", nano_elapsed_ms_now(&start), cmd);
+    if (echo) printf("%5d %s\n", us_elapsed_ms_now(&start), cmd);
     write(duet, cmd, strlen(cmd));
     write(duet, "\n", 1);
     while ((got = read(duet, &duet_reply[len], sizeof(duet_reply) - len)) > 0) {
@@ -280,7 +280,7 @@ duet_cmd(const char *cmd, bool echo = true)
  	duet_reply[len] = '\0';
 	if ((len == 3 && strcmp(&duet_reply[len-3], "ok\n") == 0) ||
 	    (len  > 3 && strcmp(&duet_reply[len-4], "\nok\n") == 0)) {
-	    if (echo) printf("%5d %s", nano_elapsed_ms_now(&start), duet_reply);
+	    if (echo) printf("%5d %s", us_elapsed_ms_now(&start), duet_reply);
 	    duet_reply[len-1] = '\0';
 	    return duet_reply;
 	}
@@ -375,20 +375,20 @@ play_one_round()
     bool claw_has_moved = false;
     enum { early, low } time_state = early;
 
-    nano_gettime(&start);
-    nano_gettime(&sleep_until);
+    us_gettime(&start);
+    us_gettime(&sleep_until);
 
     pico->writeline("game");
     release_light->on();
 
     player->play(claw_music);
 
-    while (nano_elapsed_ms_now(&start) < ROUND_MS) {
+    while (us_elapsed_ms_now(&start) < ROUND_MS) {
 	int move_x = 0, move_y = 0, move_z = 0, move_servo = 0;
 
-	nano_add_ms(&sleep_until, UPDATE_PERIOD);
+	us_add_ms(&sleep_until, UPDATE_PERIOD);
 
-	while (! nano_now_is_later_than(&sleep_until)) {
+	while (! us_now_is_later_than(&sleep_until)) {
 	    if (release_button->get()) {
 		pico->writeline("drop");
 		goto end_of_round;
@@ -399,7 +399,7 @@ play_one_round()
 	    if (left->get())     move_x = -1;
 	    if (right->get())    move_x = +1;
 
-	    int time_left = (ROUND_MS - nano_elapsed_ms_now(&start)+500)/1000;
+	    int time_left = (ROUND_MS - us_elapsed_ms_now(&start)+500)/1000;
 	    if (time_left != last_time_shown) {
 		canvas->blank();
 		canvas->nine_segment_2(time_left, COLOR_WHITE);
@@ -421,7 +421,7 @@ play_one_round()
 	if (move_z) z_has_moved = true;
 	if (move_servo) claw_has_moved = true;
 
-	if (time_state < low && nano_elapsed_ms_now(&start) >= ROUND_MS-5000) {
+	if (time_state < low && us_elapsed_ms_now(&start) >= ROUND_MS-5000) {
 	    time_state = low;
 	    pico->writeline("time-low");
 	}
@@ -481,7 +481,7 @@ static void
 threads_main(int argc, char **argv)
 {
     seed_random();
-    nano_gettime(&start);
+    us_gettime(&start);
 
     pi_usb_init();
 

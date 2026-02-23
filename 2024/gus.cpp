@@ -103,18 +103,18 @@ public:
 
 	light->on();
 
-	nano_gettime(&start);
+	us_gettime(&start);
 	if (wav) player->play(wav);
 
 	up();
 
-	while (nano_elapsed_ms_now(&start) < 20*1000 && ! high_es->get()) {}
+	while (us_elapsed_ms_now(&start) < 20*1000 && ! high_es->get()) {}
 
 	down();
 
 	player->stop();
-	nano_gettime(&start);
-	while (nano_elapsed_ms_now(&start) < 20*1000 && ! low_es->get()) {}
+	us_gettime(&start);
+	while (us_elapsed_ms_now(&start) < 20*1000 && ! low_es->get()) {}
 	motor->stop();
 
 	lights->chase();

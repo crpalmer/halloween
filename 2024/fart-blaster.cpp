@@ -37,23 +37,23 @@ static class Fart *fart;
 class LightAction {
 public:
     LightAction(NeoPixelPico *neo, int first_led, int n_leds) : neo(neo), first_led(first_led), n_leds(n_leds) {
-	nano_gettime(&next);
+	us_gettime(&next);
     }
 
     virtual void step() = 0;
 
     bool is_ready() {
-	return nano_now_is_later_than(&next);
+	return us_now_is_later_than(&next);
     }
 
     void schedule_in(int ms) {
-	nano_gettime(&next);
-	nano_add_ms(&next, ms);
+	us_gettime(&next);
+	us_add_ms(&next, ms);
     }
 
-    struct timespec *soonest_next(struct timespec *current_next = NULL) {
-	if (! current_next || nano_later_than(current_next, &next)) {
-	    return &next;
+    us_time_t soonest_next(us_time_t current_next = 0) {
+	if (! current_next || current_next > next) {
+	    return next;
 	}
 	return current_next;
     }
@@ -78,7 +78,7 @@ private:
     int first_led;
     int n_leds;
 
-    struct timespec next;
+    us_time_t next = 0;
 };
 
 class LightVortex : public LightAction {
@@ -154,8 +154,8 @@ static int light_step(NeoPixelPico *neo, LightAction *bubble, LightAction *main)
 
     if (dirty) neo->show();
 
-    struct timespec *next = bubble->soonest_next(main->soonest_next());
-    int ms = - nano_elapsed_ms_now(next);
+    us_time_t next = bubble->soonest_next(main->soonest_next());
+    int ms = - us_elapsed_ms_now(&next);
     if (ms < 1) ms = 1;
     return ms;
 }

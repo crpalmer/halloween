@@ -99,25 +99,25 @@ play_track(action_t *a, stop_t *stop)
     setup_servo(HEAD_ID, &a->head);
     setup_servo(TAIL_ID, &a->tail);
 
-    nano_gettime(&head_at);
-    nano_gettime(&tail_at);
+    us_gettime(&head_at);
+    us_gettime(&tail_at);
 
-    nano_add_ms(&head_at, a->head.speed_ms/2);
-    nano_add_ms(&tail_at, a->tail.speed_ms/2);
+    us_add_ms(&head_at, a->head.speed_ms/2);
+    us_add_ms(&tail_at, a->tail.speed_ms/2);
 
     while (! stop_is_stopped(stop)) {
 	struct timespec now;
 
-	nano_gettime(&now);
-	if (nano_later_than(&now, &head_at)) {
+	us_gettime(&now);
+	if (us_later_than(&now, &head_at)) {
 	    head_left = !head_left;
 	    maestro_set_servo_pos(m, HEAD_ID, 50 + (-1*head_left)*a->head.delta_pct);
-	    nano_add_ms(&head_at, a->head.speed_ms);
+	    us_add_ms(&head_at, a->head.speed_ms);
 	}
-	if (nano_later_than(&now, &tail_at)) {
+	if (us_later_than(&now, &tail_at)) {
 	    tail_left = !tail_left;
 	    maestro_set_servo_pos(m, TAIL_ID, 50 + (-1*tail_left)*a->tail.delta_pct);
-	    nano_add_ms(&tail_at, a->tail.speed_ms);
+	    us_add_ms(&tail_at, a->tail.speed_ms);
 	}
     }
 }

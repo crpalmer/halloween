@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "pi.h"
 #include <string.h>
 #include "pi-threads.h"
 #include "neopixel-pico.h"

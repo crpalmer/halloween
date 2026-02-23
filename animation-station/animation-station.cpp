@@ -1,5 +1,5 @@
-#include <string.h>
 #include "pi.h"
+#include <string.h>
 #include "time-utils.h"
 #include "random-utils.h"
 #include "animation-station.h"
@@ -71,7 +71,7 @@ void AnimationStationButton::on_change() {
 AnimationStation::AnimationStation() : PiThread("animation-station") {
     lock = new PiMutex();
     cond = new PiCond();
-    nano_gettime(&start_time);
+    us_gettime(&start_time);
     start();
 }
 
@@ -107,7 +107,7 @@ bool AnimationStation::load_state() {
 
     ret = true;
     save_dirty = false;
-    nano_gettime(&last_save);
+    us_gettime(&last_save);
 
 done:
     fatal_free(buf);
@@ -128,7 +128,7 @@ bool AnimationStation::save_state() {
 	file_close(f);
 	ret = true;
     }
-    nano_gettime(&last_save);
+    us_gettime(&last_save);
     save_dirty = false;
     return ret;
 }
@@ -143,7 +143,7 @@ bool AnimationStation::trigger_common() {
     save_dirty = true;
     active_prop = "";
 
-    if (save_dirty && nano_elapsed_ms_now(&last_save) >= save_every_ms) {
+    if (save_dirty && us_elapsed_ms_now(&last_save) >= save_every_ms) {
 	save_state();
     }
 

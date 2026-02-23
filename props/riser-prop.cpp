@@ -42,8 +42,8 @@ void RiserProp::down() {
 }
 
 void RiserProp::wait_for_es(Input *es, int max_ms) {
-    struct timespec start;
-    nano_gettime(&start);
-    while (nano_elapsed_ms_now(&start) < max_ms && ! es->get()) {}
-    if (DEBUG) printf("%d ms end-stop %s\n", nano_elapsed_ms_now(&start), es->get() ? "triggered" : "NOT TRIGGERED");
+    us_time_t start;
+    us_gettime(&start);
+    while (us_elapsed_ms_now(&start) < max_ms && ! es->get()) {}
+    if (DEBUG) printf("%d ms end-stop %s\n", us_elapsed_ms_now(&start), es->get() ? "triggered" : "NOT TRIGGERED");
 }

@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "pi.h"
 #include <string.h>
 #include "gp-input.h"
-#include "pi.h"
 #include "physics.h"
 #include "servo-gpio.h"
 

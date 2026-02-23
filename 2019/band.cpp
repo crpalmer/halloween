@@ -145,7 +145,7 @@ main(int argc, char **argv)
 
 	ms_sleep(BETWEEN_SONG_MS);
 
-	nano_gettime(&start);
+	us_gettime(&start);
 	wb_set(LIGHTS, 1);
 	talking_skull_actor_play(vocals);
 	talking_skull_actor_play(drum);
