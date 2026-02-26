@@ -4,7 +4,7 @@
 #include "pi-threads.h"
 #include "stdin-reader.h"
 #include "stdout-writer.h"
-#include "stepper.h"
+#include "axis-stepper.h"
 #include "threads-console.h"
 
 static const int DIR_PIN = 0;
@@ -39,7 +39,7 @@ public:
 	Input *fast = new GPInput(FAST_PIN);
 	fast->set_pullup_up();
 	step = new GPOutput(STEP_PIN);
-	stepper = new Stepper(dir, step, STEPS_PER_MM / (fast->get() ? 2 : 1));
+	stepper = new AxisStepper(dir, step, STEPS_PER_MM / (fast->get() ? 2 : 1));
 
 	end_stop = new GPInput(ES_PIN);
 	end_stop->set_pullup_up();
@@ -71,7 +71,7 @@ protected:
 protected:
     Output *dir;
     Output *step;
-    Stepper *stepper;
+    AxisStepper *stepper;
     Input *end_stop = NULL;
 };
 
