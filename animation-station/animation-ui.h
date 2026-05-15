@@ -10,7 +10,7 @@ public:
 	httpd->add_prefix_handler(root, this);
     }
 
-    HttpdResponse *open(std::string path) override;
+    HttpdResponse *open(std::string path, HttpdRequest *request) override;
 
 private:
     std::string root;

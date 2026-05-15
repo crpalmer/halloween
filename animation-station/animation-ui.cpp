@@ -2,7 +2,7 @@
 #include "animation-station.h"
 #include "animation-ui.h"
 
-HttpdResponse *AnimationStationUI::open(std::string path) {
+HttpdResponse *AnimationStationUI::open(std::string path, HttpdRequest *request) {
     int slash = (int) path.find_first_of("/");
     std::string prop = path;
     std::string action = "status";
