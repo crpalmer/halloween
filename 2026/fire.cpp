@@ -23,7 +23,7 @@ static color_t red    = { 255,  15,  15 };
 
 static NeoPixelPico *neo;
 static const int fire_high = 55;
-static const int purple_pct = 3;
+static const int purple_pct = 0;
 static const int red_pct = 12;
 
 static void flicker_led(NeoPixelPico *neo, int led, color_t c, int flicker_high) {
