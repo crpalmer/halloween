@@ -49,7 +49,26 @@ static void flicker_fire(NeoPixelPico *neo) {
 
 	flicker_led(neo, i, c, fire_high);
     }
+
+#if PRINT_NEOPIXEL_SHOW_TIME
+    static us_time_t show_us = 0;
+    static int n_shows = 0;
+    static int last_s = 0;
+
+    us_time_t start = us_now();
+#endif
+
     neo->show();
+
+#if PRINT_NEOPIXEL_SHOW_TIME
+    show_us += us_now() - start;
+    n_shows ++;
+
+    if ((int) (start / 1000000) != last_s) {
+	last_s = start / 1000000;
+	printf("%5d : %.2f ms\n", last_s, show_us / 1000.0 / n_shows);
+    }
+#endif
 }
 
 int
