@@ -16,6 +16,7 @@ endif()
 
 add_subdirectory(claw)
 add_subdirectory(props)
+add_subdirectory(2026)
 add_subdirectory(2025)
 add_subdirectory(2024)
 add_subdirectory(2023)
