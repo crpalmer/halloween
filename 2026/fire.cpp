@@ -18,8 +18,8 @@ static color_t red    = { 255,  15,  15 };
 #define SLEEP_LOW 10
 #define SLEEP_HIGH 100
 
-#define FIRE_PIN 0
-#define FIRE_N_LEDS 9
+#define PIN 0
+#define N_LEDS 9
 
 static NeoPixelPico *neo;
 static const int fire_high = 55;
@@ -39,7 +39,7 @@ static void flicker_led(NeoPixelPico *neo, int led, color_t c, int flicker_high)
 }
 
 static void flicker_fire(NeoPixelPico *neo) {
-    for (int i = 0; i < FIRE_N_LEDS; i++) {
+    for (int i = 0; i < N_LEDS; i++) {
 	int pct = random_number_in_range(0, 99);
 	color_t c;
 
@@ -57,8 +57,8 @@ main(int argc, char **argv)
 {
     pi_init_no_reboot();
 
-    neo = new NeoPixelPico(FIRE_PIN);
-    neo->set_n_leds(FIRE_N_LEDS);
+    neo = new NeoPixelPico(PIN);
+    neo->set_n_leds(N_LEDS);
 
     for (;;) {
 	flicker_fire(neo);
