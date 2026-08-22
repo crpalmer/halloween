@@ -15,7 +15,7 @@ static color_t orange = { 223,  56,  25 };
 static color_t purple = { 131,  56, 154 };
 static color_t red    = { 255,  15,  15 };
 
-#define SLEEP_LOW 20
+#define SLEEP_LOW 10
 #define SLEEP_HIGH 100
 
 #define PIN 0
