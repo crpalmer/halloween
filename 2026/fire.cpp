@@ -11,7 +11,7 @@ typedef struct {
     int r, g, b;
 } color_t;
 
-static color_t orange = { 223,  56,  25 };
+static color_t green =  { 80, 200, 120 };
 static color_t purple = { 131,  56, 154 };
 static color_t red    = { 255,  15,  15 };
 
@@ -23,8 +23,8 @@ static color_t red    = { 255,  15,  15 };
 
 static NeoPixelPico *neo;
 static const int fire_high = 55;
-static const int purple_pct = 0;
-static const int red_pct = 12;
+static const int purple_pct = 12;
+static const int red_pct = 0;
 
 static void flicker_led(NeoPixelPico *neo, int led, color_t c, int flicker_high) {
     int r = c.r - random_number_in_range(0, flicker_high);
@@ -45,7 +45,7 @@ static void flicker_fire(NeoPixelPico *neo) {
 
 	if (pct < purple_pct) c = purple;
 	else if (pct < red_pct + purple_pct) c = red;
-	else c = orange;
+	else c = green;
 
 	flicker_led(neo, i, c, fire_high);
     }
