@@ -15,13 +15,14 @@ static color_t orange = { 223,  56,  25 };
 static color_t purple = { 131,  56, 154 };
 static color_t red    = { 255,  15,  15 };
 
+static const int N_STRANDS = 1;
+static const int PINS[N_STRANDS] = { 0 };
+static const int N_LEDS[N_STRANDS] = { 9 };
+
 #define SLEEP_LOW 10
 #define SLEEP_HIGH 100
 
-#define PIN 0
-#define N_LEDS 9
-
-static NeoPixelPico *neo;
+static NeoPixelPico *neo[N_STRANDS];
 static const int fire_high = 55;
 static const int purple_pct = 0;
 static const int red_pct = 12;
@@ -38,8 +39,8 @@ static void flicker_led(NeoPixelPico *neo, int led, color_t c, int flicker_high)
     neo->set_led(led, r, g, b);
 }
 
-static void flicker_fire(NeoPixelPico *neo) {
-    for (int i = 0; i < N_LEDS; i++) {
+static void flicker_fire(NeoPixelPico *neo, int n_leds) {
+    for (int i = 0; i < n_leds; i++) {
 	int pct = random_number_in_range(0, 99);
 	color_t c;
 
@@ -76,11 +77,15 @@ main(int argc, char **argv)
 {
     pi_init_no_reboot();
 
-    neo = new NeoPixelPico(PIN);
-    neo->set_n_leds(N_LEDS);
+    for (int i = 0; i < N_STRANDS; i++) {
+	neo[i] = new NeoPixelPico(PINS[i]);
+	neo[i]->set_n_leds(N_LEDS[i]);
+    }
 
     for (;;) {
-	flicker_fire(neo);
+	for (int i = 0; i < N_STRANDS; i++) {
+	    flicker_fire(neo[i], N_LEDS[i]);
+	}
         ms_sleep(random_number_in_range(SLEEP_LOW, SLEEP_HIGH));
     }
 }
