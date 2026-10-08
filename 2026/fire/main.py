@@ -12,9 +12,9 @@ class Log:
     def __init__(self, pin, n):
         self._neo = NeoPixel(pin, n)
 
-    def _vary_the_colour(self, rgb):
+    def _vary_the_colour(self, rgb, delta):
         rgb = int(rgb)
-        rgb += randint(-27, +27)
+        rgb += randint(-delta, +delta)
         if rgb < 0:
             return 0
         elif rgb > 255:
@@ -22,27 +22,54 @@ class Log:
         else:
             return rgb
     
-    def _v(self, rgb):
-        return gamma_correction[self._vary_the_colour(rgb)]
+    def _v(self, rgb, delta=15):
+        return gamma_correction[self._vary_the_colour(rgb, delta)]
+
+    def _random_colour(self):
+        pct = randint(0, 1000)
+        if pct < 0:
+            return tuple(self._v(c, 0) for c in (59, 0, 86))
+        elif pct < 10:
+            return tuple(self._v(c, 5) for c in (195, 97, 60))
+        else:
+            return tuple(self._v(c, 8) for c in (179, 82, 19))
 
     def flicker(self):
-        pct = randint(0, 99)
-        for i in range(len(self._neo)):
-            if pct < 0:
-                self._neo[i] = (self._v(131), self._v(56), self._v(154))
-            elif pct < 12:
-                self._neo[i] = (self._v(255), self._v(15), self._v(15))
-            else:
-                self._neo[i] = (self._v(223), self._v(56), self._v(25))
         self._neo.write()
+        for i in range(len(self._neo)):
+            self._neo[i] = self._random_colour()
+        self._neo.write()
+        
+# l = Log(Pin(0), 2)
+# neo = NeoPixel(Pin(2), 10)
+# red = (223, 56, 26)
+# orange = (150, 50, 33)
+# d = 15
+# neo[0] = tuple(gamma_correction[c] for c in red)
+# neo[1] = tuple(gamma_correction[max(c - d, 0)] for c in red)
+# neo[2] = tuple(gamma_correction[min(c + d, 255)] for c in red)
+# neo[3] = tuple(gamma_correction[c] for c in orange)
+# neo[4] = tuple(gamma_correction[max(c - d, 0)] for c in orange)
+# neo[5] = tuple(gamma_correction[min(c + d, 255)] for c in orange)
+# while True:
+#     neo[7] = tuple(l._v(c) for c in red)
+#     neo[8] = tuple(l._v(c) for c in orange)
+#     neo.write()
+#     time.sleep_ms(10)
+
+# n = NeoPixel(Pin(1), 21)
+# for i in range(21):
+#     n[i] = (0, 0, 0)
+# n.write()
+# time.sleep(1000)
 
 logs = []
 logs.append(Log(Pin(0), 21))
 logs.append(Log(Pin(1), 19))
-logs.append(Log(Pin(2), 19))
-logs.append(Log(Pin(3), 14))
-logs.append(Log(Pin(4), 14))
-logs.append(Log(Pin(5), 14))
+logs.append(Log(Pin(2), 18))
+logs.append(Log(Pin(3), 15))
+logs.append(Log(Pin(4), 15))
+logs.append(Log(Pin(5), 21))
 
 while True:
     start = time.ticks_ms()
