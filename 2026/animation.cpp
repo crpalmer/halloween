@@ -135,11 +135,11 @@ void threads_main(int argc, char **argv) {
 	light[i] = new Light(prop_get_light(i));
     }
 
-    new Rat(input[1], output[1], light[1]);
-    new Snake(input[2], output[2], light[2]);
+    new Snake(input[1], output[2], light[1]);
+    new Rat(input[2], output[1], light[2]);
     new Question(input[3], output[3], light[3]);
-    new Toad(input[4], output[4], light[4]);
-    new Possum(input[5], output[5], light[5]);
+    new Possum(input[4], output[5], light[4]);
+    new Toad(input[5], output[4], light[5]);
 
     auto station = AnimationStation::get();
     station->load_state();
