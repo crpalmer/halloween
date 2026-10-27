@@ -26,7 +26,7 @@ const bool test_offline = false;
 
 #define BAUD	B57600
 
-static struct timespec start;
+static us_time_t start;
 
 static int duet = -1;
 static char duet_reply[100000];
@@ -369,7 +369,7 @@ static void
 play_one_round()
 {
     int last_time_shown = -1;
-    struct timespec sleep_until;
+    us_time_t sleep_until;
     double servo_pos = 50;
     bool z_has_moved = false;
     bool claw_has_moved = false;

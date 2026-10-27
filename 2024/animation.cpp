@@ -117,15 +117,15 @@ private:
 
 class DebugHandler : public HttpdDebugHandler {
 public:
-    virtual HttpdResponse *open(std::string path) {
-	return HttpdDebugHandler::open(path);
+    virtual HttpdResponse *open(std::string path, HttpdRequest *request) {
+	return HttpdDebugHandler::open(path, request);
     }
 };
 
 class TriggerHandler : public HttpdPrefixHandler {
 public:
     TriggerHandler() : HttpdPrefixHandler() { }
-    HttpdResponse *open(std::string path) {
+    HttpdResponse *open(std::string path, HttpdRequest *request) {
 	AnimationStation *station = AnimationStation::get();
 	bool res = station->trigger(path);
 	return new HttpdResponse(std::to_string(res) + " " + path);

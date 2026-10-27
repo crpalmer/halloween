@@ -45,8 +45,8 @@ static AudioPlayer *player = new AudioPlayer(audio);
 
 static void blink_lights_for(bool *is_lit, int ms)
 {
-    struct timespec start;
-    struct timespec now;
+    us_time_t start;
+    us_time_t now;
 
     us_gettime(&start);
     do {
