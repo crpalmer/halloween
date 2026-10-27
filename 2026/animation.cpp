@@ -47,15 +47,15 @@ protected:
 class Rat : public Button {
 public:
     Rat(Input *button, Output *output, Light *light) : Button("Rat", button, output, light) {
-	add_wav("coin.wav");
+	//add_wav("coin.wav");
 	start();
     }
 };
 
 class Snake : public Button {
 public:
-    Snake(Input *button, Output *output, Light *light) : Button("Snake", button, new DummyOutput(), light) {
-	add_wav("plant.wav");
+    Snake(Input *button, Output *output, Light *light) : Button("Snake", button, output, light) {
+	//add_wav("plant.wav");
 	start();
     }
 
@@ -83,7 +83,7 @@ public:
 class Toad : public Button {
 public:
     Toad(Input *button, Output *output, Light *light) : Button("Toad", button, output, light) {
-	add_wav("bob.wav");
+	//add_wav("bob.wav");
 	start();
     }
 };
@@ -91,7 +91,7 @@ public:
 class Possum : public Button {
 public:
     Possum(Input *button, Output *output, Light *light) : Button("Possum", button, output, light) {
-	add_wav("bubble.wav");
+	//add_wav("bubble.wav");
 	start();
     }
 
