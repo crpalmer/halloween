@@ -44,30 +44,22 @@ protected:
     Light *light = light;
 };
 
-class Coin : public Button {
+class Rat : public Button {
 public:
-    Coin(Input *button, Output *output, Light *light) : Button("Coin", button, output, light) {
+    Rat(Input *button, Output *output, Light *light) : Button("Rat", button, output, light) {
 	add_wav("coin.wav");
 	start();
     }
 };
 
-class Plant : public Button {
+class Snake : public Button {
 public:
-    Plant(Input *button, Output *output, Light *light) : Button("Plant", button, new DummyOutput(), light), trigger(output) {
+    Snake(Input *button, Output *output, Light *light) : Button("Snake", button, new DummyOutput(), light) {
 	add_wav("plant.wav");
 	start();
     }
 
-    bool act(bool play_all_audio) override {
-	trigger->on();
-	bool ret = Button::act(play_all_audio);
-	trigger->off();
-	return ret;
-    }
-
-private:
-     Output *trigger;
+    double down_ms_target() { return 3; }
 };
 
 class Question : public Button {
@@ -84,19 +76,21 @@ public:
 	lights->chase();
 	return ret;
     }
+
+    double up_ms_target() { return 1.5; }
 };
 
-class Bob : public Button {
+class Toad : public Button {
 public:
-    Bob(Input *button, Output *output, Light *light) : Button("Bob", button, output, light) {
+    Toad(Input *button, Output *output, Light *light) : Button("Toad", button, output, light) {
 	add_wav("bob.wav");
 	start();
     }
 };
 
-class Cheep : public Button {
+class Possum : public Button {
 public:
-    Cheep(Input *button, Output *output, Light *light) : Button("Cheep", button, output, light) {
+    Possum(Input *button, Output *output, Light *light) : Button("Possum", button, output, light) {
 	add_wav("bubble.wav");
 	start();
     }
@@ -141,11 +135,11 @@ void threads_main(int argc, char **argv) {
 	light[i] = new Light(prop_get_light(i));
     }
 
-    new Coin(input[1], output[1], light[1]);
-    new Plant(input[2], output[2], light[2]);
+    new Rat(input[1], output[1], light[1]);
+    new Snake(input[2], output[2], light[2]);
     new Question(input[3], output[3], light[3]);
-    new Bob(input[4], output[4], light[4]);
-    new Cheep(input[5], output[5], light[5]);
+    new Toad(input[4], output[4], light[4]);
+    new Possum(input[5], output[5], light[5]);
 
     auto station = AnimationStation::get();
     station->load_state();
