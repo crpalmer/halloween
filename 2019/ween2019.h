@@ -7,9 +7,7 @@
 
 static inline int ween2019_is_ignored()
 {
-    struct stat s;
-
-    return (stat("/tmp/ween-ignore", &s) >= 0);
+    return file_exists("/tmp/ween-ignore");
 }
 
 static inline void ween2019_wait_until_valid()

@@ -7,9 +7,7 @@
 
 static inline int ween_hours_is_ignored()
 {
-    struct stat s;
-
-    return (stat("/tmp/ween-ignore", &s) >= 0);
+    return file_exists("/tmp/ween-ignore");
 }
 
 static inline bool ween_hours_is_primetime() {
