@@ -21,6 +21,21 @@ public:
 
     friend class FoggerConsole;
 
+    double get_duty() { return duty; }
+
+    double inc_duty(double delta = 0) {
+	if (delta == 0) delta = delta_duty;
+	duty += delta;
+	if (duty < 0) duty = 0;
+	return duty;
+    }
+
+    double dec_duty() {
+	duty -= delta_duty;
+	if (duty < 0) duty = 0;
+	return duty;
+    }
+
 protected:
     Output *fogger;
 

@@ -1,34 +1,54 @@
 #include "pi.h"
 #include <string.h>
-#include "net-listener.h"
-#include "net-reader.h"
-#include "net-writer.h"
+#include "httpd-server.h"
 #include "gp-output.h"
 #include "wifi.h"
 
 #include "fogger.h"
 
-class FoggerNet : public NetListener {
+class WWWHandler : public HttpdPrefixHandler {
 public:
-    FoggerNet(Fogger *fogger) : NetListener(5678), fogger(fogger) { start(); }
-    void accepted(int fd) {
-	new FoggerConsole(fogger, new NetReader(fd), new NetWriter(fd));
+    WWWHandler(Fogger *fogger) {
+	this->fogger = fogger;
+    }
+
+    HttpdResponse *open(std::string path, HttpdRequest *request) override {
+	if (path == "more" || path == "less") {
+	    if (path == "more") fogger->inc_duty();
+	    else fogger->dec_duty();
+	    HttpdResponse *response = new HttpdResponse("success");
+	    response->set_status(302);
+	    response->add_header("Location: /");
+	    return response;
+	}
+
+	HttpdResponse *response = new HttpdResponse(
+"<html>"
+"<head><title>Fogger</title></head>"
+"<body>"
+  "<h2>Fogger</h2>"
+  "<h3>Current duty is <b>" + std::to_string(fogger->get_duty()) + "</b> - <a href='/more'>[more fog]</a> || <a href='/less'>[less fog]</a></h3>"
+"</body>"
+	);
+	response->set_content_type("text/html");
+	return response;
     }
 
 private:
     Fogger *fogger;
 };
 
+static void create_httpd_server(Fogger *fogger) {
+    HttpdServer *www = new HttpdServer();
+    www->add_prefix_handler("", new WWWHandler(fogger));
+    www->start();
+}
+
 static void threads_main(int argc, char **argv) {
     wifi_init("fogger");
 
     Output *output = new GPOutput(0);
-
-    ms_sleep(5000);
-    printf("starting\n");
-    Fogger *fogger = new Fogger(output);
-    new FoggerNet(fogger);
-    printf("finishing\n");
+    create_httpd_server(new Fogger(output));
 }
 
 int
