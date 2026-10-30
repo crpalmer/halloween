@@ -3,6 +3,7 @@
 
 #include <sys/stat.h>
 #include "audio.h"
+#include "file.h"
 #include "ween-time.h"
 
 static inline int ween_hours_is_ignored()

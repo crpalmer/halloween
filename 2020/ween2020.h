@@ -2,6 +2,7 @@
 #define __WEEN2018_H__
 
 #include <sys/stat.h>
+#include "file.h"
 #include "time-utils.h"
 #include "ween-time.h"
 
