@@ -44,9 +44,9 @@ protected:
     Light *light = light;
 };
 
-class Rat : public Button {
+class Bunny : public Button {
 public:
-    Rat(Input *button, Output *output, Light *light) : Button("Rat", button, output, light) {
+    Bunny(Input *button, Output *output, Light *light) : Button("Bunny", button, output, light) {
 	//add_wav("coin.wav");
 	start();
     }
@@ -88,9 +88,9 @@ public:
     }
 };
 
-class Possum : public Button {
+class Ankheg : public Button {
 public:
-    Possum(Input *button, Output *output, Light *light) : Button("Possum", button, output, light) {
+    Ankheg(Input *button, Output *output, Light *light) : Button("Ankheg", button, output, light) {
 	//add_wav("bubble.wav");
 	start();
     }
@@ -136,9 +136,9 @@ void threads_main(int argc, char **argv) {
     }
 
     new Snake(input[1], output[2], light[1]);
-    new Rat(input[2], output[1], light[2]);
+    new Bunny(input[2], output[1], light[2]);
     new Question(input[3], output[3], light[3]);
-    new Possum(input[4], output[5], light[4]);
+    new Ankheg(input[4], output[5], light[4]);
     new Toad(input[5], output[4], light[5]);
 
     auto station = AnimationStation::get();
