@@ -50,6 +50,8 @@ public:
 	//add_wav("coin.wav");
 	start();
     }
+
+    double up_ms_target() { return 2; }
 };
 
 class Snake : public Button {
